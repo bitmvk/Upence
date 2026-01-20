@@ -1,0 +1,1356 @@
+package com.upence.ui
+
+import androidx.compose.foundation.*
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.upence.data.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.time.Instant
+import java.time.format.DateTimeFormatter
+import java.text.NumberFormat
+import java.util.Locale
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CurrencyRupee
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Money
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.text.selection.DisableSelection
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.text.*
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TextFieldValue
+
+// Enhanced FieldType with better UX
+enum class FieldType(val displayName: String, val iconName: String, val colorValue: Long) {
+    AMOUNT("Amount", "CurrencyRupee", 0xFF4361EE),
+    COUNTERPARTY("Counterparty", "Person", 0xFF6C757D),
+    DATE("Date", "CalendarToday", 0xFF06D6A0),
+    REFERENCE("Reference", "Receipt", 0xFF495057);
+    
+    @Composable
+    fun color(): Color = Color(colorValue)
+}
+
+// New data model for text range selection
+data class TextRangeSelection(
+    val start: Int,
+    val end: Int,
+    val fieldType: FieldType,
+    val originalText: String
+) {
+    fun cleanNumericValue(): String {
+        return if (fieldType == FieldType.AMOUNT || fieldType == FieldType.REFERENCE) {
+            extractNumbersOnly(originalText)
+        } else {
+            originalText
+        }
+    }
+    
+    private fun extractNumbersOnly(text: String): String {
+        return text.replace(Regex("[^\\d]"), "")
+    }
+}
+
+// Data class to track word analysis (legacy, will be phased out)
+data class WordAnalysis(
+    val word: String,
+    val originalIndex: Int,
+    val isNumeric: Boolean = false,
+    val numericValue: String = "",
+    val fieldType: FieldType? = null,
+    val isSelected: Boolean = false
+) {
+    val displayText: String
+        get() = if (fieldType == FieldType.AMOUNT && isNumeric) numericValue else word
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SMSPageEnhanced(
+    smsId: Long,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    smsDao: SMSDao,
+    smsParsingPatternDao: SMSParsingPatternDao,
+    transactionDao: TransactionDao,
+    categoryDao: com.upence.data.CategoriesDao,
+    bankAccountsDao: com.upence.data.BankAccountsDao,
+    tagsDao: com.upence.data.TagsDao,
+    senderDao: com.upence.data.SenderDao,
+    scope: CoroutineScope,
+    navController: androidx.navigation.NavController
+) {
+    val sms by smsDao.selectSMSById(smsId).collectAsState(initial = null)
+    val categories by categoryDao.getAllCategories().collectAsState(initial = emptyList())
+    val bankAccounts by bankAccountsDao.getAllAccounts().collectAsState(initial = emptyList())
+    val tags by tagsDao.getAllTags().collectAsState(initial = emptyList())
+    val existingPatterns by remember { mutableStateOf(emptyList<SMSParsingPattern>()) }
+    
+    // New text selection system state
+    var textSelections by remember { mutableStateOf<List<TextRangeSelection>>(emptyList()) }
+    var expertMode by remember { mutableStateOf(false) }
+    
+    // Enhanced state management
+    var wordAnalysis by remember { mutableStateOf<List<WordAnalysis>>(emptyList()) }
+    var selectedFieldType by remember { mutableStateOf<FieldType?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    // Transaction state
+    var amount by remember { mutableStateOf("") }
+    var counterparty by remember { mutableStateOf("") }
+    var reference by remember { mutableStateOf("") }
+    var transactionType by remember { mutableStateOf(TransactionType.DEBIT) }
+    var description by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf<Categories?>(null) }
+    var selectedAccount by remember { mutableStateOf<BankAccounts?>(null) }
+    var selectedTags by remember { mutableStateOf<List<Tags>>(emptyList()) }
+    var showCategoryExpanded by remember { mutableStateOf(false) }
+    var showAccountExpanded by remember { mutableStateOf(false) }
+
+    // SMS body collapse state
+    var showSMSBodyCollapsed by remember { mutableStateOf(false) }
+
+    // Track if data was auto-retrieved from pattern
+    var isDataAutoRetrieved by remember { mutableStateOf(false) }
+
+    // Track if a pattern was found (to hide save pattern checkbox)
+    var patternWasFound by remember { mutableStateOf(false) }
+
+    // Save pattern checkbox state
+    var savePattern by remember { mutableStateOf(false) }
+
+    // Not a Transaction dialog state
+    var showNotATransactionDialog by remember { mutableStateOf(false) }
+    var applyToAllFutureSMS by remember { mutableStateOf(false) }
+
+    // Initialize word analysis
+    LaunchedEffect(sms) {
+        if (sms != null) {
+            isLoading = true
+            val smsVal = sms!!
+            
+            // Analyze words for numeric content
+            val words = smsVal.message.split("\\s+".toRegex()).filter { it.isNotBlank() }
+            wordAnalysis = words.mapIndexed { index, word ->
+                val (isNumeric, numericValue) = extractNumericContent(word)
+                WordAnalysis(
+                    word = word,
+                    originalIndex = index,
+                    isNumeric = isNumeric,
+                    numericValue = numericValue
+                )
+            }
+            
+            // Check for existing patterns
+            try {
+                val patterns = smsParsingPatternDao.findSimilarPatterns(smsVal.sender)
+                if (patterns.isNotEmpty()) {
+                    // Auto-apply first pattern
+                    val pattern = patterns.first()
+                    applyPatternToAnalysis(pattern, smsVal.message, wordAnalysis)?.let { analysis ->
+                        wordAnalysis = analysis
+
+                        // Extract data from pattern
+                        val extracted = extractUsingPattern(smsVal.message, pattern)
+                        amount = extracted["amount"] ?: ""
+                        counterparty = extracted["counterparty"] ?: ""
+                        reference = extracted["reference"] ?: ""
+                        transactionType = pattern.transactionType
+
+                        // Mark data as auto-retrieved and pattern found
+                        isDataAutoRetrieved = true
+                        patternWasFound = true
+
+                        // Collapse SMS body by default when auto-retrieved
+                        showSMSBodyCollapsed = true
+
+                        // Pre-fill category and account from pattern defaults
+                        if (pattern.defaultCategoryID.isNotBlank()) {
+                            selectedCategory = categories.find { it.id.toString() == pattern.defaultCategoryID }
+                        }
+                        if (pattern.defaultAccountID.isNotBlank()) {
+                            selectedAccount = bankAccounts.find { it.id.toString() == pattern.defaultAccountID }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                // Continue without patterns
+            }
+            
+            isLoading = false
+        }
+    }
+    
+    // Loading state
+    if (isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+    
+    // SMS not found
+    if (sms == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("SMS not found", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = onBack) {
+                    Text("Go Back")
+                }
+            }
+        }
+        return
+    }
+    
+    val smsVal = sms!!
+    
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        "Complete Transaction",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
+            )
+        }
+    ) { paddingValues ->
+        Surface(
+            modifier = modifier
+                .padding(paddingValues)
+                .fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            UnifiedTransactionScreen(
+                sms = smsVal,
+                wordAnalysis = wordAnalysis,
+                selectedFieldType = selectedFieldType,
+                amount = amount,
+                onAmountChange = { amount = it },
+                counterparty = counterparty,
+                onCounterpartyChange = { counterparty = it },
+                reference = reference,
+                onReferenceChange = { reference = it },
+                transactionType = transactionType,
+                onTransactionTypeChange = { transactionType = it },
+                savePattern = savePattern,
+                onSavePatternChange = { savePattern = it },
+                description = description,
+                onDescriptionChange = { description = it },
+                categories = categories,
+                selectedCategory = selectedCategory,
+                onCategorySelected = { selectedCategory = it },
+                showCategoryExpanded = showCategoryExpanded,
+                onCategoryExpandedChange = { showCategoryExpanded = it },
+                bankAccounts = bankAccounts,
+                selectedAccount = selectedAccount,
+                onAccountSelected = { selectedAccount = it },
+                showAccountExpanded = showAccountExpanded,
+                onAccountExpandedChange = { showAccountExpanded = it },
+                tags = tags,
+                selectedTags = selectedTags,
+                onTagsSelected = { selectedTags = it },
+                isDataAutoRetrieved = isDataAutoRetrieved,
+                patternWasFound = patternWasFound,
+                showSMSBodyCollapsed = showSMSBodyCollapsed,
+                onSMSBodyCollapseChange = { showSMSBodyCollapsed = it },
+                onFieldTypeSelected = { fieldType ->
+                    selectedFieldType = if (selectedFieldType == fieldType) null else fieldType
+                },
+                onWordClicked = { index ->
+                    selectedFieldType?.let { fieldType ->
+                        wordAnalysis = wordAnalysis.mapIndexed { i, analysis ->
+                            if (i == index) {
+                                // For amount field, only allow selection of numeric tokens
+                                if (fieldType == FieldType.AMOUNT && !analysis.isNumeric) {
+                                    return@mapIndexed analysis
+                                }
+                                analysis.copy(fieldType = fieldType, isSelected = true)
+                            } else if (analysis.fieldType == fieldType) {
+                                analysis.copy(isSelected = false)
+                            } else {
+                                analysis
+                            }
+                        }
+
+                        // Update extracted values based on selected words
+                        val newAmount = wordAnalysis
+                            .filter { it.fieldType == FieldType.AMOUNT && it.isSelected }
+                            .joinToString("") { it.displayText }
+                        if (newAmount.isNotBlank()) amount = newAmount
+
+                        val newCounterparty = wordAnalysis
+                            .filter { it.fieldType == FieldType.COUNTERPARTY && it.isSelected }
+                            .joinToString(" ") { it.word }
+                        if (newCounterparty.isNotBlank()) counterparty = newCounterparty
+
+                        val newReference = wordAnalysis
+                            .filter { it.fieldType == FieldType.REFERENCE && it.isSelected }
+                            .joinToString(" ") { it.word }
+                        if (newReference.isNotBlank()) reference = extractNumbersOnly(newReference)
+                    }
+                },
+                onCancel = onBack,
+                onNotATransactionClick = { showNotATransactionDialog = true },
+                onNotATransactionLongPress = {
+                    scope.launch {
+                        withContext(Dispatchers.IO) {
+                            smsDao.deleteSMS(smsId)
+                        }
+                        onBack()
+                    }
+                },
+                onCreateTransaction = {
+                    // Validate based on whether data was auto-retrieved
+                    val isValid = if (isDataAutoRetrieved) {
+                        validateTransaction(amount, counterparty, selectedCategory, selectedAccount)
+                    } else {
+                        // For manually filled data, only category and account are required
+                        selectedCategory != null && selectedAccount != null
+                    }
+
+                    if (isValid) {
+                        // Save pattern if requested
+                        if (savePattern) {
+                            val pattern = createPatternFromAnalysis(
+                                smsVal.sender,
+                                smsVal.message,
+                                wordAnalysis,
+                                transactionType
+                            )
+                            scope.launch {
+                                withContext(Dispatchers.IO) {
+                                    val patternId = smsParsingPatternDao.insertPattern(pattern).toInt()
+                                    // Update pattern with defaults
+                                    smsParsingPatternDao.updateDefaults(
+                                        patternId,
+                                        selectedCategory?.id?.toString() ?: "",
+                                        selectedAccount?.id?.toString() ?: ""
+                                    )
+                                }
+                            }
+                        }
+
+                        // Create transaction
+                        val transaction = Transaction(
+                            counterParty = counterparty,
+                            amount = if (amount.isNotBlank()) amount.toDoubleOrNull() ?: 0.0 else 0.0,
+                            timestamp = Instant.now(),
+                            categoryID = selectedCategory?.id?.toString() ?: "",
+                            description = description,
+                            accountID = selectedAccount?.id?.toString() ?: "",
+                            transactionType = transactionType,
+                            referenceNumber = reference
+                        )
+
+                        scope.launch {
+                            withContext(Dispatchers.IO) {
+                                transactionDao.insertTransaction(transaction)
+                            }
+                            onBack()
+                        }
+                    }
+                },
+                navController = navController
+            )
+
+            // Not a Transaction Dialog
+            if (showNotATransactionDialog) {
+                NotATransactionDialog(
+                    sender = smsVal.sender,
+                    applyToAllFutureSMS = applyToAllFutureSMS,
+                    onApplyToAllChange = { applyToAllFutureSMS = it },
+                    onDismiss = { showNotATransactionDialog = false },
+                    onConfirm = {
+                        scope.launch {
+                            withContext(Dispatchers.IO) {
+                                if (applyToAllFutureSMS) {
+                                    senderDao.markSenderAsIgnored(
+                                        senderName = smsVal.sender,
+                                        reason = "Not a transaction"
+                                    )
+                                }
+                                smsDao.deleteSMS(smsId)
+                            }
+                            onBack()
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun NotATransactionDialog(
+    sender: String,
+    applyToAllFutureSMS: Boolean,
+    onApplyToAllChange: (Boolean) -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("Mark as Not a Transaction")
+        },
+        text = {
+            Column {
+                Text(
+                    "Do you want to mark this SMS from '$sender' as not a transaction?",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Checkbox(
+                        checked = applyToAllFutureSMS,
+                        onCheckedChange = onApplyToAllChange
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Apply for all future SMS from this sender",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text("Confirm")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+// TODO: Merge FirstScreenContent and SecondScreenContent into single UnifiedTransactionScreen
+// - Show SMS body section (collapsible) at top
+// - Show transaction details section (only when isDataAutoRetrieved == true)
+// - Always show account, category, tags, and description sections
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun UnifiedTransactionScreen(
+    sms: SMS,
+    wordAnalysis: List<WordAnalysis>,
+    selectedFieldType: FieldType?,
+    amount: String,
+    onAmountChange: (String) -> Unit,
+    counterparty: String,
+    onCounterpartyChange: (String) -> Unit,
+    reference: String,
+    onReferenceChange: (String) -> Unit,
+    transactionType: TransactionType,
+    onTransactionTypeChange: (TransactionType) -> Unit,
+    savePattern: Boolean,
+    onSavePatternChange: (Boolean) -> Unit,
+    description: String,
+    onDescriptionChange: (String) -> Unit,
+    categories: List<Categories>,
+    selectedCategory: Categories?,
+    onCategorySelected: (Categories) -> Unit,
+    showCategoryExpanded: Boolean,
+    onCategoryExpandedChange: (Boolean) -> Unit,
+    bankAccounts: List<BankAccounts>,
+    selectedAccount: BankAccounts?,
+    onAccountSelected: (BankAccounts) -> Unit,
+    showAccountExpanded: Boolean,
+    onAccountExpandedChange: (Boolean) -> Unit,
+    tags: List<Tags>,
+    selectedTags: List<Tags>,
+    onTagsSelected: (List<Tags>) -> Unit,
+    isDataAutoRetrieved: Boolean,
+    patternWasFound: Boolean,
+    showSMSBodyCollapsed: Boolean,
+    onSMSBodyCollapseChange: (Boolean) -> Unit,
+    onFieldTypeSelected: (FieldType) -> Unit,
+    onWordClicked: (Int) -> Unit,
+    onCancel: () -> Unit,
+    onNotATransactionClick: () -> Unit,
+    onNotATransactionLongPress: () -> Unit,
+    onCreateTransaction: () -> Unit,
+    navController: androidx.navigation.NavController
+) {
+    // TODO: Create UnifiedTransactionScreen composable that:
+    // - Takes all parameters from both FirstScreenContent and SecondScreenContent
+    // - Shows collapsible SMS body with word chips (when !showSMSBodyCollapsed)
+    // - Shows transaction details (when isDataAutoRetrieved)
+    // - Shows account/category/tags/dropdowns always
+    // - Conditionally shows "Save pattern" checkbox based on !patternWasFound
+    // - Validates and saves transaction
+
+    // TODO: Implement collapsible SMS body section
+    // - When isDataAutoRetrieved == true, show collapsed by default
+    // - When isDataAutoRetrieved == false, show expanded by default
+    // - Add clickable header to toggle collapse state
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // SMS Body Section (Collapsible)
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // Collapsible Header
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSMSBodyCollapseChange(!showSMSBodyCollapsed) }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = if (showSMSBodyCollapsed) Icons.Filled.ExpandMore else Icons.Filled.KeyboardArrowUp,
+                                contentDescription = if (showSMSBodyCollapsed) "Expand" else "Collapse",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "SMS Body",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (isDataAutoRetrieved) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Surface(
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    Text(
+                                        text = "Auto-filled",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+                            }
+                        }
+                        Text(
+                            text = java.time.Instant.ofEpochMilli(sms.timestamp)
+                                .atZone(java.time.ZoneId.systemDefault())
+                                .format(DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm")),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // SMS Sender and Message (Always show sender)
+                    Text(
+                        text = "From: ${sms.sender}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // SMS Message (collapsible)
+                    if (!showSMSBodyCollapsed) {
+                        SelectionContainer {
+                            Text(
+                                text = sms.message,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Field Type Chips
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FieldType.entries.forEach { fieldType ->
+                                EnhancedFieldTypeChip(
+                                    fieldType = fieldType,
+                                    isSelected = selectedFieldType == fieldType,
+                                    onClick = { onFieldTypeSelected(fieldType) }
+                                )
+                            }
+                        }
+
+                        if (selectedFieldType != null) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "Click words to mark as ${selectedFieldType.displayName}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Word Chips
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            wordAnalysis.forEachIndexed { index, analysis ->
+                                EnhancedWordChip(
+                                    analysis = analysis,
+                                    targetFieldType = selectedFieldType,
+                                    onClick = { onWordClicked(index) }
+                                )
+                            }
+                        }
+                    } else {
+                        // Collapsed view - show snippet
+                        Text(
+                            text = if (sms.message.length > 50) {
+                                sms.message.take(50) + "..."
+                            } else {
+                                sms.message
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+        }
+
+        // Transaction Details Section (Only when data is auto-retrieved)
+        if (isDataAutoRetrieved) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Transaction Details",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Surface(
+                                color = MaterialTheme.colorScheme.tertiaryContainer,
+                                shape = MaterialTheme.shapes.small
+                            ) {
+                                Text(
+                                    text = "Auto-filled",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Amount Field
+                        OutlinedTextField(
+                            value = amount,
+                            onValueChange = onAmountChange,
+                            label = { Text("Amount") },
+                            leadingIcon = {
+                                Icon(Icons.Filled.CurrencyRupee, contentDescription = "Amount")
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Counterparty Field
+                        OutlinedTextField(
+                            value = counterparty,
+                            onValueChange = onCounterpartyChange,
+                            label = { Text("Counterparty") },
+                            leadingIcon = {
+                                Icon(Icons.Filled.Person, contentDescription = "Counterparty")
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Reference Field
+                        OutlinedTextField(
+                            value = reference,
+                            onValueChange = onReferenceChange,
+                            label = { Text("Reference Number") },
+                            leadingIcon = {
+                                Icon(Icons.Filled.Receipt, contentDescription = "Reference")
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Transaction Type
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            TransactionType.entries.forEach { type ->
+                                FilterChip(
+                                    selected = transactionType == type,
+                                    onClick = { onTransactionTypeChange(type) },
+                                    label = { Text(type.name) },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = if (type == TransactionType.CREDIT) Icons.Filled.Money else Icons.Filled.CreditCard,
+                                            contentDescription = type.name
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Account Section
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                ExposedDropdownMenuBox(
+                    expanded = showAccountExpanded,
+                    onExpandedChange = onAccountExpandedChange
+                ) {
+                    OutlinedTextField(
+                        value = selectedAccount?.accountName ?: "Select Account",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Account") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showAccountExpanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                            .padding(16.dp)
+                    )
+                    ExposedDropdownMenu(
+                        expanded = showAccountExpanded,
+                        onDismissRequest = { onAccountExpandedChange(false) }
+                    ) {
+                        bankAccounts.forEach { account ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = account.accountName,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                },
+                                onClick = {
+                                    onAccountSelected(account)
+                                    onAccountExpandedChange(false)
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Filled.CreditCard,
+                                        contentDescription = "Account"
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Category Section
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                ExposedDropdownMenuBox(
+                    expanded = showCategoryExpanded,
+                    onExpandedChange = onCategoryExpandedChange
+                ) {
+                    OutlinedTextField(
+                        value = selectedCategory?.name ?: "Select Category",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Category") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showCategoryExpanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                            .padding(16.dp)
+                    )
+                    ExposedDropdownMenu(
+                        expanded = showCategoryExpanded,
+                        onDismissRequest = { onCategoryExpandedChange(false) }
+                    ) {
+                        categories.forEach { category ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = category.name,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                },
+                                onClick = {
+                                    onCategorySelected(category)
+                                    onCategoryExpandedChange(false)
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Filled.Info,
+                                        contentDescription = "Category"
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Tags Section
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Tags",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (tags.isEmpty()) {
+                        Text(
+                            text = "No tags available. Create tags in Settings.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = { navController.navigate("tags_management") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Manage Tags")
+                        }
+                    } else {
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(tags) { tag ->
+                                FilterChip(
+                                    selected = selectedTags.contains(tag),
+                                    onClick = {
+                                        val newTags = if (selectedTags.contains(tag)) {
+                                            selectedTags - tag
+                                        } else {
+                                            selectedTags + tag
+                                        }
+                                        onTagsSelected(newTags)
+                                    },
+                                    label = { Text(tag.name) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = Color(android.graphics.Color.parseColor(tag.color)),
+                                        selectedLabelColor = Color.White
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Description Section
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Description (Optional)",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = onDescriptionChange,
+                        placeholder = { Text("Add a description for this transaction") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        maxLines = 5
+                    )
+                }
+            }
+        }
+
+        // TODO: Hide "Save pattern" checkbox when patternWasFound == true
+        // - This prevents showing checkbox when pattern was already pre-applied
+        if (!patternWasFound) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .clickable { onSavePatternChange(!savePattern) },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = savePattern,
+                            onCheckedChange = null
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Save as Pattern",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = "Save the selected field mappings as a pattern for future SMS from this sender",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Action Buttons Section
+        item {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Create Transaction Button
+                Button(
+                    onClick = onCreateTransaction,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = selectedCategory != null && selectedAccount != null
+                ) {
+                    Icon(Icons.Filled.Save, contentDescription = "Save")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Create Transaction")
+                }
+
+                // Not a Transaction Button
+                OutlinedButton(
+                    onClick = onNotATransactionClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .combinedClickable(
+                            onClick = onNotATransactionClick,
+                            onLongClick = onNotATransactionLongPress
+                        )
+                ) {
+                    Icon(Icons.Filled.Cancel, contentDescription = "Cancel")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Not a Transaction")
+                }
+
+                // Cancel Button
+                TextButton(
+                    onClick = onCancel,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Cancel")
+                }
+            }
+        }
+
+        // Spacer at bottom
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EnhancedFieldTypeChip(
+    fieldType: FieldType,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.clickable { onClick() },
+        shape = CircleShape,
+        color = if (isSelected) fieldType.color() else fieldType.color().copy(alpha = 0.1f),
+        border = BorderStroke(
+            width = if (isSelected) 2.dp else 1.dp,
+            color = fieldType.color()
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(if (isSelected) fieldType.color() else fieldType.color().copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = fieldType.displayName.first().uppercase(),
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else fieldType.color(),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = fieldType.displayName,
+                style = MaterialTheme.typography.labelMedium,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else fieldType.color()
+            )
+        }
+    }
+}
+
+@Composable
+fun EnhancedWordChip(
+    analysis: WordAnalysis,
+    targetFieldType: FieldType?,
+    onClick: () -> Unit
+) {
+    val isDisabled = targetFieldType == FieldType.AMOUNT && !analysis.isNumeric
+    val isSelected = analysis.isSelected && analysis.fieldType == targetFieldType
+
+    // Only show subtle border when selected, no color changes
+    val borderColor = if (isSelected) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+    } else {
+        MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+    }
+
+    val borderWidth = if (isSelected) 2.dp else 1.dp
+
+    Surface(
+        modifier = Modifier
+            .clickable(enabled = !isDisabled) { onClick() }
+            .alpha(if (isDisabled) 0.5f else 1f),
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(width = borderWidth, color = borderColor)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = analysis.displayText,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
+            )
+            if (analysis.isNumeric && analysis.fieldType == FieldType.AMOUNT) {
+                Spacer(modifier = Modifier.width(4.dp))
+                Badge(
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                    contentColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Text("₹", fontSize = 10.sp)
+                }
+            }
+        }
+    }
+}
+
+// Enhanced numeric extraction with Indian format support
+fun extractNumericContent(word: String): Pair<Boolean, String> {
+    // Handle common Indian/International currency formats including "Rs.", "RS.", "₹"
+    val cleanWord = word.replace(",", "")  // Remove commas for thousands
+    // Match patterns like: Rs.1.00, ₹100, $50.00, 1,234.56, 250 etc.
+    val numericRegex = Regex("""(?i)[₹$\s]*RS?\.?\s*([\d]+(?:\.\d{1,2})?)""")
+    val match = numericRegex.find(cleanWord)
+    
+    return if (match != null) {
+        val numericValue = match.groupValues[1]
+        try {
+            val number = numericValue.toDoubleOrNull()
+            if (number != null) {
+                true to String.format(Locale.US, "%.2f", number)
+            } else {
+                false to ""
+            }
+        } catch (e: Exception) {
+            false to ""
+        }
+    } else {
+        // Alternative: look for any numeric pattern
+        val altRegex = Regex("""[\d]+(?:[.,]\d{1,2})?""")
+        val altMatch = altRegex.find(word)
+        if (altMatch != null) {
+            val numericValue = altMatch.value.replace(",", ".")
+            try {
+                val number = numericValue.toDoubleOrNull()
+                if (number != null) {
+                    true to String.format(Locale.US, "%.2f", number)
+                } else {
+                    false to ""
+                }
+            } catch (e: Exception) {
+                false to ""
+            }
+        } else {
+            false to ""
+        }
+    }
+}
+
+fun updateExtractedValues(
+    analysis: List<WordAnalysis>,
+    fieldType: FieldType,
+    currentAmount: String,
+    currentCounterparty: String,
+    currentReference: String,
+    onAmountChange: (String) -> Unit,
+    onCounterpartyChange: (String) -> Unit,
+    onReferenceChange: (String) -> Unit
+) {
+    when (fieldType) {
+        FieldType.AMOUNT -> {
+            val amountText = analysis
+                .filter { it.fieldType == FieldType.AMOUNT && it.isSelected }
+                .joinToString("") { it.displayText }
+            if (amountText.isNotBlank()) {
+                onAmountChange(amountText)
+            }
+        }
+        FieldType.COUNTERPARTY -> {
+            val counterpartyText = analysis
+                .filter { it.fieldType == FieldType.COUNTERPARTY && it.isSelected }
+                .joinToString(" ") { it.word }
+            if (counterpartyText.isNotBlank()) {
+                onCounterpartyChange(counterpartyText)
+            }
+        }
+        FieldType.REFERENCE -> {
+            val referenceText = analysis
+                .filter { it.fieldType == FieldType.REFERENCE && it.isSelected }
+                .joinToString(" ") { it.word }
+            if (referenceText.isNotBlank()) {
+                onReferenceChange(referenceText)
+            }
+        }
+        else -> {}
+    }
+}
+
+fun applyPatternToAnalysis(
+    pattern: SMSParsingPattern,
+    message: String,
+    currentAnalysis: List<WordAnalysis>
+): List<WordAnalysis>? {
+    val words = message.split("\\s+".toRegex())
+    val updatedAnalysis = currentAnalysis.toMutableList()
+    
+    // Apply amount positions
+    pattern.amountPattern.split(",").mapNotNull { it.toIntOrNull() }.forEach { pos ->
+        if (pos < updatedAnalysis.size) {
+            updatedAnalysis[pos] = updatedAnalysis[pos].copy(fieldType = FieldType.AMOUNT, isSelected = true)
+        }
+    }
+    
+    // Apply counterparty positions
+    pattern.counterpartyPattern.split(",").mapNotNull { it.toIntOrNull() }.forEach { pos ->
+        if (pos < updatedAnalysis.size) {
+            updatedAnalysis[pos] = updatedAnalysis[pos].copy(fieldType = FieldType.COUNTERPARTY, isSelected = true)
+        }
+    }
+    
+    // Apply reference positions
+    pattern.referencePattern?.split(",")?.mapNotNull { it.toIntOrNull() }?.forEach { pos ->
+        if (pos < updatedAnalysis.size) {
+            updatedAnalysis[pos] = updatedAnalysis[pos].copy(fieldType = FieldType.REFERENCE, isSelected = true)
+        }
+    }
+    
+    return updatedAnalysis
+}
+
+fun createPatternFromAnalysis(
+    sender: String,
+    message: String,
+    analysis: List<WordAnalysis>,
+    transactionType: TransactionType
+): SMSParsingPattern {
+    val amountPositions = analysis
+        .mapIndexedNotNull { index, word -> if (word.fieldType == FieldType.AMOUNT) index else null }
+    
+    val counterpartyPositions = analysis
+        .mapIndexedNotNull { index, word -> if (word.fieldType == FieldType.COUNTERPARTY) index else null }
+    
+    val referencePositions = analysis
+        .mapIndexedNotNull { index, word -> if (word.fieldType == FieldType.REFERENCE) index else null }
+    
+    val datePositions = analysis
+        .mapIndexedNotNull { index, word -> if (word.fieldType == FieldType.DATE) index else null }
+    
+    return SMSParsingPattern(
+        senderIdentifier = sender,
+        patternName = "Generated_${System.currentTimeMillis()}",
+        messageStructure = buildMessageStructure(message, analysis),
+        amountPattern = amountPositions.joinToString(","),
+        counterpartyPattern = counterpartyPositions.joinToString(","),
+        datePattern = datePositions.joinToString(",").ifEmpty { null },
+        referencePattern = referencePositions.joinToString(",").ifEmpty { null },
+        transactionType = transactionType,
+        isActive = true
+    )
+}
+
+fun buildMessageStructure(message: String, analysis: List<WordAnalysis>): String {
+    val words = message.split("\\s+".toRegex())
+    return words.mapIndexed { index, word ->
+        val wordAnalysis = analysis.getOrNull(index)
+        when (wordAnalysis?.fieldType) {
+            FieldType.AMOUNT -> "[AMOUNT]"
+            FieldType.COUNTERPARTY -> "[COUNTERPARTY]"
+            FieldType.DATE -> "[DATE]"
+            FieldType.REFERENCE -> "[REFERENCE]"
+            else -> if (word.length > 3) "[TEXT]" else "[SHORT]"
+        }
+    }.joinToString(" ")
+}
+
+fun extractUsingPattern(message: String, pattern: SMSParsingPattern): Map<String, String> {
+    val result = mutableMapOf<String, String>()
+    val words = message.split("\\s+".toRegex())
+    
+    // Extract amount
+    if (pattern.amountPattern.isNotEmpty()) {
+        val amount = pattern.amountPattern.split(",")
+            .mapNotNull { it.toIntOrNull() }
+            .mapNotNull { words.getOrNull(it) }
+            .joinToString(" ")
+        
+        // Clean amount (extract numeric part)
+        val cleanAmount = amount.replace("[^\\d.]".toRegex(), "")
+        if (cleanAmount.isNotBlank()) {
+            result["amount"] = cleanAmount
+        }
+    }
+    
+    // Extract counterparty
+    if (pattern.counterpartyPattern.isNotEmpty()) {
+        result["counterparty"] = pattern.counterpartyPattern.split(",")
+            .mapNotNull { it.toIntOrNull() }
+            .mapNotNull { words.getOrNull(it) }
+            .joinToString(" ")
+    }
+    
+    // Extract reference
+    if (!pattern.referencePattern.isNullOrEmpty()) {
+        result["reference"] = pattern.referencePattern.split(",")
+            .mapNotNull { it.toIntOrNull() }
+            .mapNotNull { words.getOrNull(it) }
+            .joinToString(" ")
+    }
+    
+    return result
+}
+
+fun extractNumbersOnly(text: String): String {
+    return text.replace(Regex("[^\\d]"), "")
+}
+
+fun validateTransaction(
+    amount: String,
+    counterparty: String,
+    category: Categories?,
+    account: BankAccounts?
+): Boolean {
+    return amount.isNotBlank() && 
+           counterparty.isNotBlank() && 
+           amount.toDoubleOrNull() != null &&
+           category != null && 
+           account != null
+}

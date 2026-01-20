@@ -1,0 +1,15 @@
+{
+  "provider": {
+    "siliconflow": {
+      "models": {
+        "deepseek-ai/DeepSeek-V3.2": {
+          "limit": {
+            "context": 164000,
+            "output": 65536
+          }
+        }
+      }
+    }
+  },
+  "$schema": "https://opencode.ai/config.json"
+}
