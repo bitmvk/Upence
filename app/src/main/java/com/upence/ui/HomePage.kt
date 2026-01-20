@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Wallet
+import androidx.compose.material.icons.filled.Message
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,11 +39,14 @@ import kotlinx.coroutines.flow.Flow
 fun HomePage(
     transactionDao: TransactionDao,
     categoryDao: CategoriesDao,
-    bankAccountsDao: BankAccountsDao
+    bankAccountsDao: BankAccountsDao,
+    smsDao: SMSDao,
+    navController: androidx.navigation.NavController
 ) {
     val transactions by transactionDao.getAllTransactions().collectAsState(initial = emptyList())
     val categories by categoryDao.getAllCategories().collectAsState(initial = emptyList())
     val bankAccounts by bankAccountsDao.getAllAccounts().collectAsState(initial = emptyList())
+    val smsList by smsDao.selectUnprocessedSMS().collectAsState(initial = emptyList())
     
     // Calculate financial metrics
     val (netBalance, monthlyIncome, monthlyExpense) = remember(transactions) {
@@ -85,6 +89,26 @@ fun HomePage(
                     titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
+        },
+        floatingActionButton = {
+            if (smsList.isNotEmpty()) {
+                FloatingActionButton(
+                    onClick = { navController.navigate("unprocessed_sms") },
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Badge(
+                        modifier = Modifier
+                            .offset(x = (-6).dp, y = 6.dp)
+                    ) {
+                        Text(smsList.size.toString(), fontSize = 10.sp)
+                    }
+                    Icon(
+                        Icons.Default.Message,
+                        contentDescription = "Unprocessed SMS",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
         }
     ) { innerPadding ->
         Column(
@@ -438,21 +462,7 @@ fun TransactionListItem(transaction: Transaction) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = transaction.timestamp
-                                .atZone(java.time.ZoneId.systemDefault())
-                                .toLocalDate()
-                                .format(DateTimeFormatter.ofPattern("MMM dd")),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                        
                         if (transaction.referenceNumber.isNotBlank()) {
-                            Text(
-                                text = " • ",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                            )
                             Text(
                                 text = transaction.referenceNumber.take(8),
                                 style = MaterialTheme.typography.bodySmall,

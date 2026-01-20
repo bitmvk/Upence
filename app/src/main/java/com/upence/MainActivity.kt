@@ -48,6 +48,7 @@ import com.upence.data.UserStore
 import com.upence.ui.HomePage
 import com.upence.ui.SMSPageEnhanced
 import com.upence.ui.StartPage
+import com.upence.ui.UnprocessedSMSListPage
 import com.upence.ui.theme.UpenceTheme
 import com.upence.ui.settings.AccountManagementPage
 import com.upence.ui.settings.CategoryManagementPage
@@ -108,7 +109,9 @@ class MainActivity : ComponentActivity() {
                                     HomePage(
                                         transactionDao = transactionDao,
                                         categoryDao = categoryDao,
-                                        bankAccountsDao = bankAccountsDao
+                                        bankAccountsDao = bankAccountsDao,
+                                        smsDao = smsDao,
+                                        navController = navController
                                     )
                                 }
                             }
@@ -158,6 +161,12 @@ class MainActivity : ComponentActivity() {
                             navController = navController
                         )
                     }
+                    composable("unprocessed_sms") {
+                        UnprocessedSMSListPage(
+                            smsDao = smsDao,
+                            navController = navController
+                        )
+                    }
                 }
             }
         }
@@ -176,7 +185,7 @@ class MainActivity : ComponentActivity() {
                 Log.d("MainActivity", "Received SMS ID: $smsId")
 
                 val notificationManager =
-                    getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    getSystemService(NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.cancel(smsId.toInt())
             }
         }
@@ -255,7 +264,9 @@ fun DefaultPreview() {
         HomePage(
             transactionDao = TODO(),
             categoryDao = TODO(),
-            bankAccountsDao = TODO()
+            bankAccountsDao = TODO(),
+            smsDao = TODO(),
+            navController = TODO()
         )
     }
 }

@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -28,22 +27,24 @@ import java.util.Locale
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CurrencyRupee
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Money
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -52,6 +53,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
@@ -59,10 +61,15 @@ import androidx.compose.ui.text.input.TextFieldValue
 // Enhanced FieldType with better UX
 enum class FieldType(val displayName: String, val iconName: String, val colorValue: Long) {
     AMOUNT("Amount", "CurrencyRupee", 0xFF4361EE),
-    COUNTERPARTY("Counterparty", "Person", 0xFF6C757D),
-    DATE("Date", "CalendarToday", 0xFF06D6A0),
-    REFERENCE("Reference", "Receipt", 0xFF495057);
-    
+    COUNTERPARTY("Counterparty", "Person", 0xFF06D6A0),
+    REFERENCE("Reference", "Receipt", 0xFFEF476F);
+
+    val buttonDisplayName: String
+        get() = when (this) {
+            COUNTERPARTY -> "Counter Party"
+            else -> displayName
+        }
+
     @Composable
     fun color(): Color = Color(colorValue)
 }
@@ -97,7 +104,7 @@ data class WordAnalysis(
     val isSelected: Boolean = false
 ) {
     val displayText: String
-        get() = if (fieldType == FieldType.AMOUNT && isNumeric) numericValue else word
+        get() = word
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -188,9 +195,9 @@ fun SMSPageEnhanced(
 
                         // Extract data from pattern
                         val extracted = extractUsingPattern(smsVal.message, pattern)
-                        amount = extracted["amount"] ?: ""
+                        amount = (extracted["amount"] ?: "").trim('.')
                         counterparty = extracted["counterparty"] ?: ""
-                        reference = extracted["reference"] ?: ""
+                        reference = (extracted["reference"] ?: "").trim('.')
                         transactionType = pattern.transactionType
 
                         // Mark data as auto-retrieved and pattern found
@@ -273,11 +280,11 @@ fun SMSPageEnhanced(
                 wordAnalysis = wordAnalysis,
                 selectedFieldType = selectedFieldType,
                 amount = amount,
-                onAmountChange = { amount = it },
+                onAmountChange = { amount = it.trim('.') },
                 counterparty = counterparty,
                 onCounterpartyChange = { counterparty = it },
                 reference = reference,
-                onReferenceChange = { reference = it },
+                onReferenceChange = { reference = it.trim('.') },
                 transactionType = transactionType,
                 onTransactionTypeChange = { transactionType = it },
                 savePattern = savePattern,
@@ -323,8 +330,8 @@ fun SMSPageEnhanced(
                         // Update extracted values based on selected words
                         val newAmount = wordAnalysis
                             .filter { it.fieldType == FieldType.AMOUNT && it.isSelected }
-                            .joinToString("") { it.displayText }
-                        if (newAmount.isNotBlank()) amount = newAmount
+                            .joinToString("") { it.numericValue }
+                        if (newAmount.isNotBlank()) amount = newAmount.trim('.')
 
                         val newCounterparty = wordAnalysis
                             .filter { it.fieldType == FieldType.COUNTERPARTY && it.isSelected }
@@ -334,7 +341,7 @@ fun SMSPageEnhanced(
                         val newReference = wordAnalysis
                             .filter { it.fieldType == FieldType.REFERENCE && it.isSelected }
                             .joinToString(" ") { it.word }
-                        if (newReference.isNotBlank()) reference = extractNumbersOnly(newReference)
+                        if (newReference.isNotBlank()) reference = extractNumbersOnly(newReference).trim('.')
                     }
                 },
                 onCancel = onBack,
@@ -620,9 +627,10 @@ fun UnifiedTransactionScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // Field Type Chips
-                        Row(
+                        FlowRow(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             FieldType.entries.forEach { fieldType ->
                                 EnhancedFieldTypeChip(
@@ -676,101 +684,91 @@ fun UnifiedTransactionScreen(
             }
         }
 
-        // Transaction Details Section (Only when data is auto-retrieved)
-        if (isDataAutoRetrieved) {
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
+        // Transaction Details Section (Always visible)
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // Transaction Type
+                    Text(
+                        text = "Transaction Type",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Transaction Details",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TransactionType.entries.forEach { type ->
+                            FilterChip(
+                                selected = transactionType == type,
+                                onClick = { onTransactionTypeChange(type) },
+                                label = { Text(type.name) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = if (type == TransactionType.CREDIT) Icons.Filled.Money else Icons.Filled.CreditCard,
+                                        contentDescription = type.name
+                                    )
+                                }
                             )
-                            Surface(
-                                color = MaterialTheme.colorScheme.tertiaryContainer,
-                                shape = MaterialTheme.shapes.small
-                            ) {
-                                Text(
-                                    text = "Auto-filled",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Amount Field
-                        OutlinedTextField(
-                            value = amount,
-                            onValueChange = onAmountChange,
-                            label = { Text("Amount") },
-                            leadingIcon = {
-                                Icon(Icons.Filled.CurrencyRupee, contentDescription = "Amount")
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Counterparty Field
-                        OutlinedTextField(
-                            value = counterparty,
-                            onValueChange = onCounterpartyChange,
-                            label = { Text("Counterparty") },
-                            leadingIcon = {
-                                Icon(Icons.Filled.Person, contentDescription = "Counterparty")
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Reference Field
-                        OutlinedTextField(
-                            value = reference,
-                            onValueChange = onReferenceChange,
-                            label = { Text("Reference Number") },
-                            leadingIcon = {
-                                Icon(Icons.Filled.Receipt, contentDescription = "Reference")
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Transaction Type
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            TransactionType.entries.forEach { type ->
-                                FilterChip(
-                                    selected = transactionType == type,
-                                    onClick = { onTransactionTypeChange(type) },
-                                    label = { Text(type.name) },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = if (type == TransactionType.CREDIT) Icons.Filled.Money else Icons.Filled.CreditCard,
-                                            contentDescription = type.name
-                                        )
-                                    }
-                                )
-                            }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Amount Field
+                    OutlinedTextField(
+                        value = amount,
+                        onValueChange = onAmountChange,
+                        label = { Text("Amount") },
+                        leadingIcon = {
+                            Icon(Icons.Filled.CurrencyRupee, contentDescription = "Amount")
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Counter Party Field
+                    OutlinedTextField(
+                        value = counterparty,
+                        onValueChange = onCounterpartyChange,
+                        label = { Text("Counter Party") },
+                        leadingIcon = {
+                            Icon(Icons.AutoMirrored.Filled.CompareArrows, contentDescription = "Counter Party")
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Reference Field
+                    OutlinedTextField(
+                        value = reference,
+                        onValueChange = onReferenceChange,
+                        label = { Text("Reference Number") },
+                        leadingIcon = {
+                            Box(
+                                modifier = Modifier.size(24.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "R",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
         }
@@ -783,44 +781,56 @@ fun UnifiedTransactionScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
-                ExposedDropdownMenuBox(
-                    expanded = showAccountExpanded,
-                    onExpandedChange = onAccountExpandedChange
-                ) {
-                    OutlinedTextField(
-                        value = selectedAccount?.accountName ?: "Select Account",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Account") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showAccountExpanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
-                            .padding(16.dp)
-                    )
-                    ExposedDropdownMenu(
+                Column(modifier = Modifier.padding(16.dp)) {
+                    ExposedDropdownMenuBox(
                         expanded = showAccountExpanded,
-                        onDismissRequest = { onAccountExpandedChange(false) }
+                        onExpandedChange = onAccountExpandedChange
                     ) {
-                        bankAccounts.forEach { account ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = account.accountName,
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                },
-                                onClick = {
-                                    onAccountSelected(account)
-                                    onAccountExpandedChange(false)
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Filled.CreditCard,
-                                        contentDescription = "Account"
-                                    )
-                                }
-                            )
+                        OutlinedTextField(
+                            value = selectedAccount?.accountName ?: "Select Account",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Account") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showAccountExpanded) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = showAccountExpanded,
+                            onDismissRequest = { onAccountExpandedChange(false) }
+                        ) {
+                            bankAccounts.forEach { account ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = account.accountName,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    },
+                                    onClick = {
+                                        onAccountSelected(account)
+                                        onAccountExpandedChange(false)
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Filled.CreditCard,
+                                            contentDescription = "Account"
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(
+                            onClick = { navController.navigate("manage_accounts") }
+                        ) {
+                            Text("Manage Accounts")
                         }
                     }
                 }
@@ -835,44 +845,56 @@ fun UnifiedTransactionScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
-                ExposedDropdownMenuBox(
-                    expanded = showCategoryExpanded,
-                    onExpandedChange = onCategoryExpandedChange
-                ) {
-                    OutlinedTextField(
-                        value = selectedCategory?.name ?: "Select Category",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Category") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showCategoryExpanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
-                            .padding(16.dp)
-                    )
-                    ExposedDropdownMenu(
+                Column(modifier = Modifier.padding(16.dp)) {
+                    ExposedDropdownMenuBox(
                         expanded = showCategoryExpanded,
-                        onDismissRequest = { onCategoryExpandedChange(false) }
+                        onExpandedChange = onCategoryExpandedChange
                     ) {
-                        categories.forEach { category ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = category.name,
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                },
-                                onClick = {
-                                    onCategorySelected(category)
-                                    onCategoryExpandedChange(false)
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Filled.Info,
-                                        contentDescription = "Category"
-                                    )
-                                }
-                            )
+                        OutlinedTextField(
+                            value = selectedCategory?.name ?: "Select Category",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Category") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showCategoryExpanded) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = showCategoryExpanded,
+                            onDismissRequest = { onCategoryExpandedChange(false) }
+                        ) {
+                            categories.forEach { category ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = category.name,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    },
+                                    onClick = {
+                                        onCategorySelected(category)
+                                        onCategoryExpandedChange(false)
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = getIconByName(category.icon),
+                                            contentDescription = "Category"
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(
+                            onClick = { navController.navigate("manage_categories") }
+                        ) {
+                            Text("Manage Categories")
                         }
                     }
                 }
@@ -909,25 +931,24 @@ fun UnifiedTransactionScreen(
                             Text("Manage Tags")
                         }
                     } else {
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            items(tags) { tag ->
-                                FilterChip(
-                                    selected = selectedTags.contains(tag),
+                            tags.forEach { tag ->
+                                val isSelected = selectedTags.contains(tag)
+                                TagItem(
+                                    tag = tag,
+                                    isSelected = isSelected,
                                     onClick = {
-                                        val newTags = if (selectedTags.contains(tag)) {
+                                        val newTags = if (isSelected) {
                                             selectedTags - tag
                                         } else {
                                             selectedTags + tag
                                         }
                                         onTagsSelected(newTags)
-                                    },
-                                    label = { Text(tag.name) },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = Color(android.graphics.Color.parseColor(tag.color)),
-                                        selectedLabelColor = Color.White
-                                    )
+                                    }
                                 )
                             }
                         }
@@ -967,35 +988,28 @@ fun UnifiedTransactionScreen(
         // - This prevents showing checkbox when pattern was already pre-applied
         if (!patternWasFound) {
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .clickable { onSavePatternChange(!savePattern) },
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                            .clickable { onSavePatternChange(!savePattern) },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Checkbox(
-                            checked = savePattern,
-                            onCheckedChange = null
+                    Checkbox(
+                        checked = savePattern,
+                        onCheckedChange = null
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Save as Pattern",
+                            style = MaterialTheme.typography.titleMedium
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Save as Pattern",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                text = "Save the selected field mappings as a pattern for future SMS from this sender",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text(
+                            text = "Save the selected field mappings as a pattern for future SMS from this sender",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
@@ -1086,7 +1100,7 @@ fun EnhancedFieldTypeChip(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = fieldType.displayName,
+                text = fieldType.buttonDisplayName,
                 style = MaterialTheme.typography.labelMedium,
                 color = if (isSelected) MaterialTheme.colorScheme.onPrimary else fieldType.color()
             )
@@ -1101,13 +1115,12 @@ fun EnhancedWordChip(
     onClick: () -> Unit
 ) {
     val isDisabled = targetFieldType == FieldType.AMOUNT && !analysis.isNumeric
-    val isSelected = analysis.isSelected && analysis.fieldType == targetFieldType
+    val isSelected = analysis.isSelected && analysis.fieldType != null
 
-    // Only show subtle border when selected, no color changes
-    val borderColor = if (isSelected) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-    } else {
-        MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+    val borderColor = when {
+        isDisabled -> MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+        isSelected -> analysis.fieldType!!.color().copy(alpha = 0.5f)
+        else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
     }
 
     val borderWidth = if (isSelected) 2.dp else 1.dp
@@ -1124,21 +1137,42 @@ fun EnhancedWordChip(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            when (analysis.fieldType) {
+                FieldType.AMOUNT -> {
+                    Badge(
+                        containerColor = FieldType.AMOUNT.color().copy(alpha = 0.2f),
+                        contentColor = FieldType.AMOUNT.color()
+                    ) {
+                        Text("₹", fontSize = 10.sp)
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+                FieldType.COUNTERPARTY -> {
+                    Badge(
+                        containerColor = FieldType.COUNTERPARTY.color().copy(alpha = 0.2f),
+                        contentColor = FieldType.COUNTERPARTY.color()
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.CompareArrows, contentDescription = null, modifier = Modifier.size(10.dp))
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+                FieldType.REFERENCE -> {
+                    Badge(
+                        containerColor = FieldType.REFERENCE.color().copy(alpha = 0.2f),
+                        contentColor = FieldType.REFERENCE.color()
+                    ) {
+                        Text("R", fontSize = 10.sp)
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+                null -> {}
+            }
             Text(
                 text = analysis.displayText,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
             )
-            if (analysis.isNumeric && analysis.fieldType == FieldType.AMOUNT) {
-                Spacer(modifier = Modifier.width(4.dp))
-                Badge(
-                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                    contentColor = MaterialTheme.colorScheme.primary
-                ) {
-                    Text("₹", fontSize = 10.sp)
-                }
-            }
         }
     }
 }
@@ -1181,6 +1215,136 @@ fun extractNumericContent(word: String): Pair<Boolean, String> {
             }
         } else {
             false to ""
+        }
+    }
+}
+
+@Composable
+fun TagItem(
+    tag: Tags,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier.background(
+            color = Color(android.graphics.Color.parseColor(tag.color)),
+            shape = RoundedCornerShape(100)
+        ),
+    ) {
+        if (isSelected) {
+            IconButton(
+                onClick = onClick,
+                modifier = Modifier
+                    .padding(10.dp)
+                    .size(22.dp)
+                    .align(Alignment.CenterVertically)
+            ) {
+                Icon(
+                    modifier = Modifier
+                        .padding(start = 1.dp)
+                        .align(Alignment.CenterVertically)
+                        .size(24.dp),
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = null
+                )
+            }
+        }
+        Text(
+            tag.name,
+            modifier = Modifier
+                .padding(top = 5.dp, bottom = 5.dp, start = 2.dp, end = 10.dp)
+                .align(Alignment.CenterVertically),
+            color = Color.White
+        )
+    }
+}
+
+fun getIconByName(iconName: String): ImageVector {
+    return try {
+        val getter = Icons.Filled.javaClass.getDeclaredMethod(iconName)
+        getter.invoke(Icons.Filled) as? ImageVector ?: Icons.Filled.Info
+    } catch (e: Exception) {
+        Icons.Filled.Info
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun UnprocessedSMSListPage(
+    smsDao: SMSDao,
+    navController: androidx.navigation.NavController
+) {
+    val smsList by smsDao.selectUnprocessedSMS().collectAsState(initial = emptyList())
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        "Unprocessed SMS",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
+            )
+        }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (smsList.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "No unprocessed SMS",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                items(smsList) { sms ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { navController.navigate("sms_view/${sms.id}") },
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = sms.sender,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = sms.message,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -1271,16 +1435,12 @@ fun createPatternFromAnalysis(
     val referencePositions = analysis
         .mapIndexedNotNull { index, word -> if (word.fieldType == FieldType.REFERENCE) index else null }
     
-    val datePositions = analysis
-        .mapIndexedNotNull { index, word -> if (word.fieldType == FieldType.DATE) index else null }
-    
     return SMSParsingPattern(
         senderIdentifier = sender,
         patternName = "Generated_${System.currentTimeMillis()}",
         messageStructure = buildMessageStructure(message, analysis),
         amountPattern = amountPositions.joinToString(","),
         counterpartyPattern = counterpartyPositions.joinToString(","),
-        datePattern = datePositions.joinToString(",").ifEmpty { null },
         referencePattern = referencePositions.joinToString(",").ifEmpty { null },
         transactionType = transactionType,
         isActive = true
@@ -1294,7 +1454,6 @@ fun buildMessageStructure(message: String, analysis: List<WordAnalysis>): String
         when (wordAnalysis?.fieldType) {
             FieldType.AMOUNT -> "[AMOUNT]"
             FieldType.COUNTERPARTY -> "[COUNTERPARTY]"
-            FieldType.DATE -> "[DATE]"
             FieldType.REFERENCE -> "[REFERENCE]"
             else -> if (word.length > 3) "[TEXT]" else "[SHORT]"
         }

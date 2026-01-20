@@ -10,4 +10,5 @@ data class SMS(
     val sender: String,
     val message: String,
     val timestamp: Long,
+    val processed: Boolean = false
 )

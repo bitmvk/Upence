@@ -26,4 +26,10 @@ interface SMSDao {
 
     @Query("DELETE FROM sms WHERE id = (SELECT id FROM sms ORDER BY timestamp ASC LIMIT 1)")
     suspend fun deleteOldestSMS()
+
+    @Query("SELECT * FROM sms WHERE processed = 0")
+    fun selectUnprocessedSMS(): Flow<List<SMS>>
+
+    @Query("UPDATE sms SET processed = 1 WHERE id = :id")
+    suspend fun markAsProcessed(id: Long)
 }

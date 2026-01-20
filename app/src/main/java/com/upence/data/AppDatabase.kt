@@ -11,7 +11,7 @@ import androidx.room.TypeConverters
 
 import java.time.Instant
 
-@Database(entities = [Transaction::class, BankAccounts::class, Senders::class, Tags::class, TransactionTags::class, Categories::class, SMS::class, SMSParsingPattern::class], version = 5)
+@Database(entities = [Transaction::class, BankAccounts::class, Senders::class, Tags::class, TransactionTags::class, Categories::class, SMS::class, SMSParsingPattern::class], version = 6)
 @TypeConverters(TransactionConverters::class, InstantConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
@@ -58,6 +58,14 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "ALTER TABLE sms ADD COLUMN processed INTEGER NOT NULL DEFAULT 0"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 Room.databaseBuilder(
@@ -65,7 +73,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "upence_database"
                 )
-                    .addMigrations(MIGRATION_3_4, MIGRATION_4_5)
+                    .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .fallbackToDestructiveMigration(true)
                     .build()
                     .also { INSTANCE = it }
