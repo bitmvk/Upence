@@ -1,7 +1,8 @@
 package com.upence.ui.component
 
-import android.app.Application
+import android.content.Context
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,16 +17,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -38,10 +38,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dalvik.system.DexFile
@@ -52,7 +52,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Enumeration
 
-// --- Data Models ---
+// ============================================================================
+// DATA MODELS
+// ============================================================================
 
 data class IconItem(
     val name: String,
@@ -62,13 +64,14 @@ data class IconItem(
 data class IconPickerState(
     val displayedIcons: List<IconItem> = emptyList(),
     val isLoading: Boolean = true,
-    val totalIconsLoaded: Int = 0,
-    val loadingStatus: String = "Initializing..."
+    val totalIconsLoaded: Int = 0
 )
 
-// --- ViewModel ---
+// ============================================================================
+// VIEW MODEL
+// ============================================================================
 
-class IconPickerViewModel(application: Application) : AndroidViewModel(application) {
+class IconPickerViewModel : ViewModel() {
 
     var state by mutableStateOf(IconPickerState())
         private set
@@ -80,32 +83,17 @@ class IconPickerViewModel(application: Application) : AndroidViewModel(applicati
     private var currentSelection: ImageVector? = null
     private var lastQuery: String = ""
 
-    init {
-        loadIconsViaDexScan()
-    }
-
-    fun updateSelection(icon: ImageVector?) {
-        if (currentSelection != icon) {
-            currentSelection = icon
-            // Re-run the search logic with the current query to re-apply sorting
-            updateSearch(lastQuery)
-        }
-    }
-
     /**
-     * Scans the application's Dex file to find all classes in the material icons package.
+     * Scans application's Dex file to find all Filled icons.
+     * Uses DexFile scanning to discover ALL icons at runtime.
+     *
+     * @param context Application context
      */
     @Suppress("DEPRECATION")
-    private fun loadIconsViaDexScan() {
-        val context = getApplication<Application>()
-
+    fun loadIconsViaDexScan(context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
             val icons = mutableListOf<IconItem>()
             val searchPackage = "androidx.compose.material.icons.filled"
-
-            withContext(Dispatchers.Main) {
-                state = state.copy(loadingStatus = "Scanning app code...")
-            }
 
             try {
                 val dexFile = DexFile(context.packageCodePath)
@@ -145,6 +133,14 @@ class IconPickerViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    fun updateSelection(icon: ImageVector?) {
+        if (currentSelection != icon) {
+            currentSelection = icon
+            // Re-run search logic with current query to re-apply sorting
+            updateSearch(lastQuery)
+        }
+    }
+
     fun updateSearch(query: String) {
         lastQuery = query
         searchJob?.cancel()
@@ -160,11 +156,11 @@ class IconPickerViewModel(application: Application) : AndroidViewModel(applicati
                 }
             }
 
-            // 2. If query is blank and we have a selection, move it to the top
+            // 2. If query is blank and we have a selection, move it to top
             val sortedList = if (query.isBlank() && currentSelection != null) {
                 val selectedItem = allIconsCache.find { it.image == currentSelection }
                 if (selectedItem != null) {
-                    // Create a list with the selected item first, followed by the rest (excluding the selected one)
+                    // Create a list with selected item first, followed by the rest
                     listOf(selectedItem) + filtered.filter { it.image != currentSelection }
                 } else {
                     filtered
@@ -180,16 +176,49 @@ class IconPickerViewModel(application: Application) : AndroidViewModel(applicati
                 state = state.copy(
                     displayedIcons = limitedList,
                     isLoading = false,
-                    totalIconsLoaded = allIconsCache.size,
-                    loadingStatus = "Loaded"
+                    totalIconsLoaded = allIconsCache.size
                 )
             }
         }
     }
 }
 
-// --- Composable ---
+// ============================================================================
+// CONTEXT PROVIDER
+// ============================================================================
 
+interface ContextProvider {
+    fun getContext(): Context
+}
+
+// ============================================================================
+// ICON PICKER COMPONENT
+// ============================================================================
+
+/**
+ * Icon Picker - Select Material Design icons
+ *
+ * FEATURES:
+ * =========
+ * 1. Search: Real-time filtering with 300ms debounce
+ * 2. All Filled Icons: Scans entire Compose icon library
+ * 3. Selection Management: Selected icon moves to top of list
+ * 4. Grid Display: Icons shown in scrollable FlowRow
+ *
+ * ICON DISCOVERY:
+ * ==============
+ * Uses DexFile scanning to discover ALL Filled icons at runtime.
+ * This ensures:
+ * - No curated list limitations
+ * - All icons are available
+ * - Future Compose icon updates are automatically included
+ *
+ * PERFORMANCE:
+ * ===========
+ * - Icons are cached in ViewModel
+ * - Debounced search prevents excessive filtering
+ * - Limited to 50 displayed icons for performance
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun IconPicker(
@@ -198,44 +227,61 @@ fun IconPicker(
     modifier: Modifier = Modifier,
     viewModel: IconPickerViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val state = viewModel.state
     var searchQuery by remember { mutableStateOf("") }
 
-    // Sync the selected icon to the ViewModel to handle sorting
+    // Load icons on first composition
+    LaunchedEffect(Unit) {
+        viewModel.loadIconsViaDexScan(context)
+    }
+
+    // Sync: selected icon with ViewModel to handle sorting
     LaunchedEffect(selectedIcon) {
         viewModel.updateSelection(selectedIcon)
+    }
+
+    // Sync: search query with ViewModel
+    LaunchedEffect(searchQuery) {
+        viewModel.updateSearch(searchQuery)
+    }
+
+    // Sync the search query with ViewModel
+    LaunchedEffect(searchQuery) {
+        viewModel.updateSearch(searchQuery)
     }
 
     Column(
         modifier = modifier
             .padding(16.dp)
             .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // 1. Search Bar
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { query ->
-                    searchQuery = query
-                    viewModel.updateSearch(query)
-                },
-                label = { Text("Search Icon") },
-                placeholder = { Text("Type to search...") },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Search") },
-                modifier = Modifier
-                    .fillMaxWidth(),
-                singleLine = true,
-                enabled = !state.isLoading,
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = { Text("Search icons...") },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Search"
+                )
+            },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // 2. Icon Count
+        if (state.totalIconsLoaded > 0) {
+            Text(
+                text = "${state.displayedIcons.size} of ${state.totalIconsLoaded} icons",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
-        // 2. Icon Grid Area
+        // 3. Icon Grid Area
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -243,104 +289,92 @@ fun IconPicker(
                 .verticalScroll(rememberScrollState()),
             contentAlignment = Alignment.TopCenter
         ) {
-            if (state.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.padding(16.dp))
-            } else {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    maxItemsInEachRow = Int.MAX_VALUE
-                ) {
-                    state.displayedIcons.forEach { iconItem ->
-                        val isSelected = iconItem.image == selectedIcon
-                        SelectableIconItem(
-                            iconItem = iconItem,
-                            isSelected = isSelected,
-                            onSelect = { onIconSelect(iconItem.image) }
-                        )
-                    }
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                maxItemsInEachRow = Int.MAX_VALUE
+            ) {
+                state.displayedIcons.forEach { iconItem ->
+                    val isSelected = iconItem.image == selectedIcon
+                    SelectableIconItem(
+                        iconItem = iconItem,
+                        isSelected = isSelected,
+                        onSelect = { onIconSelect(iconItem.image) }
+                    )
+                }
 
-                    if (state.displayedIcons.isEmpty() && !state.isLoading) {
-                        Text(
-                            text = "No icons found matching '$searchQuery'",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
+                if (state.displayedIcons.isEmpty() && !state.isLoading) {
+                    Text(
+                        text = "No icons found matching '$searchQuery'",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(16.dp)
+                    )
                 }
             }
         }
     }
 }
 
+// ============================================================================
+// SELECTABLE ICON ITEM COMPONENT
+// ============================================================================
+
 @Composable
-private fun SelectableIconItem(
+fun SelectableIconItem(
     iconItem: IconItem,
     isSelected: Boolean,
     onSelect: () -> Unit
 ) {
-    val backgroundColor = if (isSelected) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant
-    }
-
-    val borderColor = if (isSelected) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        Color.Transparent
-    }
-
-    val contentColor = if (isSelected) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(64.dp)
+    Surface(
+        onClick = onSelect,
+        shape = RoundedCornerShape(12.dp),
+        color = if (isSelected) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant
+        },
+        border = if (isSelected) {
+            BorderStroke(
+                width = 2.dp,
+                color = MaterialTheme.colorScheme.primary
+            )
+        } else {
+            null
+        },
+        modifier = Modifier
+            .size(48.dp)
+            .clip(RoundedCornerShape(12.dp))
     ) {
         Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(56.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(backgroundColor)
-                .border(2.dp, borderColor, RoundedCornerShape(12.dp))
-                .clickable(onClick = onSelect)
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = iconItem.image,
                 contentDescription = iconItem.name,
-                tint = contentColor,
-                modifier = Modifier.size(24.dp)
+                tint = if (isSelected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
             )
         }
-        Text(
-            text = iconItem.name,
-            style = MaterialTheme.typography.labelSmall,
-            maxLines = 1,
-            modifier = Modifier.padding(top = 4.dp),
-            color = MaterialTheme.colorScheme.onSurface
-        )
     }
 }
+
+// ============================================================================
+// PREVIEW
+// ============================================================================
 
 @Preview(showBackground = true)
 @Composable
 fun IconPickerPreview() {
-    var currentIcon by remember { mutableStateOf<ImageVector?>(null) }
-
-    Column(modifier = Modifier.fillMaxSize()) {
+    MaterialTheme {
         IconPicker(
-            selectedIcon = currentIcon,
-            modifier = Modifier.height(400.dp),
-            onIconSelect = { newIcon ->
-                currentIcon = newIcon
-            }
+            selectedIcon = null,
+            onIconSelect = {}
         )
     }
 }

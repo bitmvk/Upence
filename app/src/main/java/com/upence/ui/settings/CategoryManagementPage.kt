@@ -51,12 +51,7 @@ fun CategoryManagementPage(
 ) {
     val scope = rememberCoroutineScope()
     val categories by categoryDao.getAllCategories().collectAsState(initial = emptyList())
-    
-    LaunchedEffect(categories.size) {
-        Log.d("CategoryManagement", "Loaded ${categories.size} categories")
-        Log.d("CategoryManagement", "Loaded $categories")
-    }
-    
+
     var showAddDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf<Categories?>(null) }
     var showMigrationDialog by remember { mutableStateOf<Categories?>(null) }
@@ -65,23 +60,18 @@ fun CategoryManagementPage(
     if (showAddDialog) {
         AddEditCategoryDialog(
             category = null,
-            onDismiss = { 
-                Log.d("CategoryManagement", "Dismissed add category dialog")
-                showAddDialog = false 
-            },
+            onDismiss = { showAddDialog = false },
             onSave = { icon, name, color, description ->
-                Log.d("CategoryManagement", "Saving new category: name=$name, icon=$icon, color=$color, description=$description")
                 scope.launch {
                     withContext(Dispatchers.IO) {
                         val newCategory = Categories(
                             id = System.currentTimeMillis().toInt(),
-                            icon = icon,
+                            icon = icon.removePrefix("Filled."),
                             name = name,
                             color = color,
                             description = description
                         )
                         categoryDao.insertCategory(newCategory)
-                        Log.d("CategoryManagement", "Successfully inserted category with ID: ${newCategory.id}")
                     }
                     showAddDialog = false
                 }
@@ -98,30 +88,22 @@ fun CategoryManagementPage(
     if (showMigrationDialog != null) {
         val categoryToDelete = showMigrationDialog!!
         MigrationDialog(
-            onDismiss = { 
-                Log.d("CategoryManagement", "Dismissed migration dialog for category: ${categoryToDelete.name}")
-                showMigrationDialog = null 
-            },
+            onDismiss = { showMigrationDialog = null },
             onConfirm = { migrateTo ->
-                Log.d("CategoryManagement", "Migrating transactions from category: ${categoryToDelete.name} (ID: ${categoryToDelete.id})")
                 scope.launch {
                     withContext(Dispatchers.IO) {
                         if (migrateTo == null) {
-                            Log.d("CategoryManagement", "Migrating ${categoryToDelete.id} to uncategorized")
                             categoryDao.migrateCategoryTransactions(
                                 categoryToDelete.id.toString(),
                                 ""
                             )
                         } else if (migrateTo is Categories) {
-                            Log.d("CategoryManagement", "Migrating ${categoryToDelete.id} to category: ${migrateTo.name} (ID: ${migrateTo.id})")
                             categoryDao.migrateCategoryTransactions(
                                 categoryToDelete.id.toString(),
                                 migrateTo.id.toString()
                             )
                         }
-                        Log.d("CategoryManagement", "Deleting category: ${categoryToDelete.name} (ID: ${categoryToDelete.id})")
                         categoryDao.deleteCategory(categoryToDelete)
-                        Log.d("CategoryManagement", "Successfully deleted category: ${categoryToDelete.name}")
                     }
                     showMigrationDialog = null
                 }
@@ -136,15 +118,10 @@ fun CategoryManagementPage(
     if (showSimpleConfirmDialog != null) {
         val category = showSimpleConfirmDialog!!
         ConfirmDeleteDialog(
-            onDismiss = { 
-                Log.d("CategoryManagement", "Dismissed delete confirm dialog for category: ${category.name}")
-                showSimpleConfirmDialog = null 
-            },
+            onDismiss = { showSimpleConfirmDialog = null },
             onConfirm = {
-                Log.d("CategoryManagement", "Deleting category without transactions: ${category.name} (ID: ${category.id})")
                 scope.launch {
                     categoryDao.deleteCategory(category)
-                    Log.d("CategoryManagement", "Successfully deleted category: ${category.name}")
                     showSimpleConfirmDialog = null
                 }
             },
@@ -201,13 +178,10 @@ fun CategoryManagementPage(
                 items(categories) { category ->
                     CategoryItem(
                         category = category,
-                        onEdit = { 
-                            Log.d("CategoryManagement", "Edit clicked for category: ${category.name} (ID: ${category.id})")
-                        },
+                        onEdit = {},
                         onDelete = {
                             scope.launch {
                                 val count = categoryDao.getTransactionCount(category.id.toString())
-                                Log.d("CategoryManagement", "Delete clicked for category: ${category.name} (ID: ${category.id}), transaction count: $count")
                                 if (count > 0) {
                                     showMigrationDialog = category
                                 } else {
@@ -339,15 +313,11 @@ fun AddEditCategoryDialog(
     LaunchedEffect(category?.icon) {
         category?.icon?.let { iconName ->
             selectedIcon = getIconByName(iconName)
-            Log.d("CategoryManagement", "Loaded existing icon for category ${category?.name}: $iconName")
         }
     }
 
     AlertDialog(
-        onDismissRequest = { 
-            Log.d("CategoryManagement", "Dialog dismissed for category: $name")
-            onDismiss() 
-        },
+        onDismissRequest = { onDismiss() },
         title = { 
             Text(
                 text = when (currentView) {
@@ -390,10 +360,7 @@ fun AddEditCategoryDialog(
                         DialogView.ICON_PICKER -> {
                             IconPicker(
                                 selectedIcon = selectedIcon,
-                                onIconSelect = { 
-                                    Log.d("CategoryManagement", "Icon selected: ${it.name}")
-                                    selectedIcon = it 
-                                },
+                                onIconSelect = { selectedIcon = it },
                                 modifier = Modifier.heightIn(max = 400.dp)
                             )
                             Row(
@@ -402,10 +369,7 @@ fun AddEditCategoryDialog(
                                     .padding(top = 16.dp),
                                 horizontalArrangement = Arrangement.End
                             ) {
-                                Button(onClick = { 
-                                    Log.d("CategoryManagement", "Closing icon picker, selected icon: ${selectedIcon?.name}")
-                                    currentView = DialogView.FORM 
-                                }) {
+                                Button(onClick = { currentView = DialogView.FORM }) {
                                     Text("Done")
                                 }
                             }
@@ -426,10 +390,7 @@ fun AddEditCategoryDialog(
                                 )
 
                                 Text("Icon", style = MaterialTheme.typography.labelMedium)
-                                IconButton(onClick = { 
-                                    Log.d("CategoryManagement", "Opening icon picker for category: $name")
-                                    currentView = DialogView.ICON_PICKER 
-                                }) {
+                                IconButton(onClick = { currentView = DialogView.ICON_PICKER }) {
                                     Box(
                                         modifier = Modifier
                                             .size(40.dp)
@@ -489,7 +450,6 @@ fun AddEditCategoryDialog(
                 Button(
                     onClick = {
                         val iconName = selectedIcon?.name ?: Icons.Default.Add.name
-                        Log.d("CategoryManagement", "Save clicked for category: name=$name, icon=$iconName, color=$color, description=$description")
                         onSave(iconName, name, color, description)
                     },
                     enabled = name.isNotBlank() && selectedIcon != null

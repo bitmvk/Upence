@@ -3,60 +3,69 @@ package com.upence.util
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.ui.graphics.vector.ImageVector
-import java.util.Locale
 
+// ============================================================================
+// ICON UTILS - SIMPLIFIED FILLED ICON LOADER
+// ============================================================================
+// DESIGN DECISION:
+// ===============
+// This utility only supports Filled icons to match IconPicker behavior.
+// Other icon styles (Outlined, Rounded, Sharp, TwoTone) are intentionally
+// not supported to maintain consistency and reduce complexity.
+//
+// ICON NAME FORMATS:
+// ==================
+// Icons in database can be stored in two formats:
+// 1. "Filled.Restaurant" - with style prefix (legacy)
+// 2. "Restaurant" - without style prefix (new, preferred)
+//
+// Both formats are normalized by removing "Filled." prefix.
+//
+// PERFORMANCE:
+// ===========
+// Icons are cached after first load to avoid repeated reflection.
+//
+// ERROR HANDLING:
+// ===============
+// If icon loading fails (e.g., icon doesn't exist or ProGuard stripped it),
+// falls back to QuestionMark icon to prevent crashes.
+// ============================================================================
 object IconUtils {
 
     private val iconCache = mutableMapOf<String, ImageVector>()
 
     /**
-     * Dynamically loads an icon by its name (e.g., "Filled.Restaurant").
-     * Works for both Core and Extended icons.
+     * Load a Filled icon by its name.
+     *
+     * @param dbName Icon name from database
+     * @return Filled ImageVector, or QuestionMark if not found
      */
     fun getIconByName(dbName: String): ImageVector {
-        // 1. Return cached if available
-        if (iconCache.containsKey(dbName)) return iconCache[dbName]!!
+        // Normalize: remove "Filled." prefix if present
+        val normalizedName = dbName.removePrefix("Filled.")
 
-        // 2. Parse the name (e.g., "Filled.Restaurant" -> Style: "Filled", Name: "Restaurant")
-        val parts = dbName.split(".")
-        if (parts.size != 2) return Icons.Default.QuestionMark
-
-        val style = parts[0] // "Filled", "Outlined", "Rounded", etc.
-        val name = parts[1]  // "Restaurant", "AccountBox", etc.
+        // Return cached if available
+        if (iconCache.containsKey(normalizedName)) return iconCache[normalizedName]!!
 
         try {
-            // 3. Construct the expected class path for Extended icons
-            // Structure: androidx.compose.material.icons.<style>.<Name>Kt
-            val packageStyle = style.lowercase(Locale.ROOT) // "filled"
-            val className = "androidx.compose.material.icons.$packageStyle.${name}Kt"
-
-            // 4. Load the Class
+            // Load icon class via reflection
+            // Structure: androidx.compose.material.icons.filled.{Name}Kt
+            val className = "androidx.compose.material.icons.filled.${normalizedName}Kt"
             val iconClass = Class.forName(className)
 
-            // 5. Find the static getter method (e.g., getRestaurant)
-            // The method usually requires the Theme Object (Icons.Filled) as a receiver
-            val methodName = "get$name"
-            val receiverObj = when (style) {
-                "Filled" -> Icons.Filled
-                "Outlined" -> Icons.Outlined
-                "Rounded" -> Icons.Rounded
-                "Sharp" -> Icons.Sharp
-                "TwoTone" -> Icons.TwoTone
-                else -> Icons.Filled
-            }
+            // Get icon getter method
+            val methodName = "get$normalizedName"
+            val method = iconClass.getMethod(methodName, Icons.Filled::class.java)
 
-            // 6. Invoke the method to get the ImageVector
-            // Note: Extension properties in Kotlin compile to static methods accepting the receiver as the first arg.
-            val method = iconClass.getMethod(methodName, receiverObj::class.java)
-            val imageVector = method.invoke(null, receiverObj) as ImageVector
+            // Invoke method to get ImageVector
+            val imageVector = method.invoke(null, Icons.Filled) as ImageVector
 
-            // 7. Cache and return
-            iconCache[dbName] = imageVector
+            // Cache and return
+            iconCache[normalizedName] = imageVector
             return imageVector
 
         } catch (e: Exception) {
-            // Fallback: If reflection fails (e.g. icon doesn't exist or ProGuard stripped it), return QuestionMark
-            e.printStackTrace()
+            // Fallback to QuestionMark icon if loading fails
             return Icons.Default.QuestionMark
         }
     }
