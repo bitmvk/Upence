@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.LocalIndication
+import com.upence.util.IconUtils.getIconByName
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
@@ -1256,15 +1257,6 @@ fun TagItem(
                 .align(Alignment.CenterVertically),
             color = Color.White
         )
-    }
-}
-
-fun getIconByName(iconName: String): ImageVector {
-    return try {
-        val getter = Icons.Filled.javaClass.getDeclaredMethod(iconName)
-        getter.invoke(Icons.Filled) as? ImageVector ?: Icons.Filled.Info
-    } catch (e: Exception) {
-        Icons.Filled.Info
     }
 }
 
