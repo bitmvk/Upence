@@ -139,20 +139,31 @@ fun SMSPageEnhanced(
     var selectedFieldType by remember { mutableStateOf<FieldType?>(null) }
     var isLoading by remember { mutableStateOf(false) }
 
-    // Transaction state
+    // Transaction state - save IDs instead of objects
     var amount by rememberSaveable { mutableStateOf("") }
     var counterparty by rememberSaveable { mutableStateOf("") }
     var reference by rememberSaveable { mutableStateOf("") }
     var transactionType by rememberSaveable { mutableStateOf(TransactionType.DEBIT) }
     var description by rememberSaveable { mutableStateOf("") }
-    var selectedCategory by rememberSaveable { mutableStateOf<Categories?>(null) }
-    var selectedAccount by rememberSaveable { mutableStateOf<BankAccounts?>(null) }
-    var selectedTags by rememberSaveable { mutableStateOf<List<Tags>>(emptyList()) }
+    var selectedCategoryId by rememberSaveable { mutableStateOf<Int?>(null) }
+    var selectedAccountId by rememberSaveable { mutableStateOf<Int?>(null) }
+    var selectedTagIds by rememberSaveable { mutableStateOf<List<Int>>(emptyList()) }
     var showCategoryExpanded by rememberSaveable { mutableStateOf(false) }
     var showAccountExpanded by rememberSaveable { mutableStateOf(false) }
 
     // SMS body collapse state
     var showSMSBodyCollapsed by rememberSaveable { mutableStateOf(false) }
+
+    // Derive actual objects from saved IDs and current lists
+    val selectedCategory by remember(categories) {
+        derivedStateOf { categories.find { it.id == selectedCategoryId } }
+    }
+    val selectedAccount by remember(bankAccounts) {
+        derivedStateOf { bankAccounts.find { it.id == selectedAccountId } }
+    }
+    val selectedTags by remember(tags) {
+        derivedStateOf { tags.filter { it.id in selectedTagIds } }
+    }
 
     // Track if data was auto-retrieved from pattern
     var isDataAutoRetrieved by remember { mutableStateOf(false) }
@@ -213,7 +224,7 @@ fun SMSPageEnhanced(
 
                         // Pre-fill account from pattern defaults (only if autoSelectAccount is enabled)
                         if (pattern.defaultAccountID.isNotBlank() && pattern.autoSelectAccount) {
-                            selectedAccount = bankAccounts.find { it.id.toString() == pattern.defaultAccountID }
+                            selectedAccountId = pattern.defaultAccountID.toIntOrNull()
                         }
                     }
                 }
@@ -296,17 +307,17 @@ fun SMSPageEnhanced(
                 onDescriptionChange = { description = it },
                 categories = categories,
                 selectedCategory = selectedCategory,
-                onCategorySelected = { selectedCategory = it },
+                onCategorySelected = { selectedCategoryId = it.id },
                 showCategoryExpanded = showCategoryExpanded,
                 onCategoryExpandedChange = { showCategoryExpanded = it },
                 bankAccounts = bankAccounts,
                 selectedAccount = selectedAccount,
-                onAccountSelected = { selectedAccount = it },
+                onAccountSelected = { selectedAccountId = it.id },
                 showAccountExpanded = showAccountExpanded,
                 onAccountExpandedChange = { showAccountExpanded = it },
                 tags = tags,
                 selectedTags = selectedTags,
-                onTagsSelected = { selectedTags = it },
+                onTagsSelected = { selectedTagIds = it.map { tag -> tag.id } },
                 isDataAutoRetrieved = isDataAutoRetrieved,
                 patternWasFound = patternWasFound,
                 showSMSBodyCollapsed = showSMSBodyCollapsed,
