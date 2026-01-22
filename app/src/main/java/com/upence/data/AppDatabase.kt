@@ -11,7 +11,7 @@ import androidx.room.TypeConverters
 
 import java.time.Instant
 
-@Database(entities = [Transaction::class, BankAccounts::class, Senders::class, Tags::class, TransactionTags::class, Categories::class, SMS::class, SMSParsingPattern::class], version = 6)
+@Database(entities = [Transaction::class, BankAccounts::class, Senders::class, Tags::class, TransactionTags::class, Categories::class, SMS::class, SMSParsingPattern::class], version = 7)
 @TypeConverters(TransactionConverters::class, InstantConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
