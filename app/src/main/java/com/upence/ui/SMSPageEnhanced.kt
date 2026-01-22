@@ -140,19 +140,19 @@ fun SMSPageEnhanced(
     var isLoading by remember { mutableStateOf(false) }
 
     // Transaction state
-    var amount by remember { mutableStateOf("") }
-    var counterparty by remember { mutableStateOf("") }
-    var reference by remember { mutableStateOf("") }
-    var transactionType by remember { mutableStateOf(TransactionType.DEBIT) }
-    var description by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf<Categories?>(null) }
-    var selectedAccount by remember { mutableStateOf<BankAccounts?>(null) }
-    var selectedTags by remember { mutableStateOf<List<Tags>>(emptyList()) }
-    var showCategoryExpanded by remember { mutableStateOf(false) }
-    var showAccountExpanded by remember { mutableStateOf(false) }
+    var amount by rememberSaveable { mutableStateOf("") }
+    var counterparty by rememberSaveable { mutableStateOf("") }
+    var reference by rememberSaveable { mutableStateOf("") }
+    var transactionType by rememberSaveable { mutableStateOf(TransactionType.DEBIT) }
+    var description by rememberSaveable { mutableStateOf("") }
+    var selectedCategory by rememberSaveable { mutableStateOf<Categories?>(null) }
+    var selectedAccount by rememberSaveable { mutableStateOf<BankAccounts?>(null) }
+    var selectedTags by rememberSaveable { mutableStateOf<List<Tags>>(emptyList()) }
+    var showCategoryExpanded by rememberSaveable { mutableStateOf(false) }
+    var showAccountExpanded by rememberSaveable { mutableStateOf(false) }
 
     // SMS body collapse state
-    var showSMSBodyCollapsed by remember { mutableStateOf(false) }
+    var showSMSBodyCollapsed by rememberSaveable { mutableStateOf(false) }
 
     // Track if data was auto-retrieved from pattern
     var isDataAutoRetrieved by remember { mutableStateOf(false) }
@@ -161,7 +161,10 @@ fun SMSPageEnhanced(
     var patternWasFound by remember { mutableStateOf(false) }
 
     // Save pattern checkbox state
-    var savePattern by remember { mutableStateOf(false) }
+    var savePattern by rememberSaveable { mutableStateOf(false) }
+
+    // Auto-select account checkbox state
+    var autoSelectAccount by rememberSaveable { mutableStateOf(false) }
 
     // Not a Transaction dialog state
     var showNotATransactionDialog by remember { mutableStateOf(false) }
@@ -208,11 +211,8 @@ fun SMSPageEnhanced(
                         // Collapse SMS body by default when auto-retrieved
                         showSMSBodyCollapsed = true
 
-                        // Pre-fill category and account from pattern defaults
-                        if (pattern.defaultCategoryID.isNotBlank()) {
-                            selectedCategory = categories.find { it.id.toString() == pattern.defaultCategoryID }
-                        }
-                        if (pattern.defaultAccountID.isNotBlank()) {
+                        // Pre-fill account from pattern defaults (only if autoSelectAccount is enabled)
+                        if (pattern.defaultAccountID.isNotBlank() && pattern.autoSelectAccount) {
                             selectedAccount = bankAccounts.find { it.id.toString() == pattern.defaultAccountID }
                         }
                     }
@@ -290,6 +290,8 @@ fun SMSPageEnhanced(
                 onTransactionTypeChange = { transactionType = it },
                 savePattern = savePattern,
                 onSavePatternChange = { savePattern = it },
+                autoSelectAccount = autoSelectAccount,
+                onAutoSelectAccountChange = { autoSelectAccount = it },
                 description = description,
                 onDescriptionChange = { description = it },
                 categories = categories,
@@ -380,7 +382,8 @@ fun SMSPageEnhanced(
                                     smsParsingPatternDao.updateDefaults(
                                         patternId,
                                         selectedCategory?.id?.toString() ?: "",
-                                        selectedAccount?.id?.toString() ?: ""
+                                        selectedAccount?.id?.toString() ?: "",
+                                        autoSelectAccount
                                     )
                                 }
                             }
@@ -505,6 +508,8 @@ fun UnifiedTransactionScreen(
     onTransactionTypeChange: (TransactionType) -> Unit,
     savePattern: Boolean,
     onSavePatternChange: (Boolean) -> Unit,
+    autoSelectAccount: Boolean,
+    onAutoSelectAccountChange: (Boolean) -> Unit,
     description: String,
     onDescriptionChange: (String) -> Unit,
     categories: List<Categories>,
@@ -1011,6 +1016,24 @@ fun UnifiedTransactionScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+
+                        if (savePattern) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    checked = autoSelectAccount,
+                                    onCheckedChange = { onAutoSelectAccountChange(it) }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Auto-select this account for future SMS",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
                     }
                 }
             }

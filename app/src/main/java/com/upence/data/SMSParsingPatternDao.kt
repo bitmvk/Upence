@@ -47,6 +47,6 @@ interface SMSParsingPatternDao {
     @Query("SELECT * FROM sms_parsing_patterns WHERE isActive = 1 AND senderIdentifier = :sender")
     suspend fun getActivePatternsForSender(sender: String): List<SMSParsingPattern>
 
-    @Query("UPDATE sms_parsing_patterns SET defaultCategoryID = :categoryID, defaultAccountID = :accountID WHERE id = :patternId")
-    suspend fun updateDefaults(patternId: Int, categoryID: String, accountID: String)
+    @Query("UPDATE sms_parsing_patterns SET defaultCategoryID = :categoryID, defaultAccountID = :accountID, autoSelectAccount = :autoSelectAccount WHERE id = :patternId")
+    suspend fun updateDefaults(patternId: Int, categoryID: String, accountID: String, autoSelectAccount: Boolean)
 }

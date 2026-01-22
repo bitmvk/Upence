@@ -18,6 +18,7 @@ data class SMSParsingPattern(
     val isActive: Boolean = true, // Whether this pattern should be used
     val defaultCategoryID: String = "",
     val defaultAccountID: String = "",
+    val autoSelectAccount: Boolean = false,
     val createdTimestamp: Long = System.currentTimeMillis(),
     val lastUsedTimestamp: Long? = null
 )
