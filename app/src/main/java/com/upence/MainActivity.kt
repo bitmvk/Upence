@@ -137,6 +137,7 @@ class MainActivity : ComponentActivity() {
                             bankAccountsDao = bankAccountsDao,
                             tagsDao = tagsDao,
                             senderDao = database.SenderDao(),
+                            userStore = userStore,
                             scope = scope,
                             navController = navController
                         )
