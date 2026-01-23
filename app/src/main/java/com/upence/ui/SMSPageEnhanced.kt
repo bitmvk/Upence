@@ -193,7 +193,7 @@ fun SMSPageEnhanced(
             val smsVal = sms!!
             
             // Analyze words for numeric content
-            val words = smsVal.message.split("\\s+".toRegex()).filter { it.isNotBlank() }
+            val words = smsVal.message.split(Regex("""\s+""")).filter { it.isNotBlank() }
             wordAnalysis = words.mapIndexed { index, word ->
                 val (isNumeric, numericValue) = extractNumericContent(word)
                 WordAnalysis(
@@ -209,7 +209,7 @@ fun SMSPageEnhanced(
                 val patterns = smsParsingPatternDao.findSimilarPatterns(
                     smsVal.sender,
                     SenderParser.extractSenderName(smsVal.sender),
-                    useIndiaRuleset.value
+                    useIndiaRuleset
                 )
                 if (patterns.isNotEmpty()) {
                     // Auto-apply first pattern
