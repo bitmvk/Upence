@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.upence.data.*
+import com.upence.util.SenderParser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
@@ -121,6 +122,7 @@ fun SMSPageEnhanced(
     bankAccountsDao: com.upence.data.BankAccountsDao,
     tagsDao: com.upence.data.TagsDao,
     senderDao: com.upence.data.SenderDao,
+    userStore: com.upence.data.UserStore,
     scope: CoroutineScope,
     navController: androidx.navigation.NavController
 ) {
@@ -177,6 +179,9 @@ fun SMSPageEnhanced(
     // Auto-select account checkbox state
     var autoSelectAccount by rememberSaveable { mutableStateOf(false) }
 
+    // India sender ruleset setting
+    val useIndiaRuleset by userStore.useIndiaSenderRuleset.collectAsState(initial = true)
+
     // Not a Transaction dialog state
     var showNotATransactionDialog by remember { mutableStateOf(false) }
     var applyToAllFutureSMS by remember { mutableStateOf(false) }
@@ -201,7 +206,11 @@ fun SMSPageEnhanced(
             
             // Check for existing patterns
             try {
-                val patterns = smsParsingPatternDao.findSimilarPatterns(smsVal.sender)
+                val patterns = smsParsingPatternDao.findSimilarPatterns(
+                    smsVal.sender,
+                    SenderParser.extractSenderName(smsVal.sender),
+                    useIndiaRuleset.value
+                )
                 if (patterns.isNotEmpty()) {
                     // Auto-apply first pattern
                     val pattern = patterns.first()
@@ -394,7 +403,8 @@ fun SMSPageEnhanced(
                                         patternId,
                                         selectedCategory?.id?.toString() ?: "",
                                         selectedAccount?.id?.toString() ?: "",
-                                        autoSelectAccount
+                                        autoSelectAccount,
+                                        SenderParser.extractSenderName(smsVal.sender)
                                     )
                                 }
                             }
@@ -1463,6 +1473,7 @@ fun createPatternFromAnalysis(
     
     return SMSParsingPattern(
         senderIdentifier = sender,
+        senderName = SenderParser.extractSenderName(sender),
         patternName = "Generated_${System.currentTimeMillis()}",
         messageStructure = buildMessageStructure(message, analysis),
         amountPattern = amountPositions.joinToString(","),

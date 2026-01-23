@@ -37,6 +37,7 @@ fun SettingsPage(
     val currencyCode by userStore.currencyCode.collectAsState(initial = "INR")
     val currencySymbol by userStore.currencySymbol.collectAsState(initial = "₹")
     val useCustomCurrency by userStore.useCustomCurrency.collectAsState(initial = false)
+    val useIndiaRuleset by userStore.useIndiaSenderRuleset.collectAsState(initial = true)
     
     Scaffold(
         topBar = {
@@ -92,6 +93,15 @@ fun SettingsPage(
                 IgnoredSendersCard(
                     ignoredSendersCount = ignoredSenders.size,
                     navController = navController
+                )
+            }
+            
+            item {
+                IndiaSenderRulesetCard(
+                    useIndiaRuleset = useIndiaRuleset,
+                    onUseIndiaRulesetChange = { enabled ->
+                        scope.launch { userStore.setUseIndiaSenderRuleset(enabled) }
+                    }
                 )
             }
             
