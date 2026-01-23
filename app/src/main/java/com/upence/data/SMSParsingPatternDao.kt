@@ -33,20 +33,32 @@ interface SMSParsingPatternDao {
     @Query("DELETE FROM sms_parsing_patterns WHERE id = :patternId")
     suspend fun deletePattern(patternId: Int)
     
-    // Find similar patterns based on message structure
+    // Find similar patterns based on senderName when India ruleset is enabled
     @Query("""
-        SELECT * FROM sms_parsing_patterns 
-        WHERE isActive = 1 
-        AND (senderIdentifier LIKE :senderPattern OR :senderPattern LIKE senderIdentifier)
-        ORDER BY 
-            CASE WHEN senderIdentifier = :senderPattern THEN 1 ELSE 0 END DESC,
+        SELECT * FROM sms_parsing_patterns
+        WHERE isActive = 1
+        AND (
+            (:useIndiaRuleset = 1 AND senderName = :senderName)
+            OR
+            (:useIndiaRuleset = 0 AND (senderIdentifier LIKE :senderPattern OR :senderPattern LIKE senderIdentifier))
+        )
+        ORDER BY
+            CASE
+                WHEN (:useIndiaRuleset = 1 AND senderName = :senderName) THEN 1
+                WHEN senderIdentifier = :senderPattern THEN 1
+                ELSE 0
+            END DESC,
             lastUsedTimestamp DESC
     """)
-    suspend fun findSimilarPatterns(senderPattern: String): List<SMSParsingPattern>
+    suspend fun findSimilarPatterns(
+        senderPattern: String,
+        senderName: String,
+        useIndiaRuleset: Boolean
+    ): List<SMSParsingPattern>
     
     @Query("SELECT * FROM sms_parsing_patterns WHERE isActive = 1 AND senderIdentifier = :sender")
     suspend fun getActivePatternsForSender(sender: String): List<SMSParsingPattern>
 
-    @Query("UPDATE sms_parsing_patterns SET defaultCategoryID = :categoryID, defaultAccountID = :accountID, autoSelectAccount = :autoSelectAccount WHERE id = :patternId")
-    suspend fun updateDefaults(patternId: Int, categoryID: String, accountID: String, autoSelectAccount: Boolean)
+    @Query("UPDATE sms_parsing_patterns SET defaultCategoryID = :categoryID, defaultAccountID = :accountID, autoSelectAccount = :autoSelectAccount, senderName = :senderName WHERE id = :patternId")
+    suspend fun updateDefaults(patternId: Int, categoryID: String, accountID: String, autoSelectAccount: Boolean, senderName: String)
 }

@@ -24,6 +24,7 @@ class UserStore(private val context: Context) {
         val CURRENCY_CODE = stringPreferencesKey("currency_code")
         val CURRENCY_SYMBOL = stringPreferencesKey("currency_symbol")
         val USE_CUSTOM_CURRENCY = booleanPreferencesKey("use_custom_currency")
+        val USE_INDIA_SENDER_RULESET = booleanPreferencesKey("use_india_sender_ruleset")
     }
 
     // Get the flow (stream) of data
@@ -82,6 +83,17 @@ class UserStore(private val context: Context) {
     suspend fun setUseCustomCurrency(use: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[USE_CUSTOM_CURRENCY] = use
+        }
+    }
+
+    val useIndiaSenderRuleset: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[USE_INDIA_SENDER_RULESET] ?: true // Default to ENABLED
+        }
+
+    suspend fun setUseIndiaSenderRuleset(use: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[USE_INDIA_SENDER_RULESET] = use
         }
     }
 }

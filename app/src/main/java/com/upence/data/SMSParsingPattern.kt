@@ -19,6 +19,7 @@ data class SMSParsingPattern(
     val defaultCategoryID: String = "",
     val defaultAccountID: String = "",
     val autoSelectAccount: Boolean = false,
+    val senderName: String = "",
     val createdTimestamp: Long = System.currentTimeMillis(),
     val lastUsedTimestamp: Long? = null
 )
