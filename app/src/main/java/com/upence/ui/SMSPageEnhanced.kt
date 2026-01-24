@@ -392,21 +392,33 @@ fun SMSPageEnhanced(
                 },
                 onWordClicked = { index ->
                     selectedFieldType?.let { fieldType ->
-                        wordAnalysis =
-                            wordAnalysis.mapIndexed { i, analysis ->
-                                if (i == index) {
+                        val targetAnalysis = wordAnalysis[index]
+                        
+                        // Toggle the clicked word
+                        val newIsSelected = !targetAnalysis.isSelected
+                        
+                        wordAnalysis = wordAnalysis.mapIndexed { i, analysis ->
+                            when {
+                                i == index -> {
                                     // For amount field, only allow selection of numeric tokens
                                     if (fieldType == FieldType.AMOUNT && !analysis.isNumeric) {
                                         return@mapIndexed analysis
                                     }
-                                    analysis.copy(fieldType = fieldType, isSelected = true)
-                                } else if (analysis.fieldType == fieldType) {
-                                    analysis.copy(isSelected = false)
-                                } else {
-                                    analysis
+                                    // Toggle selection and set/clear fieldType
+                                    if (newIsSelected) {
+                                        analysis.copy(fieldType = fieldType, isSelected = true)
+                                    } else {
+                                        analysis.copy(fieldType = null, isSelected = false)
+                                    }
                                 }
+                                // For amount field: if selecting, deselect other amount words (single value)
+                                fieldType == FieldType.AMOUNT && analysis.fieldType == FieldType.AMOUNT && newIsSelected -> {
+                                    analysis.copy(isSelected = false)
+                                }
+                                else -> analysis
                             }
-
+                        }
+                        
                         // Update extracted values based on selected words
                         val newAmount =
                             wordAnalysis
