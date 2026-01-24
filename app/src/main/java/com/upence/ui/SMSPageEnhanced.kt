@@ -161,6 +161,9 @@ fun SMSPageEnhanced(
     // Track if a pattern was found (to hide save pattern checkbox)
     var patternWasFound by remember { mutableStateOf(false) }
 
+    // Track if user has modified auto-filled data
+    var userHasModifiedData by remember { mutableStateOf(false) }
+
     // Save pattern checkbox state
     var savePattern by rememberSaveable { mutableStateOf(false) }
 
