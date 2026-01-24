@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.upence.data.*
 import com.upence.util.IconUtils.getIconByName
+import com.upence.util.SMSUtils
 import com.upence.util.SenderParser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -166,6 +167,12 @@ fun SMSPageEnhanced(
     // Auto-select account checkbox state
     var autoSelectAccount by rememberSaveable { mutableStateOf(false) }
 
+    // Pattern selection state
+    var currentPattern by remember { mutableStateOf<SMSParsingPattern?>(null) }
+    var patternMatchScore by remember { mutableStateOf(0.0) }
+    var availablePatterns by remember { mutableStateOf<List<SMSParsingPattern>>(emptyList()) }
+    var showPatternSelector by remember { mutableStateOf(false) }
+
     // India sender ruleset setting
     val useIndiaRuleset by userStore.useIndiaSenderRuleset.collectAsState(initial = true)
 
@@ -200,33 +207,65 @@ fun SMSPageEnhanced(
                         SenderParser.extractSenderName(smsVal.sender),
                         useIndiaRuleset,
                     )
+                availablePatterns = patterns
+
+                android.util.Log.d("SMSPageEnhanced", "Found ${patterns.size} patterns for sender ${smsVal.sender}")
+                patterns.forEach { pattern ->
+                    android.util.Log.d("SMSPageEnhanced", "  Pattern: ${pattern.patternName}, amountPattern: '${pattern.amountPattern}', counterpartyPattern: '${pattern.counterpartyPattern}'")
+                }
+
                 if (patterns.isNotEmpty()) {
-                    // Auto-apply first pattern
-                    val pattern = patterns.first()
-                    applyPatternToAnalysis(pattern, smsVal.message, wordAnalysis)?.let { analysis ->
-                        wordAnalysis = analysis
+                    val bestMatch = SMSUtils.findBestMatchingPattern(patterns, smsVal.message)
+                    if (bestMatch != null) {
+                        android.util.Log.i("SMSPageEnhanced", "✅ Best pattern found: ${bestMatch.pattern.patternName} (score: ${"%.2f".format(bestMatch.matchScore * 100)}%, valid: ${bestMatch.isValid})")
+                        val pattern = bestMatch.pattern
+                        currentPattern = pattern
+                        patternMatchScore = bestMatch.matchScore
 
-                        // Extract data from pattern
-                        val extracted = extractUsingPattern(smsVal.message, pattern)
-                        amount = (extracted["amount"] ?: "").trim('.')
-                        counterparty = extracted["counterparty"] ?: ""
-                        reference = (extracted["reference"] ?: "").trim('.')
-                        transactionType = pattern.transactionType
+                        applyPatternToAnalysis(pattern, smsVal.message, wordAnalysis)?.let { analysis ->
+                            wordAnalysis = analysis
 
-                        // Mark data as auto-retrieved and pattern found
-                        isDataAutoRetrieved = true
-                        patternWasFound = true
+                            // Extract data from pattern
+                            val extracted = extractUsingPattern(smsVal.message, pattern)
+                            android.util.Log.d("SMSPageEnhanced", "Pattern '${pattern.patternName}' extraction:")
+                            android.util.Log.d("SMSPageEnhanced", "  Amount positions: ${pattern.amountPattern}")
+                            android.util.Log.d("SMSPageEnhanced", "  Counterparty positions: ${pattern.counterpartyPattern}")
+                            android.util.Log.d("SMSPageEnhanced", "  Reference positions: ${pattern.referencePattern}")
+                            android.util.Log.d("SMSPageEnhanced", "  Extracted amount: ${extracted["amount"]}")
+                            android.util.Log.d("SMSPageEnhanced", "  Extracted counterparty: ${extracted["counterparty"]}")
+                            android.util.Log.d("SMSPageEnhanced", "  Extracted reference: ${extracted["reference"]}")
 
-                        // Collapse SMS body by default when auto-retrieved
-                        showSMSBodyCollapsed = true
+                            amount = (extracted["amount"] ?: "").trim('.')
+                            counterparty = extracted["counterparty"] ?: ""
+                            reference = (extracted["reference"] ?: "").trim('.')
+                            transactionType = pattern.transactionType
 
-                        // Pre-fill account from pattern defaults (only if autoSelectAccount is enabled)
-                        if (pattern.defaultAccountID.isNotBlank() && pattern.autoSelectAccount) {
-                            selectedAccountId = pattern.defaultAccountID.toIntOrNull()
+                            android.util.Log.i("SMSPageEnhanced", "📝 State values set:")
+                            android.util.Log.i("SMSPageEnhanced", "  Amount: $amount")
+                            android.util.Log.i("SMSPageEnhanced", "  Counterparty: $counterparty")
+                            android.util.Log.i("SMSPageEnhanced", "  Reference: $reference")
+                            android.util.Log.i("SMSPageEnhanced", "  Transaction type: $transactionType")
+
+                            // Mark data as auto-retrieved and pattern found
+                            isDataAutoRetrieved = true
+                            patternWasFound = true
+
+                            // Collapse SMS body by default when auto-retrieved
+                            showSMSBodyCollapsed = true
+
+                            // Pre-fill account from pattern defaults (only if autoSelectAccount is enabled)
+                            if (pattern.defaultAccountID.isNotBlank() && pattern.autoSelectAccount) {
+                                selectedAccountId = pattern.defaultAccountID.toIntOrNull()
+                            }
                         }
+                    } else {
+                        android.util.Log.w("SMSPageEnhanced", "⚠️ No valid pattern found for message")
                     }
+                } else {
+                    android.util.Log.w("SMSPageEnhanced", "⚠️ No patterns available for this sender")
                 }
             } catch (e: Exception) {
+                android.util.Log.e("SMSPageEnhanced", "❌ Error during pattern matching: ${e.message}", e)
                 // Continue without patterns
             }
 
@@ -320,6 +359,32 @@ fun SMSPageEnhanced(
                 onTagsSelected = { selectedTagIds = it.map { tag -> tag.id } },
                 isDataAutoRetrieved = isDataAutoRetrieved,
                 patternWasFound = patternWasFound,
+                currentPattern = currentPattern,
+                patternMatchScore = patternMatchScore,
+                availablePatterns = availablePatterns,
+                showPatternSelector = showPatternSelector,
+                onPatternSelectorChange = { showPatternSelector = it },
+                onPatternSelected = { pattern ->
+                    currentPattern = pattern
+                    patternMatchScore =
+                        SMSUtils.calculateStructureMatchScore(
+                            SMSUtils.buildMessageStructureFromMessage(smsVal.message),
+                            pattern.messageStructure,
+                        )
+                    applyPatternToAnalysis(pattern, smsVal.message, wordAnalysis)?.let { analysis ->
+                        wordAnalysis = analysis
+
+                        val extracted = extractUsingPattern(smsVal.message, pattern)
+                        amount = (extracted["amount"] ?: "").trim('.')
+                        counterparty = extracted["counterparty"] ?: ""
+                        reference = (extracted["reference"] ?: "").trim('.')
+                        transactionType = pattern.transactionType
+
+                        if (pattern.defaultAccountID.isNotBlank() && pattern.autoSelectAccount) {
+                            selectedAccountId = pattern.defaultAccountID.toIntOrNull()
+                        }
+                    }
+                },
                 showSMSBodyCollapsed = showSMSBodyCollapsed,
                 onSMSBodyCollapseChange = { showSMSBodyCollapsed = it },
                 onFieldTypeSelected = { fieldType ->
@@ -392,18 +457,24 @@ fun SMSPageEnhanced(
                                     wordAnalysis,
                                     transactionType,
                                 )
-                            scope.launch {
-                                withContext(Dispatchers.IO) {
-                                    val patternId = smsParsingPatternDao.insertPattern(pattern).toInt()
-                                    // Update pattern with defaults
-                                    smsParsingPatternDao.updateDefaults(
-                                        patternId,
-                                        selectedCategory?.id?.toString() ?: "",
-                                        selectedAccount?.id?.toString() ?: "",
-                                        autoSelectAccount,
-                                        SenderParser.extractSenderName(smsVal.sender),
-                                    )
+
+                            // Validate pattern has required fields before saving
+                            if (pattern.amountPattern.isNotEmpty() && pattern.counterpartyPattern.isNotEmpty()) {
+                                scope.launch {
+                                    withContext(Dispatchers.IO) {
+                                        val patternId = smsParsingPatternDao.insertPattern(pattern).toInt()
+                                        // Update pattern with defaults
+                                        smsParsingPatternDao.updateDefaults(
+                                            patternId,
+                                            selectedCategory?.id?.toString() ?: "",
+                                            selectedAccount?.id?.toString() ?: "",
+                                            autoSelectAccount,
+                                            SenderParser.extractSenderName(smsVal.sender),
+                                        )
+                                    }
                                 }
+                            } else {
+                                android.util.Log.w("SMSPageEnhanced", "Skipping pattern save - missing required fields (amount=${pattern.amountPattern.isNotEmpty()}, counterparty=${pattern.counterpartyPattern.isNotEmpty()})")
                             }
                         }
 
@@ -546,6 +617,12 @@ fun UnifiedTransactionScreen(
     onTagsSelected: (List<Tags>) -> Unit,
     isDataAutoRetrieved: Boolean,
     patternWasFound: Boolean,
+    currentPattern: SMSParsingPattern?,
+    patternMatchScore: Double,
+    availablePatterns: List<SMSParsingPattern>,
+    showPatternSelector: Boolean,
+    onPatternSelectorChange: (Boolean) -> Unit,
+    onPatternSelected: (SMSParsingPattern) -> Unit,
     showSMSBodyCollapsed: Boolean,
     onSMSBodyCollapseChange: (Boolean) -> Unit,
     onFieldTypeSelected: (FieldType) -> Unit,
@@ -653,7 +730,105 @@ fun UnifiedTransactionScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Pattern Match Display & Selector
+                    if (patternWasFound && currentPattern != null) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Pattern: ${currentPattern.patternName}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Text(
+                                        text = "Match: ${(patternMatchScore * 100).toInt()}%",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                                if (availablePatterns.size > 1) {
+                                    TextButton(onClick = { onPatternSelectorChange(!showPatternSelector) }) {
+                                        Text(if (showPatternSelector) "Hide" else "Change Pattern")
+                                    }
+                                }
+                            }
+
+                            if (showPatternSelector && availablePatterns.size > 1) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                availablePatterns.forEach { pattern ->
+                                    val matchScore =
+                                        SMSUtils.calculateStructureMatchScore(
+                                            SMSUtils.buildMessageStructureFromMessage(sms.message),
+                                            pattern.messageStructure,
+                                        )
+                                    val isSelected = currentPattern?.id == pattern.id
+
+                                    Card(
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    onPatternSelected(pattern)
+                                                    onPatternSelectorChange(false)
+                                                },
+                                        colors =
+                                            CardDefaults.cardColors(
+                                                containerColor =
+                                                    if (isSelected) {
+                                                        MaterialTheme.colorScheme.primaryContainer
+                                                    } else {
+                                                        MaterialTheme.colorScheme.surfaceVariant
+                                                    },
+                                            ),
+                                        border =
+                                            if (isSelected) {
+                                                BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                                            } else {
+                                                null
+                                            },
+                                    ) {
+                                        Column(modifier = Modifier.padding(12.dp)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                Text(
+                                                    text = pattern.patternName,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    fontWeight =
+                                                        if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                )
+                                                Text(
+                                                    text = "${(matchScore * 100).toInt()}% match",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                )
+                                            }
+                                            Text(
+                                                text =
+                                                    "Type: ${pattern.transactionType.name} | " +
+                                                        "Last used: ${pattern.lastUsedTimestamp?.let { 
+                                                            val date = Instant.ofEpochMilli(it).atZone(java.time.ZoneId.systemDefault()).toLocalDateTime()
+                                                            date.format(DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.US))
+                                                        } ?: "Never"}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
 
                         // Field Type Chips
                         FlowRow(
@@ -1457,11 +1632,19 @@ fun applyPatternToAnalysis(
     message: String,
     currentAnalysis: List<WordAnalysis>,
 ): List<WordAnalysis>? {
-    val words = message.split("\\s+".toRegex())
+    val words = message.split(Regex("""\s+""")).filter { it.isNotBlank() }
+    android.util.Log.d("SMSPageEnhanced", "applyPatternToAnalysis:")
+    android.util.Log.d("SMSPageEnhanced", "  Word count: ${words.size}")
+    android.util.Log.d("SMSPageEnhanced", "  Analysis size: ${currentAnalysis.size}")
+    android.util.Log.d("SMSPageEnhanced", "  Amount positions: ${pattern.amountPattern}")
+    android.util.Log.d("SMSPageEnhanced", "  Counterparty positions: ${pattern.counterpartyPattern}")
+    android.util.Log.d("SMSPageEnhanced", "  Reference positions: ${pattern.referencePattern}")
+
     val updatedAnalysis = currentAnalysis.toMutableList()
 
     // Apply amount positions
     pattern.amountPattern.split(",").mapNotNull { it.toIntOrNull() }.forEach { pos ->
+        android.util.Log.d("SMSPageEnhanced", "    Setting AMOUNT at position $pos: ${words.getOrNull(pos)}")
         if (pos < updatedAnalysis.size) {
             updatedAnalysis[pos] = updatedAnalysis[pos].copy(fieldType = FieldType.AMOUNT, isSelected = true)
         }
@@ -1469,6 +1652,7 @@ fun applyPatternToAnalysis(
 
     // Apply counterparty positions
     pattern.counterpartyPattern.split(",").mapNotNull { it.toIntOrNull() }.forEach { pos ->
+        android.util.Log.d("SMSPageEnhanced", "    Setting COUNTERPARTY at position $pos: ${words.getOrNull(pos)}")
         if (pos < updatedAnalysis.size) {
             updatedAnalysis[pos] = updatedAnalysis[pos].copy(fieldType = FieldType.COUNTERPARTY, isSelected = true)
         }
@@ -1476,6 +1660,7 @@ fun applyPatternToAnalysis(
 
     // Apply reference positions
     pattern.referencePattern?.split(",")?.mapNotNull { it.toIntOrNull() }?.forEach { pos ->
+        android.util.Log.d("SMSPageEnhanced", "    Setting REFERENCE at position $pos: ${words.getOrNull(pos)}")
         if (pos < updatedAnalysis.size) {
             updatedAnalysis[pos] = updatedAnalysis[pos].copy(fieldType = FieldType.REFERENCE, isSelected = true)
         }
@@ -1502,6 +1687,11 @@ fun createPatternFromAnalysis(
         analysis
             .mapIndexedNotNull { index, word -> if (word.fieldType == FieldType.REFERENCE) index else null }
 
+    android.util.Log.d("SMSPageEnhanced", "createPatternFromAnalysis:")
+    android.util.Log.d("SMSPageEnhanced", "  Amount positions: $amountPositions")
+    android.util.Log.d("SMSPageEnhanced", "  Counterparty positions: $counterpartyPositions")
+    android.util.Log.d("SMSPageEnhanced", "  Reference positions: $referencePositions")
+
     return SMSParsingPattern(
         senderIdentifier = sender,
         senderName = SenderParser.extractSenderName(sender),
@@ -1519,7 +1709,7 @@ fun buildMessageStructure(
     message: String,
     analysis: List<WordAnalysis>,
 ): String {
-    val words = message.split("\\s+".toRegex())
+    val words = message.split(Regex("""\s+""")).filter { it.isNotBlank() }
     return words.mapIndexed { index, word ->
         val wordAnalysis = analysis.getOrNull(index)
         when (wordAnalysis?.fieldType) {
@@ -1536,18 +1726,30 @@ fun extractUsingPattern(
     pattern: SMSParsingPattern,
 ): Map<String, String> {
     val result = mutableMapOf<String, String>()
-    val words = message.split("\\s+".toRegex())
+    val words = message.split(Regex("""\s+""")).filter { it.isNotBlank() }
+
+    android.util.Log.d("SMSPageEnhanced", "extractUsingPattern:")
+    android.util.Log.d("SMSPageEnhanced", "  Word count: ${words.size}")
+    android.util.Log.d("SMSPageEnhanced", "  Words: ${words.take(20)}")
+    android.util.Log.d("SMSPageEnhanced", "  Amount pattern: ${pattern.amountPattern}")
+    android.util.Log.d("SMSPageEnhanced", "  Counterparty pattern: ${pattern.counterpartyPattern}")
+    android.util.Log.d("SMSPageEnhanced", "  Reference pattern: ${pattern.referencePattern}")
 
     // Extract amount
     if (pattern.amountPattern.isNotEmpty()) {
-        val amount =
-            pattern.amountPattern.split(",")
-                .mapNotNull { it.toIntOrNull() }
-                .mapNotNull { words.getOrNull(it) }
-                .joinToString(" ")
+        val amountPositions = pattern.amountPattern.split(",").mapNotNull { it.toIntOrNull() }
+        val amountWords = amountPositions.mapNotNull { words.getOrNull(it) }
+        val amount = amountWords.joinToString(" ")
+
+        android.util.Log.d("SMSPageEnhanced", "  Amount positions: $amountPositions")
+        android.util.Log.d("SMSPageEnhanced", "  Amount words: $amountWords")
+        android.util.Log.d("SMSPageEnhanced", "  Raw amount: $amount")
 
         // Clean amount (extract numeric part)
-        val cleanAmount = amount.replace("[^\\d.]".toRegex(), "")
+        var cleanAmount = amount.replace("[^\\d.]".toRegex(), "")
+        // Remove leading/trailing dots (e.g., ".1.00" -> "1.00", "1.00." -> "1.00")
+        cleanAmount = cleanAmount.removePrefix(".").removeSuffix(".")
+        android.util.Log.d("SMSPageEnhanced", "  Clean amount: $cleanAmount")
         if (cleanAmount.isNotBlank()) {
             result["amount"] = cleanAmount
         }
@@ -1555,22 +1757,35 @@ fun extractUsingPattern(
 
     // Extract counterparty
     if (pattern.counterpartyPattern.isNotEmpty()) {
-        result["counterparty"] =
-            pattern.counterpartyPattern.split(",")
-                .mapNotNull { it.toIntOrNull() }
-                .mapNotNull { words.getOrNull(it) }
-                .joinToString(" ")
+        val counterpartyPositions = pattern.counterpartyPattern.split(",").mapNotNull { it.toIntOrNull() }
+        val counterpartyWords = counterpartyPositions.mapNotNull { words.getOrNull(it) }
+        val counterparty = counterpartyWords.joinToString(" ")
+
+        android.util.Log.d("SMSPageEnhanced", "  Counterparty positions: $counterpartyPositions")
+        android.util.Log.d("SMSPageEnhanced", "  Counterparty words: $counterpartyWords")
+        android.util.Log.d("SMSPageEnhanced", "  Counterparty: $counterparty")
+
+        if (counterparty.isNotBlank()) {
+            result["counterparty"] = counterparty
+        }
     }
 
     // Extract reference
     if (!pattern.referencePattern.isNullOrEmpty()) {
-        result["reference"] =
-            pattern.referencePattern.split(",")
-                .mapNotNull { it.toIntOrNull() }
-                .mapNotNull { words.getOrNull(it) }
-                .joinToString(" ")
+        val referencePositions = pattern.referencePattern.split(",").mapNotNull { it.toIntOrNull() }
+        val referenceWords = referencePositions.mapNotNull { words.getOrNull(it) }
+        val reference = referenceWords.joinToString(" ")
+
+        android.util.Log.d("SMSPageEnhanced", "  Reference positions: $referencePositions")
+        android.util.Log.d("SMSPageEnhanced", "  Reference words: $referenceWords")
+        android.util.Log.d("SMSPageEnhanced", "  Reference: $reference")
+
+        if (reference.isNotBlank()) {
+            result["reference"] = reference
+        }
     }
 
+    android.util.Log.d("SMSPageEnhanced", "  Result: $result")
     return result
 }
 
