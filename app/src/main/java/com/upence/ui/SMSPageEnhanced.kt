@@ -372,7 +372,13 @@ fun SMSPageEnhanced(
                 onCategoryExpandedChange = { showCategoryExpanded = it },
                 bankAccounts = bankAccounts,
                 selectedAccount = selectedAccount,
-                onAccountSelected = { selectedAccountId = it.id },
+                onAccountSelected = {
+                    // Mark data as modified when user changes account
+                    if (isDataAutoRetrieved) {
+                        userHasModifiedData = true
+                    }
+                    selectedAccountId = it.id
+                },
                 showAccountExpanded = showAccountExpanded,
                 onAccountExpandedChange = { showAccountExpanded = it },
                 tags = tags,
