@@ -383,6 +383,9 @@ fun SMSPageEnhanced(
                         reference = (extracted["reference"] ?: "").trim('.')
                         transactionType = pattern.transactionType
 
+                        // Reset modification flag when pattern is applied
+                        userHasModifiedData = false
+
                         if (pattern.defaultAccountID.isNotBlank() && pattern.autoSelectAccount) {
                             selectedAccountId = pattern.defaultAccountID.toIntOrNull()
                         }
