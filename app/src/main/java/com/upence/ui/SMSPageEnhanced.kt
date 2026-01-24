@@ -1282,9 +1282,9 @@ fun UnifiedTransactionScreen(
             }
         }
 
-        // TODO: Hide "Save pattern" checkbox when patternWasFound == true
-        // - This prevents showing checkbox when pattern was already pre-applied
-        if (!patternWasFound) {
+        // Show "Save pattern" checkbox when no pattern was found OR user has modified auto-filled data
+        // - Allows saving new patterns even when existing patterns exist for the same sender
+        if (!patternWasFound || userHasModifiedData) {
             item {
                 Row(
                     modifier =
