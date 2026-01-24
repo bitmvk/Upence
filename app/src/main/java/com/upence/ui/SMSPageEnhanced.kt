@@ -1686,30 +1686,25 @@ fun applyPatternToAnalysis(
 
     val updatedAnalysis = currentAnalysis.toMutableList()
 
-    // Apply amount positions
-    pattern.amountPattern.split(",").mapNotNull { it.toIntOrNull() }.forEach { pos ->
-        android.util.Log.d("SMSPageEnhanced", "    Setting AMOUNT at position $pos: ${words.getOrNull(pos)}")
-        if (pos < updatedAnalysis.size) {
-            updatedAnalysis[pos] = updatedAnalysis[pos].copy(fieldType = FieldType.AMOUNT, isSelected = true)
+    // Helper to apply pattern field
+    fun applyField(patternString: String?, fieldType: FieldType) {
+        if (!patternString.isNullOrEmpty()) {
+            patternString.split(",").mapNotNull { it.toIntOrNull() }.forEach { pos ->
+                if (pos < updatedAnalysis.size) {
+                    updatedAnalysis[pos] = updatedAnalysis[pos].copy(
+                        fieldType = fieldType,
+                        isSelected = true
+                    )
+                }
+            }
         }
     }
 
-    // Apply counterparty positions
-    pattern.counterpartyPattern.split(",").mapNotNull { it.toIntOrNull() }.forEach { pos ->
-        android.util.Log.d("SMSPageEnhanced", "    Setting COUNTERPARTY at position $pos: ${words.getOrNull(pos)}")
-        if (pos < updatedAnalysis.size) {
-            updatedAnalysis[pos] = updatedAnalysis[pos].copy(fieldType = FieldType.COUNTERPARTY, isSelected = true)
-        }
-    }
+    applyField(pattern.amountPattern, FieldType.AMOUNT)
+    applyField(pattern.counterpartyPattern, FieldType.COUNTERPARTY)
+    applyField(pattern.referencePattern, FieldType.REFERENCE)
 
-    // Apply reference positions
-    pattern.referencePattern?.split(",")?.mapNotNull { it.toIntOrNull() }?.forEach { pos ->
-        android.util.Log.d("SMSPageEnhanced", "    Setting REFERENCE at position $pos: ${words.getOrNull(pos)}")
-        if (pos < updatedAnalysis.size) {
-            updatedAnalysis[pos] = updatedAnalysis[pos].copy(fieldType = FieldType.REFERENCE, isSelected = true)
-        }
-    }
-
+    android.util.Log.d("SMSPageEnhanced", "  Applied ${updatedAnalysis.count { it.isSelected }} word selections")
     return updatedAnalysis
 }
 
