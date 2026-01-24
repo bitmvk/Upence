@@ -424,7 +424,12 @@ fun SMSPageEnhanced(
                                 else -> analysis
                             }
                         }
-                        
+
+                        // Mark data as modified when user changes word selection
+                        if (isDataAutoRetrieved) {
+                            userHasModifiedData = true
+                        }
+
                         // Update extracted values based on selected words
                         val newAmount =
                             wordAnalysis
