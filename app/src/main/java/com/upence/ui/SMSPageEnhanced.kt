@@ -1684,7 +1684,8 @@ fun applyPatternToAnalysis(
     android.util.Log.d("SMSPageEnhanced", "  Counterparty positions: ${pattern.counterpartyPattern}")
     android.util.Log.d("SMSPageEnhanced", "  Reference positions: ${pattern.referencePattern}")
 
-    val updatedAnalysis = currentAnalysis.toMutableList()
+    // Clear all existing selections first
+    val updatedAnalysis = currentAnalysis.map { it.copy(fieldType = null, isSelected = false) }.toMutableList()
 
     // Helper to apply pattern field
     fun applyField(patternString: String?, fieldType: FieldType) {
