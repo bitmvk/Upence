@@ -358,7 +358,13 @@ fun SMSPageEnhanced(
                     reference = it.trim('.')
                 },
                 transactionType = transactionType,
-                onTransactionTypeChange = { transactionType = it },
+                onTransactionTypeChange = {
+                    // Mark data as modified when user changes transaction type
+                    if (isDataAutoRetrieved && it != transactionType) {
+                        userHasModifiedData = true
+                    }
+                    transactionType = it
+                },
                 savePattern = savePattern,
                 onSavePatternChange = { savePattern = it },
                 autoSelectAccount = autoSelectAccount,
