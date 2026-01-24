@@ -334,11 +334,29 @@ fun SMSPageEnhanced(
                 wordAnalysis = wordAnalysis,
                 selectedFieldType = selectedFieldType,
                 amount = amount,
-                onAmountChange = { amount = it.trim('.') },
+                onAmountChange = {
+                    // Mark data as modified when user edits amount
+                    if (isDataAutoRetrieved && it.trim('.') != amount) {
+                        userHasModifiedData = true
+                    }
+                    amount = it.trim('.')
+                },
                 counterparty = counterparty,
-                onCounterpartyChange = { counterparty = it },
+                onCounterpartyChange = {
+                    // Mark data as modified when user edits counterparty
+                    if (isDataAutoRetrieved && it != counterparty) {
+                        userHasModifiedData = true
+                    }
+                    counterparty = it
+                },
                 reference = reference,
-                onReferenceChange = { reference = it.trim('.') },
+                onReferenceChange = {
+                    // Mark data as modified when user edits reference
+                    if (isDataAutoRetrieved && it.trim('.') != reference) {
+                        userHasModifiedData = true
+                    }
+                    reference = it.trim('.')
+                },
                 transactionType = transactionType,
                 onTransactionTypeChange = { transactionType = it },
                 savePattern = savePattern,
