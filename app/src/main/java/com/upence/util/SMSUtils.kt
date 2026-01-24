@@ -94,7 +94,7 @@ object SMSUtils {
 
         // Extract reference
         if (!pattern.referencePattern.isNullOrEmpty()) {
-            result["reference"] = extractFromPositions(words, pattern.referencePattern)
+            result["reference"] = extractNumbersOnly(extractFromPositions(words, pattern.referencePattern))
         }
 
         // Extract date if pattern exists
@@ -111,6 +111,10 @@ object SMSUtils {
     ): String {
         val positions = positionPattern.split(",").mapNotNull { it.toIntOrNull() }
         return positions.mapNotNull { words.getOrNull(it) }.joinToString(" ").trim()
+    }
+
+    private fun extractNumbersOnly(text: String): String {
+        return text.replace(Regex("[^\\d]"), "")
     }
 
     fun createPattern(
