@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
@@ -26,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toColorLong
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -36,18 +34,16 @@ import com.upence.data.Categories
 import com.upence.ui.component.IconPicker
 import com.upence.ui.components.*
 import com.upence.util.IconUtils.getIconByName
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import android.util.Log
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryManagementPage(
     categoryDao: com.upence.data.CategoriesDao,
     transactionDao: com.upence.data.TransactionDao,
-    navController: NavController
+    navController: NavController,
 ) {
     val scope = rememberCoroutineScope()
     val categories by categoryDao.getAllCategories().collectAsState(initial = emptyList())
@@ -56,7 +52,7 @@ fun CategoryManagementPage(
     var showDeleteDialog by remember { mutableStateOf<Categories?>(null) }
     var showMigrationDialog by remember { mutableStateOf<Categories?>(null) }
     var showSimpleConfirmDialog by remember { mutableStateOf<Categories?>(null) }
-    
+
     if (showAddDialog) {
         AddEditCategoryDialog(
             category = null,
@@ -64,27 +60,28 @@ fun CategoryManagementPage(
             onSave = { icon, name, color, description ->
                 scope.launch {
                     withContext(Dispatchers.IO) {
-                        val newCategory = Categories(
-                            id = System.currentTimeMillis().toInt(),
-                            icon = icon.removePrefix("Filled."),
-                            name = name,
-                            color = color,
-                            description = description
-                        )
+                        val newCategory =
+                            Categories(
+                                id = System.currentTimeMillis().toInt(),
+                                icon = icon.removePrefix("Filled."),
+                                name = name,
+                                color = color,
+                                description = description,
+                            )
                         categoryDao.insertCategory(newCategory)
                     }
                     showAddDialog = false
                 }
             },
-            allCategories = categories
+            allCategories = categories,
         )
     }
-    
+
     if (showDeleteDialog != null) {
         showMigrationDialog = showDeleteDialog
         showDeleteDialog = null
     }
-    
+
     if (showMigrationDialog != null) {
         val categoryToDelete = showMigrationDialog!!
         MigrationDialog(
@@ -95,12 +92,12 @@ fun CategoryManagementPage(
                         if (migrateTo == null) {
                             categoryDao.migrateCategoryTransactions(
                                 categoryToDelete.id.toString(),
-                                ""
+                                "",
                             )
                         } else if (migrateTo is Categories) {
                             categoryDao.migrateCategoryTransactions(
                                 categoryToDelete.id.toString(),
-                                migrateTo.id.toString()
+                                migrateTo.id.toString(),
                             )
                         }
                         categoryDao.deleteCategory(categoryToDelete)
@@ -111,10 +108,10 @@ fun CategoryManagementPage(
             title = "Move transactions from ${categoryToDelete.name}",
             message = "This category has transactions. Please select another category to move them to:",
             options = categories.filter { it.id != categoryToDelete.id },
-            getOptionLabel = { (it as Categories).name }
+            getOptionLabel = { (it as Categories).name },
         )
     }
-    
+
     if (showSimpleConfirmDialog != null) {
         val category = showSimpleConfirmDialog!!
         ConfirmDeleteDialog(
@@ -125,10 +122,10 @@ fun CategoryManagementPage(
                     showSimpleConfirmDialog = null
                 }
             },
-            itemText = "Category"
+            itemText = "Category",
         )
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -137,43 +134,45 @@ fun CategoryManagementPage(
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Category")
             }
-        }
+        },
     ) { paddingValues ->
         if (categories.isEmpty()) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                contentAlignment = Alignment.Center,
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         "No categories yet",
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         "Tap the + button to add your first category",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(categories) { category ->
                     CategoryItem(
@@ -188,7 +187,7 @@ fun CategoryManagementPage(
                                     showSimpleConfirmDialog = category
                                 }
                             }
-                        }
+                        },
                     )
                 }
             }
@@ -200,39 +199,41 @@ fun CategoryManagementPage(
 fun CategoryItem(
     category: Categories,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    
+
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             // Icon
             Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(Color(category.color)),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(Color(category.color)),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(getIconByName(category.icon), contentDescription = "")
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             // Name
             Text(
                 category.name,
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
-            
+
             MenuButton(showMenu = showMenu, onDismiss = { showMenu = false }, onEdit = onEdit, onDelete = onDelete)
         }
     }
@@ -243,26 +244,26 @@ fun MenuButton(
     showMenu: Boolean,
     onDismiss: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
 ) {
     var localMenu by remember { mutableStateOf(showMenu) }
-    
+
     LaunchedEffect(showMenu) {
         localMenu = showMenu
     }
-    
+
     Box {
         IconButton(onClick = { localMenu = !localMenu }) {
             Icon(Icons.Default.MoreVert, contentDescription = "Menu")
         }
-        
+
         if (localMenu) {
             DropdownMenu(
                 expanded = localMenu,
-                onDismissRequest = { 
+                onDismissRequest = {
                     localMenu = false
                     onDismiss()
-                }
+                },
             ) {
                 DropdownMenuItem(
                     text = { Text("Edit") },
@@ -271,10 +272,10 @@ fun MenuButton(
                         localMenu = false
                         onDismiss()
                     },
-                    leadingIcon = { Icon(Icons.Default.Edit, null) }
+                    leadingIcon = { Icon(Icons.Default.Edit, null) },
                 )
                 DropdownMenuItem(
-                    text = { 
+                    text = {
                         Text("Delete", color = MaterialTheme.colorScheme.error)
                     },
                     onClick = {
@@ -282,12 +283,13 @@ fun MenuButton(
                         localMenu = false
                         onDismiss()
                     },
-                    leadingIcon = { 
+                    leadingIcon = {
                         Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
                     },
-                    colors = MenuDefaults.itemColors(
-                        textColor = MaterialTheme.colorScheme.error
-                    )
+                    colors =
+                        MenuDefaults.itemColors(
+                            textColor = MaterialTheme.colorScheme.error,
+                        ),
                 )
             }
         }
@@ -301,15 +303,15 @@ fun AddEditCategoryDialog(
     category: Categories?,
     onDismiss: () -> Unit,
     onSave: (String, String, Long, String) -> Unit,
-    allCategories: List<Categories>
+    allCategories: List<Categories>,
 ) {
     var name by remember { mutableStateOf(category?.name ?: "") }
     var color by remember { mutableStateOf(category?.color ?: 0xFF4361EE) }
     var description by remember { mutableStateOf(category?.description ?: "") }
     var currentView by remember { mutableStateOf(DialogView.FORM) }
-    
+
     var selectedIcon by remember { mutableStateOf<ImageVector?>(null) }
-    
+
     LaunchedEffect(category?.icon) {
         category?.icon?.let { iconName ->
             selectedIcon = getIconByName(iconName)
@@ -318,12 +320,13 @@ fun AddEditCategoryDialog(
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        title = { 
+        title = {
             Text(
-                text = when (currentView) {
-                    DialogView.ICON_PICKER -> "Select Icon"
-                    DialogView.FORM -> if (category == null) "Add Category" else "Edit Category"
-                }
+                text =
+                    when (currentView) {
+                        DialogView.ICON_PICKER -> "Select Icon"
+                        DialogView.FORM -> if (category == null) "Add Category" else "Edit Category"
+                    },
             )
         },
         text = {
@@ -340,20 +343,20 @@ fun AddEditCategoryDialog(
                     if (targetState != DialogView.FORM) {
                         (slideInHorizontally(slideSpec) { width -> width } + fadeIn(fadeSpec))
                             .togetherWith(
-                                slideOutHorizontally(slideSpec) { width -> -width } + fadeOut(fadeSpec)
+                                slideOutHorizontally(slideSpec) { width -> -width } + fadeOut(fadeSpec),
                             )
                     } else {
                         (slideInHorizontally(slideSpec) { width -> -width } + fadeIn(fadeSpec))
                             .togetherWith(
-                                slideOutHorizontally(slideSpec) { width -> width } + fadeOut(fadeSpec)
+                                slideOutHorizontally(slideSpec) { width -> width } + fadeOut(fadeSpec),
                             )
                     }.using(
                         SizeTransform(
                             clip = true,
-                            sizeAnimationSpec = { _, _ -> sizeSpec }
-                        )
+                            sizeAnimationSpec = { _, _ -> sizeSpec },
+                        ),
                     )
-                }
+                },
             ) { viewState ->
                 Column(modifier = Modifier.fillMaxWidth()) {
                     when (viewState) {
@@ -361,13 +364,14 @@ fun AddEditCategoryDialog(
                             IconPicker(
                                 selectedIcon = selectedIcon,
                                 onIconSelect = { selectedIcon = it },
-                                modifier = Modifier.heightIn(max = 400.dp)
+                                modifier = Modifier.heightIn(max = 400.dp),
                             )
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 16.dp),
-                                horizontalArrangement = Arrangement.End
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 16.dp),
+                                horizontalArrangement = Arrangement.End,
                             ) {
                                 Button(onClick = { currentView = DialogView.FORM }) {
                                     Text("Done")
@@ -376,35 +380,37 @@ fun AddEditCategoryDialog(
                         }
                         DialogView.FORM -> {
                             Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .verticalScroll(rememberScrollState()),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
                                 OutlinedTextField(
                                     value = name,
                                     onValueChange = { name = it },
                                     label = { Text("Name") },
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
+                                    singleLine = true,
                                 )
 
                                 Text("Icon", style = MaterialTheme.typography.labelMedium)
                                 IconButton(onClick = { currentView = DialogView.ICON_PICKER }) {
                                     Box(
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .background(
-                                                Color.Black.copy(alpha = 0.05f),
-                                                shape = RoundedCornerShape(8.dp)
-                                            ),
-                                        contentAlignment = Alignment.Center
+                                        modifier =
+                                            Modifier
+                                                .size(40.dp)
+                                                .background(
+                                                    Color.Black.copy(alpha = 0.05f),
+                                                    shape = RoundedCornerShape(8.dp),
+                                                ),
+                                        contentAlignment = Alignment.Center,
                                     ) {
                                         if (selectedIcon != null) {
                                             Icon(
                                                 imageVector = selectedIcon!!,
                                                 contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onSurface
+                                                tint = MaterialTheme.colorScheme.onSurface,
                                             )
                                         } else {
                                             Text("Select", style = MaterialTheme.typography.bodySmall)
@@ -415,19 +421,32 @@ fun AddEditCategoryDialog(
                                 Text("Color", style = MaterialTheme.typography.labelMedium)
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.horizontalScroll(rememberScrollState())
+                                    modifier = Modifier.horizontalScroll(rememberScrollState()),
                                 ) {
-                                    val colors = listOf(0xFF4361EE, 0xFF06D6A0, 0xFFEF476F, 0xFFFFD166, 0xFF118AB2, 0xFF9D4EDD, 0xFF8F78FA, 0xFFFF9E45)
+                                    val colors =
+                                        listOf(
+                                            0xFF4361EE,
+                                            0xFF06D6A0,
+                                            0xFFEF476F,
+                                            0xFFFFD166,
+                                            0xFF118AB2,
+                                            0xFF9D4EDD,
+                                            0xFF8F78FA,
+                                            0xFFFF9E45,
+                                        )
                                     colors.forEach { col ->
                                         val colorVal = Color(col)
                                         Surface(
                                             onClick = { color = col },
                                             shape = CircleShape,
                                             color = colorVal,
-                                            border = if (color == col) {
-                                                BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-                                            } else null,
-                                            modifier = Modifier.size(40.dp)
+                                            border =
+                                                if (color == col) {
+                                                    BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                                                } else {
+                                                    null
+                                                },
+                                            modifier = Modifier.size(40.dp),
                                         ) {}
                                     }
                                 }
@@ -437,7 +456,7 @@ fun AddEditCategoryDialog(
                                     onValueChange = { description = it },
                                     label = { Text("Description (optional)") },
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
+                                    singleLine = true,
                                 )
                             }
                         }
@@ -452,7 +471,7 @@ fun AddEditCategoryDialog(
                         val iconName = selectedIcon?.name ?: Icons.Default.Add.name
                         onSave(iconName, name, color, description)
                     },
-                    enabled = name.isNotBlank() && selectedIcon != null
+                    enabled = name.isNotBlank() && selectedIcon != null,
                 ) {
                     Text("Save")
                 }
@@ -464,6 +483,6 @@ fun AddEditCategoryDialog(
                     Text("Cancel")
                 }
             }
-        }
+        },
     )
 }

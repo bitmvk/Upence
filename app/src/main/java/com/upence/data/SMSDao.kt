@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SMSDao {
-
     @Query("SELECT * FROM sms")
     fun selectAllSMS(): Flow<List<SMS>>
 

@@ -5,13 +5,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 
 @Composable
 fun ConfirmDeleteDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
-    itemText: String
+    itemText: String,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -28,6 +27,6 @@ fun ConfirmDeleteDialog(
             OutlinedButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
     )
 }

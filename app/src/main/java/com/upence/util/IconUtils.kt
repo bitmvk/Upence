@@ -31,7 +31,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 // falls back to QuestionMark icon to prevent crashes.
 // ============================================================================
 object IconUtils {
-
     private val iconCache = mutableMapOf<String, ImageVector>()
 
     /**
@@ -63,7 +62,6 @@ object IconUtils {
             // Cache and return
             iconCache[normalizedName] = imageVector
             return imageVector
-
         } catch (e: Exception) {
             // Fallback to QuestionMark icon if loading fails
             return Icons.Default.QuestionMark

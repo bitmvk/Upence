@@ -10,9 +10,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.upence.data.*
 import com.upence.util.createDefaultCategories
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -20,45 +20,47 @@ import kotlinx.coroutines.withContext
 fun ResetDefaultsCard(
     categoryDao: CategoriesDao,
     bankAccountsDao: BankAccountsDao,
-    scope: kotlinx.coroutines.CoroutineScope
+    scope: kotlinx.coroutines.CoroutineScope,
 ) {
     var showConfirmDialog by remember { mutableStateOf(false) }
-    
+
     Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+            ),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 12.dp),
             ) {
                 Icon(Icons.Default.Restore, contentDescription = null, modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(12.dp))
                 Text("Reset to Defaults", style = MaterialTheme.typography.titleMedium)
             }
-            
+
             Text(
                 "Restores default categories and accounts. This will remove all custom categories and accounts, clear their transaction references.",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onErrorContainer
+                color = MaterialTheme.colorScheme.onErrorContainer,
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             OutlinedButton(
                 onClick = { showConfirmDialog = true },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer
-                )
+                colors =
+                    ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    ),
             ) {
                 Text("Reset to Defaults")
             }
         }
     }
-    
+
     if (showConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
@@ -91,7 +93,7 @@ fun ResetDefaultsCard(
                 TextButton(onClick = { showConfirmDialog = false }) {
                     Text("Cancel")
                 }
-            }
+            },
         )
     }
 }

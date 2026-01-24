@@ -18,24 +18,24 @@ fun CurrencyCard(
     useCustomCurrency: Boolean,
     onCurrencyCodeChange: (String) -> Unit,
     onCurrencySymbolChange: (String) -> Unit,
-    onUseCustomCurrencyChange: (Boolean) -> Unit
+    onUseCustomCurrencyChange: (Boolean) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    
+
     Card {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 16.dp),
             ) {
                 Icon(Icons.Default.AttachMoney, contentDescription = null, modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(12.dp))
                 Text("Currency", style = MaterialTheme.typography.titleMedium)
             }
-            
+
             ExposedDropdownMenuBox(
                 expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
+                onExpandedChange = { expanded = !expanded },
             ) {
                 OutlinedTextField(
                     value = ALL_CURRENCIES.find { it.code == currencyCode }?.name ?: "Select Currency",
@@ -43,14 +43,15 @@ fun CurrencyCard(
                     readOnly = true,
                     label = { Text("Currency") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor()
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
                 )
-                
+
                 DropdownMenu(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onDismissRequest = { expanded = false },
                 ) {
                     ALL_CURRENCIES.forEach { currency ->
                         DropdownMenuItem(
@@ -64,26 +65,26 @@ fun CurrencyCard(
                                 onCurrencyCodeChange(currency.code)
                                 onCurrencySymbolChange(currency.symbol)
                                 expanded = false
-                            }
+                            },
                         )
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Switch(
                     checked = useCustomCurrency,
-                    onCheckedChange = onUseCustomCurrencyChange
+                    onCheckedChange = onUseCustomCurrencyChange,
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text("Use custom currency symbol")
             }
-            
+
             if (useCustomCurrency) {
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
@@ -92,23 +93,24 @@ fun CurrencyCard(
                     label = { Text("Custom Symbol") },
                     placeholder = { Text("e.g., BTC, 🪙, ★") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    ),
             ) {
                 Text(
                     "Preview: $currencySymbol 1,234.56",
                     modifier = Modifier.padding(12.dp),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
         }

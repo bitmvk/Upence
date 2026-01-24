@@ -6,7 +6,6 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
-
 @Dao
 interface SenderDao {
     @Query("SELECT * FROM senders WHERE accountID = :accountID ORDER BY senderName DESC")
@@ -22,7 +21,11 @@ interface SenderDao {
     fun getIgnoredSenders(): Flow<List<Senders>>
 
     @Query("UPDATE senders SET isIgnored = 1, ignoreReason = :reason, ignoredAt = :timestamp WHERE senderName = :senderName")
-    suspend fun markSenderAsIgnored(senderName: String, reason: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun markSenderAsIgnored(
+        senderName: String,
+        reason: String,
+        timestamp: Long = System.currentTimeMillis(),
+    )
 
     @Query("UPDATE senders SET isIgnored = 0, ignoreReason = NULL, ignoredAt = NULL WHERE senderName = :senderName")
     suspend fun unmarkSenderAsIgnored(senderName: String)

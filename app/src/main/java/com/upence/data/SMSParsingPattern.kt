@@ -21,5 +21,5 @@ data class SMSParsingPattern(
     val autoSelectAccount: Boolean = false,
     val senderName: String = "",
     val createdTimestamp: Long = System.currentTimeMillis(),
-    val lastUsedTimestamp: Long? = null
+    val lastUsedTimestamp: Long? = null,
 )

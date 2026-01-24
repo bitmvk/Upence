@@ -1,76 +1,63 @@
 package com.upence.ui
 
 import androidx.compose.foundation.*
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.upence.data.*
-import com.upence.util.SenderParser
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.time.Instant
-import java.time.format.DateTimeFormatter
-import java.text.NumberFormat
-import java.util.Locale
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.CurrencyRupee
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Money
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.foundation.text.selection.DisableSelection
-import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.LocalIndication
-import com.upence.util.IconUtils.getIconByName
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.*
-import androidx.compose.ui.text.input.OffsetMapping
-import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.upence.data.*
+import com.upence.util.IconUtils.getIconByName
+import com.upence.util.SenderParser
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.time.Instant
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 // Enhanced FieldType with better UX
 enum class FieldType(val displayName: String, val iconName: String, val colorValue: Long) {
     AMOUNT("Amount", "CurrencyRupee", 0xFF4361EE),
     COUNTERPARTY("Counterparty", "Person", 0xFF06D6A0),
-    REFERENCE("Reference", "Receipt", 0xFFEF476F);
+    REFERENCE("Reference", "Receipt", 0xFFEF476F),
+    ;
 
     val buttonDisplayName: String
-        get() = when (this) {
-            COUNTERPARTY -> "Counter Party"
-            else -> displayName
-        }
+        get() =
+            when (this) {
+                COUNTERPARTY -> "Counter Party"
+                else -> displayName
+            }
 
     @Composable
     fun color(): Color = Color(colorValue)
@@ -81,7 +68,7 @@ data class TextRangeSelection(
     val start: Int,
     val end: Int,
     val fieldType: FieldType,
-    val originalText: String
+    val originalText: String,
 ) {
     fun cleanNumericValue(): String {
         return if (fieldType == FieldType.AMOUNT || fieldType == FieldType.REFERENCE) {
@@ -90,7 +77,7 @@ data class TextRangeSelection(
             originalText
         }
     }
-    
+
     private fun extractNumbersOnly(text: String): String {
         return text.replace(Regex("[^\\d]"), "")
     }
@@ -103,7 +90,7 @@ data class WordAnalysis(
     val isNumeric: Boolean = false,
     val numericValue: String = "",
     val fieldType: FieldType? = null,
-    val isSelected: Boolean = false
+    val isSelected: Boolean = false,
 ) {
     val displayText: String
         get() = word
@@ -124,18 +111,18 @@ fun SMSPageEnhanced(
     senderDao: com.upence.data.SenderDao,
     userStore: com.upence.data.UserStore,
     scope: CoroutineScope,
-    navController: androidx.navigation.NavController
+    navController: androidx.navigation.NavController,
 ) {
     val sms by smsDao.selectSMSById(smsId).collectAsState(initial = null)
     val categories by categoryDao.getAllCategories().collectAsState(initial = emptyList())
     val bankAccounts by bankAccountsDao.getAllAccounts().collectAsState(initial = emptyList())
     val tags by tagsDao.getAllTags().collectAsState(initial = emptyList())
     val existingPatterns by remember { mutableStateOf(emptyList<SMSParsingPattern>()) }
-    
+
     // New text selection system state
     var textSelections by remember { mutableStateOf<List<TextRangeSelection>>(emptyList()) }
     var expertMode by remember { mutableStateOf(false) }
-    
+
     // Enhanced state management
     var wordAnalysis by remember { mutableStateOf<List<WordAnalysis>>(emptyList()) }
     var selectedFieldType by remember { mutableStateOf<FieldType?>(null) }
@@ -191,26 +178,28 @@ fun SMSPageEnhanced(
         if (sms != null) {
             isLoading = true
             val smsVal = sms!!
-            
+
             // Analyze words for numeric content
             val words = smsVal.message.split(Regex("""\s+""")).filter { it.isNotBlank() }
-            wordAnalysis = words.mapIndexed { index, word ->
-                val (isNumeric, numericValue) = extractNumericContent(word)
-                WordAnalysis(
-                    word = word,
-                    originalIndex = index,
-                    isNumeric = isNumeric,
-                    numericValue = numericValue
-                )
-            }
-            
+            wordAnalysis =
+                words.mapIndexed { index, word ->
+                    val (isNumeric, numericValue) = extractNumericContent(word)
+                    WordAnalysis(
+                        word = word,
+                        originalIndex = index,
+                        isNumeric = isNumeric,
+                        numericValue = numericValue,
+                    )
+                }
+
             // Check for existing patterns
             try {
-                val patterns = smsParsingPatternDao.findSimilarPatterns(
-                    smsVal.sender,
-                    SenderParser.extractSenderName(smsVal.sender),
-                    useIndiaRuleset
-                )
+                val patterns =
+                    smsParsingPatternDao.findSimilarPatterns(
+                        smsVal.sender,
+                        SenderParser.extractSenderName(smsVal.sender),
+                        useIndiaRuleset,
+                    )
                 if (patterns.isNotEmpty()) {
                     // Auto-apply first pattern
                     val pattern = patterns.first()
@@ -240,11 +229,11 @@ fun SMSPageEnhanced(
             } catch (e: Exception) {
                 // Continue without patterns
             }
-            
+
             isLoading = false
         }
     }
-    
+
     // Loading state
     if (isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -252,7 +241,7 @@ fun SMSPageEnhanced(
         }
         return
     }
-    
+
     // SMS not found
     if (sms == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -266,16 +255,16 @@ fun SMSPageEnhanced(
         }
         return
     }
-    
+
     val smsVal = sms!!
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
                         "Complete Transaction",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
                     )
                 },
                 navigationIcon = {
@@ -283,18 +272,20 @@ fun SMSPageEnhanced(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
             )
-        }
+        },
     ) { paddingValues ->
         Surface(
-            modifier = modifier
-                .padding(paddingValues)
-                .fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+            modifier =
+                modifier
+                    .padding(paddingValues)
+                    .fillMaxSize(),
+            color = MaterialTheme.colorScheme.background,
         ) {
             UnifiedTransactionScreen(
                 sms = smsVal,
@@ -336,34 +327,38 @@ fun SMSPageEnhanced(
                 },
                 onWordClicked = { index ->
                     selectedFieldType?.let { fieldType ->
-                        wordAnalysis = wordAnalysis.mapIndexed { i, analysis ->
-                            if (i == index) {
-                                // For amount field, only allow selection of numeric tokens
-                                if (fieldType == FieldType.AMOUNT && !analysis.isNumeric) {
-                                    return@mapIndexed analysis
+                        wordAnalysis =
+                            wordAnalysis.mapIndexed { i, analysis ->
+                                if (i == index) {
+                                    // For amount field, only allow selection of numeric tokens
+                                    if (fieldType == FieldType.AMOUNT && !analysis.isNumeric) {
+                                        return@mapIndexed analysis
+                                    }
+                                    analysis.copy(fieldType = fieldType, isSelected = true)
+                                } else if (analysis.fieldType == fieldType) {
+                                    analysis.copy(isSelected = false)
+                                } else {
+                                    analysis
                                 }
-                                analysis.copy(fieldType = fieldType, isSelected = true)
-                            } else if (analysis.fieldType == fieldType) {
-                                analysis.copy(isSelected = false)
-                            } else {
-                                analysis
                             }
-                        }
 
                         // Update extracted values based on selected words
-                        val newAmount = wordAnalysis
-                            .filter { it.fieldType == FieldType.AMOUNT && it.isSelected }
-                            .joinToString("") { it.numericValue }
+                        val newAmount =
+                            wordAnalysis
+                                .filter { it.fieldType == FieldType.AMOUNT && it.isSelected }
+                                .joinToString("") { it.numericValue }
                         if (newAmount.isNotBlank()) amount = newAmount.trim('.')
 
-                        val newCounterparty = wordAnalysis
-                            .filter { it.fieldType == FieldType.COUNTERPARTY && it.isSelected }
-                            .joinToString(" ") { it.word }
+                        val newCounterparty =
+                            wordAnalysis
+                                .filter { it.fieldType == FieldType.COUNTERPARTY && it.isSelected }
+                                .joinToString(" ") { it.word }
                         if (newCounterparty.isNotBlank()) counterparty = newCounterparty
 
-                        val newReference = wordAnalysis
-                            .filter { it.fieldType == FieldType.REFERENCE && it.isSelected }
-                            .joinToString(" ") { it.word }
+                        val newReference =
+                            wordAnalysis
+                                .filter { it.fieldType == FieldType.REFERENCE && it.isSelected }
+                                .joinToString(" ") { it.word }
                         if (newReference.isNotBlank()) reference = extractNumbersOnly(newReference).trim('.')
                     }
                 },
@@ -379,22 +374,24 @@ fun SMSPageEnhanced(
                 },
                 onCreateTransaction = {
                     // Validate based on whether data was auto-retrieved
-                    val isValid = if (isDataAutoRetrieved) {
-                        validateTransaction(amount, counterparty, selectedCategory, selectedAccount)
-                    } else {
-                        // For manually filled data, only category and account are required
-                        selectedCategory != null && selectedAccount != null
-                    }
+                    val isValid =
+                        if (isDataAutoRetrieved) {
+                            validateTransaction(amount, counterparty, selectedCategory, selectedAccount)
+                        } else {
+                            // For manually filled data, only category and account are required
+                            selectedCategory != null && selectedAccount != null
+                        }
 
                     if (isValid) {
                         // Save pattern if requested
                         if (savePattern) {
-                            val pattern = createPatternFromAnalysis(
-                                smsVal.sender,
-                                smsVal.message,
-                                wordAnalysis,
-                                transactionType
-                            )
+                            val pattern =
+                                createPatternFromAnalysis(
+                                    smsVal.sender,
+                                    smsVal.message,
+                                    wordAnalysis,
+                                    transactionType,
+                                )
                             scope.launch {
                                 withContext(Dispatchers.IO) {
                                     val patternId = smsParsingPatternDao.insertPattern(pattern).toInt()
@@ -404,23 +401,24 @@ fun SMSPageEnhanced(
                                         selectedCategory?.id?.toString() ?: "",
                                         selectedAccount?.id?.toString() ?: "",
                                         autoSelectAccount,
-                                        SenderParser.extractSenderName(smsVal.sender)
+                                        SenderParser.extractSenderName(smsVal.sender),
                                     )
                                 }
                             }
                         }
 
                         // Create transaction
-                        val transaction = Transaction(
-                            counterParty = counterparty,
-                            amount = if (amount.isNotBlank()) amount.toDoubleOrNull() ?: 0.0 else 0.0,
-                            timestamp = Instant.now(),
-                            categoryID = selectedCategory?.id?.toString() ?: "",
-                            description = description,
-                            accountID = selectedAccount?.id?.toString() ?: "",
-                            transactionType = transactionType,
-                            referenceNumber = reference
-                        )
+                        val transaction =
+                            Transaction(
+                                counterParty = counterparty,
+                                amount = if (amount.isNotBlank()) amount.toDoubleOrNull() ?: 0.0 else 0.0,
+                                timestamp = Instant.now(),
+                                categoryID = selectedCategory?.id?.toString() ?: "",
+                                description = description,
+                                accountID = selectedAccount?.id?.toString() ?: "",
+                                transactionType = transactionType,
+                                referenceNumber = reference,
+                            )
 
                         scope.launch {
                             withContext(Dispatchers.IO) {
@@ -430,7 +428,7 @@ fun SMSPageEnhanced(
                         }
                     }
                 },
-                navController = navController
+                navController = navController,
             )
 
             // Not a Transaction Dialog
@@ -446,14 +444,14 @@ fun SMSPageEnhanced(
                                 if (applyToAllFutureSMS) {
                                     senderDao.markSenderAsIgnored(
                                         senderName = smsVal.sender,
-                                        reason = "Not a transaction"
+                                        reason = "Not a transaction",
                                     )
                                 }
                                 smsDao.deleteSMS(smsId)
                             }
                             onBack()
                         }
-                    }
+                    },
                 )
             }
         }
@@ -466,7 +464,7 @@ fun NotATransactionDialog(
     applyToAllFutureSMS: Boolean,
     onApplyToAllChange: (Boolean) -> Unit,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -477,21 +475,21 @@ fun NotATransactionDialog(
             Column {
                 Text(
                     "Do you want to mark this SMS from '$sender' as not a transaction?",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Checkbox(
                         checked = applyToAllFutureSMS,
-                        onCheckedChange = onApplyToAllChange
+                        onCheckedChange = onApplyToAllChange,
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Apply for all future SMS from this sender",
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                 }
             }
@@ -505,7 +503,7 @@ fun NotATransactionDialog(
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
     )
 }
 
@@ -556,7 +554,7 @@ fun UnifiedTransactionScreen(
     onNotATransactionClick: () -> Unit,
     onNotATransactionLongPress: () -> Unit,
     onCreateTransaction: () -> Unit,
-    navController: androidx.navigation.NavController
+    navController: androidx.navigation.NavController,
 ) {
     // TODO: Create UnifiedTransactionScreen composable that:
     // - Takes all parameters from both FirstScreenContent and SecondScreenContent
@@ -572,62 +570,66 @@ fun UnifiedTransactionScreen(
     // - Add clickable header to toggle collapse state
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // SMS Body Section (Collapsible)
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     // Collapsible Header
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onSMSBodyCollapseChange(!showSMSBodyCollapsed) }
-                            .padding(vertical = 8.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { onSMSBodyCollapseChange(!showSMSBodyCollapsed) }
+                                .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = if (showSMSBodyCollapsed) Icons.Filled.ExpandMore else Icons.Filled.KeyboardArrowUp,
                                 contentDescription = if (showSMSBodyCollapsed) "Expand" else "Collapse",
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.primary,
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "SMS Body",
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
                             )
                             if (isDataAutoRetrieved) {
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Surface(
                                     color = MaterialTheme.colorScheme.primaryContainer,
-                                    shape = MaterialTheme.shapes.small
+                                    shape = MaterialTheme.shapes.small,
                                 ) {
                                     Text(
                                         text = "Auto-filled",
                                         style = MaterialTheme.typography.labelSmall,
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                                     )
                                 }
                             }
                         }
                         Text(
-                            text = java.time.Instant.ofEpochMilli(sms.timestamp)
-                                .atZone(java.time.ZoneId.systemDefault())
-                                .format(DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm")),
+                            text =
+                                java.time.Instant.ofEpochMilli(sms.timestamp)
+                                    .atZone(java.time.ZoneId.systemDefault())
+                                    .format(DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm")),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
 
@@ -637,7 +639,7 @@ fun UnifiedTransactionScreen(
                     Text(
                         text = "From: ${sms.sender}",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
 
@@ -647,7 +649,7 @@ fun UnifiedTransactionScreen(
                             Text(
                                 text = sms.message,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                         }
 
@@ -657,13 +659,13 @@ fun UnifiedTransactionScreen(
                         FlowRow(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             FieldType.entries.forEach { fieldType ->
                                 EnhancedFieldTypeChip(
                                     fieldType = fieldType,
                                     isSelected = selectedFieldType == fieldType,
-                                    onClick = { onFieldTypeSelected(fieldType) }
+                                    onClick = { onFieldTypeSelected(fieldType) },
                                 )
                             }
                         }
@@ -673,7 +675,7 @@ fun UnifiedTransactionScreen(
                             Text(
                                 text = "Click words to mark as ${selectedFieldType.displayName}",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
 
@@ -683,28 +685,29 @@ fun UnifiedTransactionScreen(
                         FlowRow(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             wordAnalysis.forEachIndexed { index, analysis ->
                                 EnhancedWordChip(
                                     analysis = analysis,
                                     targetFieldType = selectedFieldType,
-                                    onClick = { onWordClicked(index) }
+                                    onClick = { onWordClicked(index) },
                                 )
                             }
                         }
                     } else {
                         // Collapsed view - show snippet
                         Text(
-                            text = if (sms.message.length > 50) {
-                                sms.message.take(50) + "..."
-                            } else {
-                                sms.message
-                            },
+                            text =
+                                if (sms.message.length > 50) {
+                                    sms.message.take(50) + "..."
+                                } else {
+                                    sms.message
+                                },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
@@ -715,21 +718,22 @@ fun UnifiedTransactionScreen(
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     // Transaction Type
                     Text(
                         text = "Transaction Type",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         TransactionType.entries.forEach { type ->
                             FilterChip(
@@ -739,9 +743,9 @@ fun UnifiedTransactionScreen(
                                 leadingIcon = {
                                     Icon(
                                         imageVector = if (type == TransactionType.CREDIT) Icons.Filled.Money else Icons.Filled.CreditCard,
-                                        contentDescription = type.name
+                                        contentDescription = type.name,
                                     )
-                                }
+                                },
                             )
                         }
                     }
@@ -757,7 +761,7 @@ fun UnifiedTransactionScreen(
                             Icon(Icons.Filled.CurrencyRupee, contentDescription = "Amount")
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -770,7 +774,7 @@ fun UnifiedTransactionScreen(
                         leadingIcon = {
                             Icon(Icons.AutoMirrored.Filled.CompareArrows, contentDescription = "Counter Party")
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -783,16 +787,16 @@ fun UnifiedTransactionScreen(
                         leadingIcon = {
                             Box(
                                 modifier = Modifier.size(24.dp),
-                                contentAlignment = Alignment.Center
+                                contentAlignment = Alignment.Center,
                             ) {
                                 Text(
                                     text = "R",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -804,14 +808,15 @@ fun UnifiedTransactionScreen(
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     ExposedDropdownMenuBox(
                         expanded = showAccountExpanded,
-                        onExpandedChange = onAccountExpandedChange
+                        onExpandedChange = onAccountExpandedChange,
                     ) {
                         OutlinedTextField(
                             value = selectedAccount?.accountName ?: "Select Account",
@@ -819,20 +824,21 @@ fun UnifiedTransactionScreen(
                             readOnly = true,
                             label = { Text("Account") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showAccountExpanded) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor()
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(),
                         )
                         ExposedDropdownMenu(
                             expanded = showAccountExpanded,
-                            onDismissRequest = { onAccountExpandedChange(false) }
+                            onDismissRequest = { onAccountExpandedChange(false) },
                         ) {
                             bankAccounts.forEach { account ->
                                 DropdownMenuItem(
                                     text = {
                                         Text(
                                             text = account.accountName,
-                                            style = MaterialTheme.typography.bodyMedium
+                                            style = MaterialTheme.typography.bodyMedium,
                                         )
                                     },
                                     onClick = {
@@ -842,9 +848,9 @@ fun UnifiedTransactionScreen(
                                     leadingIcon = {
                                         Icon(
                                             imageVector = Icons.Filled.CreditCard,
-                                            contentDescription = "Account"
+                                            contentDescription = "Account",
                                         )
-                                    }
+                                    },
                                 )
                             }
                         }
@@ -852,10 +858,10 @@ fun UnifiedTransactionScreen(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.End,
                     ) {
                         TextButton(
-                            onClick = { navController.navigate("manage_accounts") }
+                            onClick = { navController.navigate("manage_accounts") },
                         ) {
                             Text("Manage Accounts")
                         }
@@ -868,14 +874,15 @@ fun UnifiedTransactionScreen(
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     ExposedDropdownMenuBox(
                         expanded = showCategoryExpanded,
-                        onExpandedChange = onCategoryExpandedChange
+                        onExpandedChange = onCategoryExpandedChange,
                     ) {
                         OutlinedTextField(
                             value = selectedCategory?.name ?: "Select Category",
@@ -883,20 +890,21 @@ fun UnifiedTransactionScreen(
                             readOnly = true,
                             label = { Text("Category") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showCategoryExpanded) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor()
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(),
                         )
                         ExposedDropdownMenu(
                             expanded = showCategoryExpanded,
-                            onDismissRequest = { onCategoryExpandedChange(false) }
+                            onDismissRequest = { onCategoryExpandedChange(false) },
                         ) {
                             categories.forEach { category ->
                                 DropdownMenuItem(
                                     text = {
                                         Text(
                                             text = category.name,
-                                            style = MaterialTheme.typography.bodyMedium
+                                            style = MaterialTheme.typography.bodyMedium,
                                         )
                                     },
                                     onClick = {
@@ -906,9 +914,9 @@ fun UnifiedTransactionScreen(
                                     leadingIcon = {
                                         Icon(
                                             imageVector = getIconByName(category.icon),
-                                            contentDescription = "Category"
+                                            contentDescription = "Category",
                                         )
-                                    }
+                                    },
                                 )
                             }
                         }
@@ -916,10 +924,10 @@ fun UnifiedTransactionScreen(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.End,
                     ) {
                         TextButton(
-                            onClick = { navController.navigate("manage_categories") }
+                            onClick = { navController.navigate("manage_categories") },
                         ) {
                             Text("Manage Categories")
                         }
@@ -932,15 +940,16 @@ fun UnifiedTransactionScreen(
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "Tags",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -948,12 +957,12 @@ fun UnifiedTransactionScreen(
                         Text(
                             text = "No tags available. Create tags in Settings.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(
                             onClick = { navController.navigate("tags_management") },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text("Manage Tags")
                         }
@@ -961,7 +970,7 @@ fun UnifiedTransactionScreen(
                         FlowRow(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             tags.forEach { tag ->
                                 val isSelected = selectedTags.contains(tag)
@@ -969,13 +978,14 @@ fun UnifiedTransactionScreen(
                                     tag = tag,
                                     isSelected = isSelected,
                                     onClick = {
-                                        val newTags = if (isSelected) {
-                                            selectedTags - tag
-                                        } else {
-                                            selectedTags + tag
-                                        }
+                                        val newTags =
+                                            if (isSelected) {
+                                                selectedTags - tag
+                                            } else {
+                                                selectedTags + tag
+                                            }
                                         onTagsSelected(newTags)
-                                    }
+                                    },
                                 )
                             }
                         }
@@ -988,15 +998,16 @@ fun UnifiedTransactionScreen(
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "Description (Optional)",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     OutlinedTextField(
@@ -1005,7 +1016,7 @@ fun UnifiedTransactionScreen(
                         placeholder = { Text("Add a description for this transaction") },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 3,
-                        maxLines = 5
+                        maxLines = 5,
                     )
                 }
             }
@@ -1016,42 +1027,43 @@ fun UnifiedTransactionScreen(
         if (!patternWasFound) {
             item {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .clickable { onSavePatternChange(!savePattern) },
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .clickable { onSavePatternChange(!savePattern) },
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(
                         checked = savePattern,
-                        onCheckedChange = null
+                        onCheckedChange = null,
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Save as Pattern",
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleMedium,
                         )
                         Text(
                             text = "Save the selected field mappings as a pattern for future SMS from this sender",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
 
                         if (savePattern) {
                             Spacer(modifier = Modifier.height(12.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Checkbox(
                                     checked = autoSelectAccount,
-                                    onCheckedChange = { onAutoSelectAccountChange(it) }
+                                    onCheckedChange = { onAutoSelectAccountChange(it) },
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = "Auto-select this account for future SMS",
-                                    style = MaterialTheme.typography.bodyMedium
+                                    style = MaterialTheme.typography.bodyMedium,
                                 )
                             }
                         }
@@ -1064,13 +1076,13 @@ fun UnifiedTransactionScreen(
         item {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 // Create Transaction Button
                 Button(
                     onClick = onCreateTransaction,
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = selectedCategory != null && selectedAccount != null
+                    enabled = selectedCategory != null && selectedAccount != null,
                 ) {
                     Icon(Icons.Filled.Save, contentDescription = "Save")
                     Spacer(modifier = Modifier.width(8.dp))
@@ -1080,12 +1092,13 @@ fun UnifiedTransactionScreen(
                 // Not a Transaction Button
                 OutlinedButton(
                     onClick = onNotATransactionClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .combinedClickable(
-                            onClick = onNotATransactionClick,
-                            onLongClick = onNotATransactionLongPress
-                        )
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .combinedClickable(
+                                onClick = onNotATransactionClick,
+                                onLongClick = onNotATransactionLongPress,
+                            ),
                 ) {
                     Icon(Icons.Filled.Cancel, contentDescription = "Cancel")
                     Spacer(modifier = Modifier.width(8.dp))
@@ -1095,7 +1108,7 @@ fun UnifiedTransactionScreen(
                 // Cancel Button
                 TextButton(
                     onClick = onCancel,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Cancel")
                 }
@@ -1114,40 +1127,42 @@ fun UnifiedTransactionScreen(
 fun EnhancedFieldTypeChip(
     fieldType: FieldType,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Surface(
         modifier = Modifier.clickable { onClick() },
         shape = CircleShape,
         color = if (isSelected) fieldType.color() else fieldType.color().copy(alpha = 0.1f),
-        border = BorderStroke(
-            width = if (isSelected) 2.dp else 1.dp,
-            color = fieldType.color()
-        )
+        border =
+            BorderStroke(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = fieldType.color(),
+            ),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .clip(CircleShape)
-                    .background(if (isSelected) fieldType.color() else fieldType.color().copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .background(if (isSelected) fieldType.color() else fieldType.color().copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = fieldType.displayName.first().uppercase(),
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimary else fieldType.color(),
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = fieldType.buttonDisplayName,
                 style = MaterialTheme.typography.labelMedium,
-                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else fieldType.color()
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else fieldType.color(),
             )
         }
     }
@@ -1157,36 +1172,38 @@ fun EnhancedFieldTypeChip(
 fun EnhancedWordChip(
     analysis: WordAnalysis,
     targetFieldType: FieldType?,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     val isDisabled = targetFieldType == FieldType.AMOUNT && !analysis.isNumeric
     val isSelected = analysis.isSelected && analysis.fieldType != null
 
-    val borderColor = when {
-        isDisabled -> MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
-        isSelected -> analysis.fieldType!!.color().copy(alpha = 0.5f)
-        else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-    }
+    val borderColor =
+        when {
+            isDisabled -> MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+            isSelected -> analysis.fieldType!!.color().copy(alpha = 0.5f)
+            else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+        }
 
     val borderWidth = if (isSelected) 2.dp else 1.dp
 
     Surface(
-        modifier = Modifier
-            .clickable(enabled = !isDisabled) { onClick() }
-            .alpha(if (isDisabled) 0.5f else 1f),
+        modifier =
+            Modifier
+                .clickable(enabled = !isDisabled) { onClick() }
+                .alpha(if (isDisabled) 0.5f else 1f),
         shape = MaterialTheme.shapes.small,
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(width = borderWidth, color = borderColor)
+        border = BorderStroke(width = borderWidth, color = borderColor),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             when (analysis.fieldType) {
                 FieldType.AMOUNT -> {
                     Badge(
                         containerColor = FieldType.AMOUNT.color().copy(alpha = 0.2f),
-                        contentColor = FieldType.AMOUNT.color()
+                        contentColor = FieldType.AMOUNT.color(),
                     ) {
                         Text("₹", fontSize = 10.sp)
                     }
@@ -1195,7 +1212,7 @@ fun EnhancedWordChip(
                 FieldType.COUNTERPARTY -> {
                     Badge(
                         containerColor = FieldType.COUNTERPARTY.color().copy(alpha = 0.2f),
-                        contentColor = FieldType.COUNTERPARTY.color()
+                        contentColor = FieldType.COUNTERPARTY.color(),
                     ) {
                         Icon(Icons.AutoMirrored.Filled.CompareArrows, contentDescription = null, modifier = Modifier.size(10.dp))
                     }
@@ -1204,7 +1221,7 @@ fun EnhancedWordChip(
                 FieldType.REFERENCE -> {
                     Badge(
                         containerColor = FieldType.REFERENCE.color().copy(alpha = 0.2f),
-                        contentColor = FieldType.REFERENCE.color()
+                        contentColor = FieldType.REFERENCE.color(),
                     ) {
                         Text("R", fontSize = 10.sp)
                     }
@@ -1216,7 +1233,7 @@ fun EnhancedWordChip(
                 text = analysis.displayText,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
+                fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
             )
         }
     }
@@ -1225,11 +1242,11 @@ fun EnhancedWordChip(
 // Enhanced numeric extraction with Indian format support
 fun extractNumericContent(word: String): Pair<Boolean, String> {
     // Handle common Indian/International currency formats including "Rs.", "RS.", "₹"
-    val cleanWord = word.replace(",", "")  // Remove commas for thousands
+    val cleanWord = word.replace(",", "") // Remove commas for thousands
     // Match patterns like: Rs.1.00, ₹100, $50.00, 1,234.56, 250 etc.
     val numericRegex = Regex("""(?i)[₹$\s]*RS?\.?\s*([\d]+(?:\.\d{1,2})?)""")
     val match = numericRegex.find(cleanWord)
-    
+
     return if (match != null) {
         val numericValue = match.groupValues[1]
         try {
@@ -1268,38 +1285,42 @@ fun extractNumericContent(word: String): Pair<Boolean, String> {
 fun TagItem(
     tag: Tags,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.background(
-            color = Color(android.graphics.Color.parseColor(tag.color)),
-            shape = RoundedCornerShape(100)
-        ),
+        modifier =
+            Modifier.background(
+                color = Color(android.graphics.Color.parseColor(tag.color)),
+                shape = RoundedCornerShape(100),
+            ),
     ) {
         if (isSelected) {
             IconButton(
                 onClick = onClick,
-                modifier = Modifier
-                    .padding(10.dp)
-                    .size(22.dp)
-                    .align(Alignment.CenterVertically)
+                modifier =
+                    Modifier
+                        .padding(10.dp)
+                        .size(22.dp)
+                        .align(Alignment.CenterVertically),
             ) {
                 Icon(
-                    modifier = Modifier
-                        .padding(start = 1.dp)
-                        .align(Alignment.CenterVertically)
-                        .size(24.dp),
+                    modifier =
+                        Modifier
+                            .padding(start = 1.dp)
+                            .align(Alignment.CenterVertically)
+                            .size(24.dp),
                     imageVector = Icons.Filled.Close,
-                    contentDescription = null
+                    contentDescription = null,
                 )
             }
         }
         Text(
             tag.name,
-            modifier = Modifier
-                .padding(top = 5.dp, bottom = 5.dp, start = 2.dp, end = 10.dp)
-                .align(Alignment.CenterVertically),
-            color = Color.White
+            modifier =
+                Modifier
+                    .padding(top = 5.dp, bottom = 5.dp, start = 2.dp, end = 10.dp)
+                    .align(Alignment.CenterVertically),
+            color = Color.White,
         )
     }
 }
@@ -1308,7 +1329,7 @@ fun TagItem(
 @Composable
 fun UnprocessedSMSListPage(
     smsDao: SMSDao,
-    navController: androidx.navigation.NavController
+    navController: androidx.navigation.NavController,
 ) {
     val smsList by smsDao.selectUnprocessedSMS().collectAsState(initial = emptyList())
 
@@ -1318,7 +1339,7 @@ fun UnprocessedSMSListPage(
                 title = {
                     Text(
                         "Unprocessed SMS",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
                     )
                 },
                 navigationIcon = {
@@ -1326,48 +1347,52 @@ fun UnprocessedSMSListPage(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
             )
-        }
+        },
     ) { paddingValues ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (smsList.isEmpty()) {
                 item {
                     Box(
                         modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             "No unprocessed SMS",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
             } else {
                 items(smsList) { sms ->
                     Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { navController.navigate("sms_view/${sms.id}") },
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { navController.navigate("sms_view/${sms.id}") },
+                        colors =
+                            CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                            ),
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
                                 text = sms.sender,
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
@@ -1375,7 +1400,7 @@ fun UnprocessedSMSListPage(
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                     }
@@ -1393,29 +1418,32 @@ fun updateExtractedValues(
     currentReference: String,
     onAmountChange: (String) -> Unit,
     onCounterpartyChange: (String) -> Unit,
-    onReferenceChange: (String) -> Unit
+    onReferenceChange: (String) -> Unit,
 ) {
     when (fieldType) {
         FieldType.AMOUNT -> {
-            val amountText = analysis
-                .filter { it.fieldType == FieldType.AMOUNT && it.isSelected }
-                .joinToString("") { it.displayText }
+            val amountText =
+                analysis
+                    .filter { it.fieldType == FieldType.AMOUNT && it.isSelected }
+                    .joinToString("") { it.displayText }
             if (amountText.isNotBlank()) {
                 onAmountChange(amountText)
             }
         }
         FieldType.COUNTERPARTY -> {
-            val counterpartyText = analysis
-                .filter { it.fieldType == FieldType.COUNTERPARTY && it.isSelected }
-                .joinToString(" ") { it.word }
+            val counterpartyText =
+                analysis
+                    .filter { it.fieldType == FieldType.COUNTERPARTY && it.isSelected }
+                    .joinToString(" ") { it.word }
             if (counterpartyText.isNotBlank()) {
                 onCounterpartyChange(counterpartyText)
             }
         }
         FieldType.REFERENCE -> {
-            val referenceText = analysis
-                .filter { it.fieldType == FieldType.REFERENCE && it.isSelected }
-                .joinToString(" ") { it.word }
+            val referenceText =
+                analysis
+                    .filter { it.fieldType == FieldType.REFERENCE && it.isSelected }
+                    .joinToString(" ") { it.word }
             if (referenceText.isNotBlank()) {
                 onReferenceChange(referenceText)
             }
@@ -1427,32 +1455,32 @@ fun updateExtractedValues(
 fun applyPatternToAnalysis(
     pattern: SMSParsingPattern,
     message: String,
-    currentAnalysis: List<WordAnalysis>
+    currentAnalysis: List<WordAnalysis>,
 ): List<WordAnalysis>? {
     val words = message.split("\\s+".toRegex())
     val updatedAnalysis = currentAnalysis.toMutableList()
-    
+
     // Apply amount positions
     pattern.amountPattern.split(",").mapNotNull { it.toIntOrNull() }.forEach { pos ->
         if (pos < updatedAnalysis.size) {
             updatedAnalysis[pos] = updatedAnalysis[pos].copy(fieldType = FieldType.AMOUNT, isSelected = true)
         }
     }
-    
+
     // Apply counterparty positions
     pattern.counterpartyPattern.split(",").mapNotNull { it.toIntOrNull() }.forEach { pos ->
         if (pos < updatedAnalysis.size) {
             updatedAnalysis[pos] = updatedAnalysis[pos].copy(fieldType = FieldType.COUNTERPARTY, isSelected = true)
         }
     }
-    
+
     // Apply reference positions
     pattern.referencePattern?.split(",")?.mapNotNull { it.toIntOrNull() }?.forEach { pos ->
         if (pos < updatedAnalysis.size) {
             updatedAnalysis[pos] = updatedAnalysis[pos].copy(fieldType = FieldType.REFERENCE, isSelected = true)
         }
     }
-    
+
     return updatedAnalysis
 }
 
@@ -1460,17 +1488,20 @@ fun createPatternFromAnalysis(
     sender: String,
     message: String,
     analysis: List<WordAnalysis>,
-    transactionType: TransactionType
+    transactionType: TransactionType,
 ): SMSParsingPattern {
-    val amountPositions = analysis
-        .mapIndexedNotNull { index, word -> if (word.fieldType == FieldType.AMOUNT) index else null }
-    
-    val counterpartyPositions = analysis
-        .mapIndexedNotNull { index, word -> if (word.fieldType == FieldType.COUNTERPARTY) index else null }
-    
-    val referencePositions = analysis
-        .mapIndexedNotNull { index, word -> if (word.fieldType == FieldType.REFERENCE) index else null }
-    
+    val amountPositions =
+        analysis
+            .mapIndexedNotNull { index, word -> if (word.fieldType == FieldType.AMOUNT) index else null }
+
+    val counterpartyPositions =
+        analysis
+            .mapIndexedNotNull { index, word -> if (word.fieldType == FieldType.COUNTERPARTY) index else null }
+
+    val referencePositions =
+        analysis
+            .mapIndexedNotNull { index, word -> if (word.fieldType == FieldType.REFERENCE) index else null }
+
     return SMSParsingPattern(
         senderIdentifier = sender,
         senderName = SenderParser.extractSenderName(sender),
@@ -1480,11 +1511,14 @@ fun createPatternFromAnalysis(
         counterpartyPattern = counterpartyPositions.joinToString(","),
         referencePattern = referencePositions.joinToString(",").ifEmpty { null },
         transactionType = transactionType,
-        isActive = true
+        isActive = true,
     )
 }
 
-fun buildMessageStructure(message: String, analysis: List<WordAnalysis>): String {
+fun buildMessageStructure(
+    message: String,
+    analysis: List<WordAnalysis>,
+): String {
     val words = message.split("\\s+".toRegex())
     return words.mapIndexed { index, word ->
         val wordAnalysis = analysis.getOrNull(index)
@@ -1497,40 +1531,46 @@ fun buildMessageStructure(message: String, analysis: List<WordAnalysis>): String
     }.joinToString(" ")
 }
 
-fun extractUsingPattern(message: String, pattern: SMSParsingPattern): Map<String, String> {
+fun extractUsingPattern(
+    message: String,
+    pattern: SMSParsingPattern,
+): Map<String, String> {
     val result = mutableMapOf<String, String>()
     val words = message.split("\\s+".toRegex())
-    
+
     // Extract amount
     if (pattern.amountPattern.isNotEmpty()) {
-        val amount = pattern.amountPattern.split(",")
-            .mapNotNull { it.toIntOrNull() }
-            .mapNotNull { words.getOrNull(it) }
-            .joinToString(" ")
-        
+        val amount =
+            pattern.amountPattern.split(",")
+                .mapNotNull { it.toIntOrNull() }
+                .mapNotNull { words.getOrNull(it) }
+                .joinToString(" ")
+
         // Clean amount (extract numeric part)
         val cleanAmount = amount.replace("[^\\d.]".toRegex(), "")
         if (cleanAmount.isNotBlank()) {
             result["amount"] = cleanAmount
         }
     }
-    
+
     // Extract counterparty
     if (pattern.counterpartyPattern.isNotEmpty()) {
-        result["counterparty"] = pattern.counterpartyPattern.split(",")
-            .mapNotNull { it.toIntOrNull() }
-            .mapNotNull { words.getOrNull(it) }
-            .joinToString(" ")
+        result["counterparty"] =
+            pattern.counterpartyPattern.split(",")
+                .mapNotNull { it.toIntOrNull() }
+                .mapNotNull { words.getOrNull(it) }
+                .joinToString(" ")
     }
-    
+
     // Extract reference
     if (!pattern.referencePattern.isNullOrEmpty()) {
-        result["reference"] = pattern.referencePattern.split(",")
-            .mapNotNull { it.toIntOrNull() }
-            .mapNotNull { words.getOrNull(it) }
-            .joinToString(" ")
+        result["reference"] =
+            pattern.referencePattern.split(",")
+                .mapNotNull { it.toIntOrNull() }
+                .mapNotNull { words.getOrNull(it) }
+                .joinToString(" ")
     }
-    
+
     return result
 }
 
@@ -1542,11 +1582,11 @@ fun validateTransaction(
     amount: String,
     counterparty: String,
     category: Categories?,
-    account: BankAccounts?
+    account: BankAccounts?,
 ): Boolean {
-    return amount.isNotBlank() && 
-           counterparty.isNotBlank() && 
-           amount.toDoubleOrNull() != null &&
-           category != null && 
-           account != null
+    return amount.isNotBlank() &&
+        counterparty.isNotBlank() &&
+        amount.toDoubleOrNull() != null &&
+        category != null &&
+        account != null
 }

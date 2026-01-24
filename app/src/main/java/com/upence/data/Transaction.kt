@@ -12,17 +12,17 @@ import java.time.Instant
         ForeignKey(
             parentColumns = ["id"],
             childColumns = ["accountID"],
-            entity = BankAccounts::class
+            entity = BankAccounts::class,
         ),
         ForeignKey(
             parentColumns = ["id"],
             childColumns = ["categoryID"],
-            entity = Categories::class
-        )
+            entity = Categories::class,
+        ),
     ],
     indices = [
-        Index(value = ["accountID"])
-    ]
+        Index(value = ["accountID"]),
+    ],
 )
 data class Transaction(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
@@ -35,7 +35,6 @@ data class Transaction(
     val transactionType: TransactionType,
     val referenceNumber: String,
 )
-
 
 enum class TransactionType {
     CREDIT,

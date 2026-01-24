@@ -7,7 +7,6 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
-
 @Dao
 interface BankAccountsDao {
     @Query("SELECT * FROM bankAccounts ORDER BY accountNumber DESC")
@@ -23,7 +22,10 @@ interface BankAccountsDao {
     suspend fun getTransactionCount(accountId: String): Int
 
     @Query("UPDATE transactions SET accountID = :newAccountId WHERE accountID = :oldAccountId")
-    suspend fun migrateAccountTransactions(oldAccountId: String, newAccountId: String)
+    suspend fun migrateAccountTransactions(
+        oldAccountId: String,
+        newAccountId: String,
+    )
 
     @Query("SELECT * FROM bankAccounts ORDER BY accountName ASC")
     fun getAllAccountsSorted(): Flow<List<BankAccounts>>

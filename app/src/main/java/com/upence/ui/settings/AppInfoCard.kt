@@ -15,13 +15,13 @@ fun AppInfoCard() {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 16.dp),
             ) {
                 Icon(Icons.Default.Info, contentDescription = null, Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(12.dp))
                 Text("About", style = MaterialTheme.typography.titleMedium)
             }
-            
+
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 InfoRow(label = "App Name", value = "Upence")
                 InfoRow(label = "Version", value = "1.0.0")
@@ -32,20 +32,23 @@ fun AppInfoCard() {
 }
 
 @Composable
-private fun InfoRow(label: String, value: String) {
+private fun InfoRow(
+    label: String,
+    value: String,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
             label,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             value,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }

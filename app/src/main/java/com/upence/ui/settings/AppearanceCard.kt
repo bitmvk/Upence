@@ -12,36 +12,36 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun AppearanceCard(
     themeMode: Int,
-    onThemeModeChange: (Int) -> Unit
+    onThemeModeChange: (Int) -> Unit,
 ) {
     Card {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 16.dp),
             ) {
                 Icon(Icons.Default.Palette, contentDescription = null, modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(12.dp))
                 Text("Appearance", style = MaterialTheme.typography.titleMedium)
             }
-            
+
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 RadioButtonWithLabel(
                     selected = themeMode == 0,
                     onClick = { onThemeModeChange(0) },
-                    label = "Light Mode"
+                    label = "Light Mode",
                 )
-                
+
                 RadioButtonWithLabel(
                     selected = themeMode == 1,
                     onClick = { onThemeModeChange(1) },
-                    label = "Dark Mode"
+                    label = "Dark Mode",
                 )
-                
+
                 RadioButtonWithLabel(
                     selected = themeMode == 2,
                     onClick = { onThemeModeChange(2) },
-                    label = "Follow System"
+                    label = "Follow System",
                 )
             }
         }
@@ -52,15 +52,15 @@ fun AppearanceCard(
 fun RadioButtonWithLabel(
     selected: Boolean,
     onClick: () -> Unit,
-    label: String
+    label: String,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         RadioButton(
             selected = selected,
-            onClick = onClick
+            onClick = onClick,
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(label, style = MaterialTheme.typography.bodyMedium)

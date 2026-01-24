@@ -5,18 +5,16 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.first
 
 // Create the DataStore
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 class UserStore(private val context: Context) {
-
     // Define the keys
     companion object {
         val IS_SETUP_COMPLETE = booleanPreferencesKey("is_setup_complete")
@@ -28,10 +26,11 @@ class UserStore(private val context: Context) {
     }
 
     // Get the flow (stream) of data
-    val isSetupComplete: Flow<Boolean> = context.dataStore.data
-        .map { preferences ->
-            preferences[IS_SETUP_COMPLETE] ?: false // Default to false
-        }
+    val isSetupComplete: Flow<Boolean> =
+        context.dataStore.data
+            .map { preferences ->
+                preferences[IS_SETUP_COMPLETE] ?: false // Default to false
+            }
 
     // Function to save the completion state
     suspend fun setSetupComplete(isComplete: Boolean) {
@@ -41,10 +40,11 @@ class UserStore(private val context: Context) {
     }
 
     // Theme mode preferences (0 = Light, 1 = Dark, 2 = System)
-    val themeMode: Flow<Int> = context.dataStore.data
-        .map { preferences ->
-            preferences[THEME_MODE] ?: 2 // Default to System
-        }
+    val themeMode: Flow<Int> =
+        context.dataStore.data
+            .map { preferences ->
+                preferences[THEME_MODE] ?: 2 // Default to System
+            }
 
     suspend fun setThemeMode(mode: Int) {
         context.dataStore.edit { preferences ->
@@ -53,10 +53,11 @@ class UserStore(private val context: Context) {
     }
 
     // Currency preferences
-    val currencyCode: Flow<String> = context.dataStore.data
-        .map { preferences ->
-            preferences[CURRENCY_CODE] ?: "INR" // Default to INR
-        }
+    val currencyCode: Flow<String> =
+        context.dataStore.data
+            .map { preferences ->
+                preferences[CURRENCY_CODE] ?: "INR" // Default to INR
+            }
 
     suspend fun setCurrencyCode(code: String) {
         context.dataStore.edit { preferences ->
@@ -64,10 +65,11 @@ class UserStore(private val context: Context) {
         }
     }
 
-    val currencySymbol: Flow<String> = context.dataStore.data
-        .map { preferences ->
-            preferences[CURRENCY_SYMBOL] ?: "₹" // Default to ₹
-        }
+    val currencySymbol: Flow<String> =
+        context.dataStore.data
+            .map { preferences ->
+                preferences[CURRENCY_SYMBOL] ?: "₹" // Default to ₹
+            }
 
     suspend fun setCurrencySymbol(symbol: String) {
         context.dataStore.edit { preferences ->
@@ -75,10 +77,11 @@ class UserStore(private val context: Context) {
         }
     }
 
-    val useCustomCurrency: Flow<Boolean> = context.dataStore.data
-        .map { preferences ->
-            preferences[USE_CUSTOM_CURRENCY] ?: false // Default to false
-        }
+    val useCustomCurrency: Flow<Boolean> =
+        context.dataStore.data
+            .map { preferences ->
+                preferences[USE_CUSTOM_CURRENCY] ?: false // Default to false
+            }
 
     suspend fun setUseCustomCurrency(use: Boolean) {
         context.dataStore.edit { preferences ->
@@ -86,10 +89,11 @@ class UserStore(private val context: Context) {
         }
     }
 
-    val useIndiaSenderRuleset: Flow<Boolean> = context.dataStore.data
-        .map { preferences ->
-            preferences[USE_INDIA_SENDER_RULESET] ?: true // Default to ENABLED
-        }
+    val useIndiaSenderRuleset: Flow<Boolean> =
+        context.dataStore.data
+            .map { preferences ->
+                preferences[USE_INDIA_SENDER_RULESET] ?: true // Default to ENABLED
+            }
 
     suspend fun setUseIndiaSenderRuleset(use: Boolean) {
         context.dataStore.edit { preferences ->

@@ -17,10 +17,10 @@ fun MigrationDialog(
     title: String,
     message: String,
     options: List<Any>,
-    getOptionLabel: (Any) -> String
+    getOptionLabel: (Any) -> String,
 ) {
     var selectedOption by remember { mutableStateOf(if (options.isNotEmpty()) options[0] else null) }
-    
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
@@ -33,24 +33,24 @@ fun MigrationDialog(
                 options.forEach { option ->
                     Row(
                         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         RadioButton(
                             selected = selectedOption == option,
-                            onClick = { selectedOption = option }
+                            onClick = { selectedOption = option },
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(getOptionLabel(option))
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedButton(
-                    onClick = { 
+                    onClick = {
                         onConfirm(null) // Migrate to null/uncategorized
                         onDismiss()
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Mark as Uncategorized")
                 }
@@ -61,7 +61,7 @@ fun MigrationDialog(
                 onClick = {
                     selectedOption?.let { onConfirm(it) }
                     onDismiss()
-                }
+                },
             ) {
                 Text("Migrate")
             }
@@ -70,6 +70,6 @@ fun MigrationDialog(
             OutlinedButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
     )
 }

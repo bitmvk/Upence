@@ -1,8 +1,6 @@
 package com.upence.ui
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -30,7 +28,7 @@ fun SettingsPage(
     bankAccountsDao: BankAccountsDao,
     senderDao: SenderDao,
     navController: NavController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
     val themeMode by userStore.themeMode.collectAsState(initial = 2)
@@ -38,7 +36,7 @@ fun SettingsPage(
     val currencySymbol by userStore.currencySymbol.collectAsState(initial = "₹")
     val useCustomCurrency by userStore.useCustomCurrency.collectAsState(initial = false)
     val useIndiaRuleset by userStore.useIndiaSenderRuleset.collectAsState(initial = true)
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -47,26 +45,27 @@ fun SettingsPage(
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
             )
-        }
+        },
     ) { paddingValues ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
                 AppearanceCard(
                     themeMode = themeMode,
                     onThemeModeChange = { mode ->
                         scope.launch { userStore.setThemeMode(mode) }
-                    }
+                    },
                 )
             }
-            
+
             item {
                 CurrencyCard(
                     currencyCode = currencyCode,
@@ -80,43 +79,43 @@ fun SettingsPage(
                     },
                     onUseCustomCurrencyChange = { use ->
                         scope.launch { userStore.setUseCustomCurrency(use) }
-                    }
+                    },
                 )
             }
-            
+
             item {
                 DataManagementCard(navController = navController)
             }
-            
+
             item {
                 val ignoredSenders by senderDao.getIgnoredSenders().collectAsState(initial = emptyList())
                 IgnoredSendersCard(
                     ignoredSendersCount = ignoredSenders.size,
-                    navController = navController
+                    navController = navController,
                 )
             }
-            
+
             item {
                 IndiaSenderRulesetCard(
                     useIndiaRuleset = useIndiaRuleset,
                     onUseIndiaRulesetChange = { enabled ->
                         scope.launch { userStore.setUseIndiaSenderRuleset(enabled) }
-                    }
+                    },
                 )
             }
-            
+
             item {
                 ResetDefaultsCard(
                     categoryDao = categoryDao,
                     bankAccountsDao = bankAccountsDao,
-                    scope = scope
+                    scope = scope,
                 )
             }
-            
+
             item {
                 AppInfoCard()
             }
-            
+
             item {
                 Spacer(modifier = Modifier.height(16.dp))
             }

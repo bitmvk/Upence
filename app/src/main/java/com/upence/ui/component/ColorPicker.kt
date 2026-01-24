@@ -55,31 +55,33 @@ fun ColorPicker(
     colorBoxPickerModifier: Modifier,
     colorSliderModifier: Modifier,
     colorBoxModifier: Modifier,
-    onColorChange: (Color) -> Unit
+    onColorChange: (Color) -> Unit,
 ) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
-        val hsv = remember {
-            val hsv = floatArrayOf(0f, 0f, 0f)
-            AndroidColor.colorToHSV(Color.Blue.toArgb(), hsv)
+        val hsv =
+            remember {
+                val hsv = floatArrayOf(0f, 0f, 0f)
+                AndroidColor.colorToHSV(Color.Blue.toArgb(), hsv)
 
-            mutableStateOf(
-                Triple(hsv[0], hsv[1], hsv[2])
-            )
-        }
-        val backgroundColor = remember(hsv.value) {
-            mutableStateOf(Color.hsv(hsv.value.first, hsv.value.second, hsv.value.third))
-        }
+                mutableStateOf(
+                    Triple(hsv[0], hsv[1], hsv[2]),
+                )
+            }
+        val backgroundColor =
+            remember(hsv.value) {
+                mutableStateOf(Color.hsv(hsv.value.first, hsv.value.second, hsv.value.third))
+            }
 
         // 1. SatValPanel with explicit modifier for size
         SatValPanel(
             modifier = colorBoxPickerModifier,
             hue = hsv.value.first,
             sat = hsv.value.second,
-            value = hsv.value.third
+            value = hsv.value.third,
         ) { sat, value ->
             hsv.value = Triple(hsv.value.first, sat, value)
             onColorChange(Color.hsv(hsv.value.first, sat, value))
@@ -87,15 +89,15 @@ fun ColorPicker(
         // 2. HueBar with explicit modifier for size and shape
         HueBar(
             modifier = colorSliderModifier,
-            hue = hsv.value.first
+            hue = hsv.value.first,
         ) { hue ->
             hsv.value = Triple(hue, hsv.value.second, hsv.value.third)
         }
 
-
         Box(
-            modifier = colorBoxModifier
-                .background(backgroundColor.value)
+            modifier =
+                colorBoxModifier
+                    .background(backgroundColor.value),
         )
     }
 }
@@ -104,7 +106,7 @@ fun ColorPicker(
 fun HueBar(
     modifier: Modifier = Modifier,
     hue: Float,
-    setColor: (Float) -> Unit
+    setColor: (Float) -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     var barSize by remember { mutableStateOf(IntSize.Zero) }
@@ -123,9 +125,10 @@ fun HueBar(
     }
 
     Canvas(
-        modifier = modifier
-            .onSizeChanged { barSize = it }
-            .emitDragGesture(interactionSource)
+        modifier =
+            modifier
+                .onSizeChanged { barSize = it }
+                .emitDragGesture(interactionSource),
     ) {
         // Ensure we have a valid size before creating the bitmap
         if (size.width <= 0 || size.height <= 0) return@Canvas
@@ -151,7 +154,7 @@ fun HueBar(
 
         drawBitmap(
             bitmap = bitmap,
-            panel = huePanel
+            panel = huePanel,
         )
 
         val positionX = (hue / 360f) * size.width
@@ -160,7 +163,7 @@ fun HueBar(
             color = Color.White,
             start = Offset(positionX, 0f),
             end = Offset(positionX, size.height),
-            strokeWidth = 10.dp.toPx()
+            strokeWidth = 10.dp.toPx(),
         )
     }
 }
@@ -196,12 +199,12 @@ fun SatValPanel(
     }
 
     Canvas(
-        modifier = modifier
-            .onSizeChanged { panelSize = it }
-            .emitDragGesture(interactionSource)
+        modifier =
+            modifier
+                .onSizeChanged { panelSize = it }
+                .emitDragGesture(interactionSource),
     ) {
         if (size.width <= 0 || size.height <= 0) return@Canvas
-
 
         val bitmap = createBitmap(size.width.toInt(), size.height.toInt())
         val canvas = Canvas(bitmap)
@@ -209,29 +212,42 @@ fun SatValPanel(
 
         val rgb = AndroidColor.HSVToColor(floatArrayOf(hue, 1f, 1f))
 
-        val satShader = LinearGradient(
-            satValPanel.left, satValPanel.top, satValPanel.right, satValPanel.top,
-            -0x1, rgb, Shader.TileMode.CLAMP
-        )
-        val valShader = LinearGradient(
-            satValPanel.left, satValPanel.top, satValPanel.left, satValPanel.bottom,
-            -0x1, -0x1000000, Shader.TileMode.CLAMP
-        )
+        val satShader =
+            LinearGradient(
+                satValPanel.left,
+                satValPanel.top,
+                satValPanel.right,
+                satValPanel.top,
+                -0x1,
+                rgb,
+                Shader.TileMode.CLAMP,
+            )
+        val valShader =
+            LinearGradient(
+                satValPanel.left,
+                satValPanel.top,
+                satValPanel.left,
+                satValPanel.bottom,
+                -0x1,
+                -0x1000000,
+                Shader.TileMode.CLAMP,
+            )
 
         canvas.drawRect(
             satValPanel,
             Paint().apply {
-                shader = ComposeShader(
-                    valShader,
-                    satShader,
-                    PorterDuff.Mode.MULTIPLY
-                )
-            }
+                shader =
+                    ComposeShader(
+                        valShader,
+                        satShader,
+                        PorterDuff.Mode.MULTIPLY,
+                    )
+            },
         )
 
         drawBitmap(
             bitmap = bitmap,
-            panel = satValPanel
+            panel = satValPanel,
         )
 
         val positionX = sat * size.width
@@ -243,9 +259,10 @@ fun SatValPanel(
             color = Color.White,
             radius = 8.dp.toPx(),
             center = pointOffset,
-            style = Stroke(
-                width = 2.dp.toPx()
-            )
+            style =
+                Stroke(
+                    width = 2.dp.toPx(),
+                ),
         )
 
         drawCircle(
@@ -256,32 +273,30 @@ fun SatValPanel(
     }
 }
 
-private fun Modifier.emitDragGesture(
-    interactionSource: MutableInteractionSource
-): Modifier = composed {
-    val scope = rememberCoroutineScope()
+private fun Modifier.emitDragGesture(interactionSource: MutableInteractionSource): Modifier =
+    composed {
+        val scope = rememberCoroutineScope()
 
-    pointerInput(Unit) {
-        detectDragGestures { input, _ ->
-            scope.launch {
-                interactionSource.emit(PressInteraction.Press(input.position))
+        pointerInput(Unit) {
+            detectDragGestures { input, _ ->
+                scope.launch {
+                    interactionSource.emit(PressInteraction.Press(input.position))
+                }
             }
+        }.clickable(interactionSource, null) {
         }
-    }.clickable(interactionSource, null) {
-
     }
-}
 
 private fun DrawScope.drawBitmap(
     bitmap: Bitmap,
-    panel: RectF
+    panel: RectF,
 ) {
     drawIntoCanvas {
         it.nativeCanvas.drawBitmap(
             bitmap,
             null,
             panel.toRect(),
-            null
+            null,
         )
     }
 }
@@ -292,11 +307,12 @@ fun ColorPickerPreview() {
     ColorPicker(
         modifier = Modifier,
         colorBoxPickerModifier = Modifier.size(300.dp),
-        colorSliderModifier = Modifier
-            .height(40.dp)
-            .width(300.dp)
-            .clip(RoundedCornerShape(10.dp)),
+        colorSliderModifier =
+            Modifier
+                .height(40.dp)
+                .width(300.dp)
+                .clip(RoundedCornerShape(10.dp)),
         colorBoxModifier = Modifier.size(100.dp),
-        onColorChange = {}
+        onColorChange = {},
     )
 }

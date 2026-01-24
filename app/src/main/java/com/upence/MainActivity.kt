@@ -49,14 +49,13 @@ import com.upence.ui.HomePage
 import com.upence.ui.SMSPageEnhanced
 import com.upence.ui.StartPage
 import com.upence.ui.UnprocessedSMSListPage
-import com.upence.ui.theme.UpenceTheme
 import com.upence.ui.settings.AccountManagementPage
 import com.upence.ui.settings.CategoryManagementPage
 import com.upence.ui.settings.TagsManagementPage
+import com.upence.ui.theme.UpenceTheme
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
-
     private var smsIdToNavigate by mutableStateOf<Long?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,7 +87,7 @@ class MainActivity : ComponentActivity() {
 
             UpenceTheme(
                 themeMode = themeMode,
-                dynamicColor = false
+                dynamicColor = false,
             ) {
                 NavHost(navController = navController, startDestination = "home") {
                     composable("home") {
@@ -100,28 +99,29 @@ class MainActivity : ComponentActivity() {
                                         scope.launch { userStore.setSetupComplete(true) }
                                     },
                                     categoryDao = categoryDao,
-                                    bankAccountsDao = bankAccountsDao
+                                    bankAccountsDao = bankAccountsDao,
                                 )
                             }
 
-                             true -> {
+                            true -> {
                                 EnsureSmsPermission {
                                     HomePage(
                                         transactionDao = transactionDao,
                                         categoryDao = categoryDao,
                                         bankAccountsDao = bankAccountsDao,
                                         smsDao = smsDao,
-                                        navController = navController
+                                        navController = navController,
                                     )
                                 }
                             }
                         }
-                     }
+                    }
                     composable(
                         route = "sms_view/{smsId}",
-                        arguments = listOf(
-                            navArgument("smsId") { type = NavType.LongType }
-                        )
+                        arguments =
+                            listOf(
+                                navArgument("smsId") { type = NavType.LongType },
+                            ),
                     ) { backStackEntry ->
                         val smsId = backStackEntry.arguments?.getLong("smsId") ?: -1L
                         val tagsDao = remember { database.TagsDao() }
@@ -139,33 +139,33 @@ class MainActivity : ComponentActivity() {
                             senderDao = database.SenderDao(),
                             userStore = userStore,
                             scope = scope,
-                            navController = navController
+                            navController = navController,
                         )
                     }
                     composable("manage_accounts") {
                         AccountManagementPage(
                             bankAccountsDao = bankAccountsDao,
                             transactionDao = transactionDao,
-                            navController = navController
+                            navController = navController,
                         )
                     }
                     composable("manage_categories") {
                         CategoryManagementPage(
                             categoryDao = categoryDao,
                             transactionDao = transactionDao,
-                            navController = navController
+                            navController = navController,
                         )
                     }
                     composable("manage_tags") {
                         TagsManagementPage(
                             tagsDao = database.TagsDao(),
-                            navController = navController
+                            navController = navController,
                         )
                     }
                     composable("unprocessed_sms") {
                         UnprocessedSMSListPage(
                             smsDao = smsDao,
-                            navController = navController
+                            navController = navController,
                         )
                     }
                 }
@@ -217,17 +217,19 @@ fun EnsureSmsPermission(content: @Composable () -> Unit) {
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) updatePermissionStatus()
-        }
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) updatePermissionStatus()
+            }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        sharedPrefs.edit { putBoolean("sms_asked", true) }
-        updatePermissionStatus()
-    }
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            sharedPrefs.edit { putBoolean("sms_asked", true) }
+            updatePermissionStatus()
+        }
 
     if (hasPermissions) {
         content()
@@ -237,8 +239,11 @@ fun EnsureSmsPermission(content: @Composable () -> Unit) {
             title = { Text("Permissions Required") },
             text = {
                 Text(
-                    if (isPermanentlyDenied) "SMS permissions are permanently disabled. Enable them in Settings."
-                    else "This app needs to Read and Receive SMS to track transactions automatically."
+                    if (isPermanentlyDenied) {
+                        "SMS permissions are permanently disabled. Enable them in Settings."
+                    } else {
+                        "This app needs to Read and Receive SMS to track transactions automatically."
+                    },
                 )
             },
             confirmButton = {
@@ -248,14 +253,15 @@ fun EnsureSmsPermission(content: @Composable () -> Unit) {
             },
             dismissButton = {
                 TextButton(onClick = {
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.fromParts("package", context.packageName, null)
-                    }
+                    val intent =
+                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.fromParts("package", context.packageName, null)
+                        }
                     context.startActivity(intent)
                 }) { Text("Settings") }
-            }
+            },
         )
-        }
+    }
 }
 
 @Preview(showBackground = true)
@@ -267,7 +273,7 @@ fun DefaultPreview() {
             categoryDao = TODO(),
             bankAccountsDao = TODO(),
             smsDao = TODO(),
-            navController = TODO()
+            navController = TODO(),
         )
     }
 }

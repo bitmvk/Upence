@@ -1,34 +1,35 @@
 package com.upence
 
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.provider.Telephony
 import android.util.Log
 import com.upence.data.AppDatabase
 import com.upence.data.SMS
 import com.upence.data.SMSDao
 import com.upence.data.SenderDao
-import com.upence.data.TransactionDao
+import com.upence.data.UserStore
 import com.upence.util.NotificationHelper
 import com.upence.util.SMSUtils
-import com.upence.data.UserStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
-import android.app.PendingIntent
-import android.content.ComponentName
-import android.os.Build
+import kotlinx.coroutines.launch
 
 class SmsReceiver : BroadcastReceiver() {
-
-    override fun onReceive(context: Context, intent: Intent) {
+    override fun onReceive(
+        context: Context,
+        intent: Intent,
+    ) {
         if (intent.action == Telephony.Sms.Intents.SMS_RECEIVED_ACTION) {
             Log.d("SmsReceiver", "SMS received, starting processing")
-            
+
             val pendingResult = goAsync()
-            
+
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
@@ -36,13 +37,13 @@ class SmsReceiver : BroadcastReceiver() {
                         Log.w("SmsReceiver", "No messages found in intent")
                         return@launch
                     }
-                    
+
                     val database = AppDatabase.getDatabase(context)
                     val smsDao = database.SMSDao()
                     val senderDao = database.SenderDao()
                     val transactionDao = database.transactionDao()
                     val userStore = UserStore(context)
-                    
+
                     for (message in messages) {
                         val body = message.messageBody ?: ""
                         val sender = message.originatingAddress ?: ""
@@ -56,21 +57,23 @@ class SmsReceiver : BroadcastReceiver() {
                             continue
                         }
 
-                        val isBankMessage = sender.endsWith("-S") || 
-                                             sender.contains("BANK", ignoreCase = true) ||
-                                             sender.contains("UPI", ignoreCase = true) ||
-                                             sender.contains("TRANSACTION", ignoreCase = true)
+                        val isBankMessage =
+                            sender.endsWith("-S") ||
+                                sender.contains("BANK", ignoreCase = true) ||
+                                sender.contains("UPI", ignoreCase = true) ||
+                                sender.contains("TRANSACTION", ignoreCase = true)
 
                         if (!isBankMessage) {
                             Log.w("SmsReceiver", "Non-bank SMS ignored: $sender")
                             continue
                         }
 
-                        val sms = SMS(
-                            sender = sender,
-                            message = body,
-                            timestamp = timestamp
-                        )
+                        val sms =
+                            SMS(
+                                sender = sender,
+                                message = body,
+                                timestamp = timestamp,
+                            )
 
                         val newSmsId = smsDao.insertSMS(sms)
 
@@ -98,25 +101,28 @@ class SmsReceiver : BroadcastReceiver() {
 
                         val currencySymbol = userStore.currencySymbol.first()
 
-                        val launchIntent = Intent(context, MainActivity::class.java).apply {
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                            putExtra("sms_id", newSmsId)
-                            putExtra("from_background", true)
-                            component = ComponentName(context.packageName, MainActivity::class.java.name)
-                        }
+                        val launchIntent =
+                            Intent(context, MainActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                putExtra("sms_id", newSmsId)
+                                putExtra("from_background", true)
+                                component = ComponentName(context.packageName, MainActivity::class.java.name)
+                            }
 
-                        val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-                        } else {
-                            PendingIntent.FLAG_UPDATE_CURRENT
-                        }
+                        val pendingIntentFlags =
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                            } else {
+                                PendingIntent.FLAG_UPDATE_CURRENT
+                            }
 
-                        val pendingIntent = PendingIntent.getActivity(
-                            context,
-                            newSmsId.toInt(),
-                            launchIntent,
-                            pendingIntentFlags
-                        )
+                        val pendingIntent =
+                            PendingIntent.getActivity(
+                                context,
+                                newSmsId.toInt(),
+                                launchIntent,
+                                pendingIntentFlags,
+                            )
 
                         NotificationHelper.sendSmsNotification(
                             context = context,
@@ -124,7 +130,7 @@ class SmsReceiver : BroadcastReceiver() {
                             messageBody = body,
                             smsId = newSmsId,
                             currencySymbol = currencySymbol,
-                            pendingIntent = pendingIntent
+                            pendingIntent = pendingIntent,
                         )
                     }
                 } catch (e: Exception) {

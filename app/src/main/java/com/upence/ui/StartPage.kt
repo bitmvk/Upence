@@ -88,8 +88,8 @@ import com.upence.data.CategoriesDao
 import com.upence.ui.component.ColorPicker
 import com.upence.ui.component.IconPicker
 import com.upence.ui.theme.UpenceTheme
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
@@ -97,9 +97,8 @@ import kotlin.math.roundToInt
 fun StartPage(
     onSetupFinished: () -> Unit, // <--- NEW CALLBACK
     categoryDao: CategoriesDao,
-    bankAccountsDao: BankAccountsDao
+    bankAccountsDao: BankAccountsDao,
 ) {
-
     var currentStep by remember { mutableIntStateOf(0) }
 
     // Account Data
@@ -118,16 +117,20 @@ fun StartPage(
         mutableStateOf(
             ContextCompat.checkSelfPermission(
                 context,
-                Manifest.permission.RECEIVE_SMS
-            ) == PackageManager.PERMISSION_GRANTED
+                Manifest.permission.RECEIVE_SMS,
+            ) == PackageManager.PERMISSION_GRANTED,
         )
     }
     var hasNotificationPermission by remember {
         mutableStateOf(
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED else true
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS,
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                true
+            },
         )
     }
 
@@ -137,54 +140,56 @@ fun StartPage(
 
     // Lifecycle Observer (omitted for brevity, keep your existing one)
 
-    val categories = remember {
-        mutableStateListOf<CategoryData>(
-            CategoryData(
-                color = Color(0xFFffadad),
-                text = "Food and Groceries",
-                icon = Icons.Default.Restaurant,
-                desc = ""
-            ),
-            CategoryData(
-                color = Color(0xFFcaffbf),
-                text = "Travel",
-                icon = Icons.Default.Train,
-                desc = ""
-            ),
-            CategoryData(
-                color = Color(0xFF9bf6ff),
-                text = "To People",
-                icon = Icons.Default.Person,
-                desc = ""
-            ),
-            CategoryData(
-                color = Color(0xFFa0c4ff),
-                text = "Tolls",
-                icon = Icons.Default.DirectionsCar,
-                desc = ""
-            ),
-            CategoryData(
-                color = Color(0xFFbdb2ff),
-                text = "Online Shopping",
-                icon = Icons.Default.ShoppingBag,
-                desc = ""
-            ),
-            CategoryData(
-                color = Color(0xFFffd6a5),
-                text = "Bills and Utilities",
-                icon = Icons.Default.ShoppingBag,
-                desc = ""
-            ),
-        )
-    }
+    val categories =
+        remember {
+            mutableStateListOf<CategoryData>(
+                CategoryData(
+                    color = Color(0xFFffadad),
+                    text = "Food and Groceries",
+                    icon = Icons.Default.Restaurant,
+                    desc = "",
+                ),
+                CategoryData(
+                    color = Color(0xFFcaffbf),
+                    text = "Travel",
+                    icon = Icons.Default.Train,
+                    desc = "",
+                ),
+                CategoryData(
+                    color = Color(0xFF9bf6ff),
+                    text = "To People",
+                    icon = Icons.Default.Person,
+                    desc = "",
+                ),
+                CategoryData(
+                    color = Color(0xFFa0c4ff),
+                    text = "Tolls",
+                    icon = Icons.Default.DirectionsCar,
+                    desc = "",
+                ),
+                CategoryData(
+                    color = Color(0xFFbdb2ff),
+                    text = "Online Shopping",
+                    icon = Icons.Default.ShoppingBag,
+                    desc = "",
+                ),
+                CategoryData(
+                    color = Color(0xFFffd6a5),
+                    text = "Bills and Utilities",
+                    icon = Icons.Default.ShoppingBag,
+                    desc = "",
+                ),
+            )
+        }
 
     UpenceTheme {
         Scaffold(modifier = Modifier.fillMaxSize(), bottomBar = {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-                    .navigationBarsPadding(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                        .navigationBarsPadding(),
             ) {
                 if (currentStep > 0) {
                     TextButton(
@@ -197,10 +202,14 @@ fun StartPage(
                         when (currentStep) {
                             0 -> currentStep++ // Welcome
                             1 -> { // Permissions
-                                if (!hasSmsPermission) showSmsBlockerDialog = true
-                                else if (!hasNotificationPermission) showNotificationWarningDialog =
-                                    true
-                                else currentStep++
+                                if (!hasSmsPermission) {
+                                    showSmsBlockerDialog = true
+                                } else if (!hasNotificationPermission) {
+                                    showNotificationWarningDialog =
+                                        true
+                                } else {
+                                    currentStep++
+                                }
                             }
 
                             2 -> { // Account
@@ -228,8 +237,8 @@ fun StartPage(
                                             BankAccounts(
                                                 accountName = accountName,
                                                 accountNumber = accountNumber,
-                                                description = accountDesc
-                                            )
+                                                description = accountDesc,
+                                            ),
                                         )
 
                                         categories.forEach { categoryData ->
@@ -239,8 +248,8 @@ fun StartPage(
                                                     name = categoryData.text,
                                                     description = categoryData.desc,
                                                     color = categoryData.color.toColorLong(),
-                                                    icon = categoryData.icon.name
-                                                )
+                                                    icon = categoryData.icon.name,
+                                                ),
                                             )
                                         }
                                     }
@@ -249,7 +258,7 @@ fun StartPage(
                             }
                         }
                     },
-                    modifier = Modifier.align(Alignment.CenterEnd)
+                    modifier = Modifier.align(Alignment.CenterEnd),
                 ) {
                     // Change text based on step
                     Text(if (currentStep == 3) "Finish" else "Next")
@@ -259,26 +268,36 @@ fun StartPage(
             Box(modifier = Modifier.padding(innerPadding)) {
                 when (currentStep) {
                     0 -> WelcomeStep()
-                    1 -> PermissionsStep(
-                        hasSmsPermission,
-                        hasNotificationPermission
-                    ) { s, n -> hasSmsPermission = s; hasNotificationPermission = n }
+                    1 ->
+                        PermissionsStep(
+                            hasSmsPermission,
+                            hasNotificationPermission,
+                        ) { s, n ->
+                            hasSmsPermission = s
+                            hasNotificationPermission = n
+                        }
 
-                    2 -> AccountStep(
-                        accountName,
-                        { accountName = it; isAccountNameError = false },
-                        accountNumber,
-                        { accountNumber = it },
-                        accountDesc,
-                        { accountDesc = it },
-                        isAccountNameError,
-                        accountShakeOffset.value
-                    )
+                    2 ->
+                        AccountStep(
+                            accountName,
+                            {
+                                accountName = it
+                                isAccountNameError = false
+                            },
+                            accountNumber,
+                            { accountNumber = it },
+                            accountDesc,
+                            { accountDesc = it },
+                            isAccountNameError,
+                            accountShakeOffset.value,
+                        )
 
-                    3 -> CategoriesStep(
-                        categories,
-                        { categories.remove(it) },
-                        { categories.add(it) })
+                    3 ->
+                        CategoriesStep(
+                            categories,
+                            { categories.remove(it) },
+                            { categories.add(it) },
+                        )
                 }
 
                 // Keep your Dialog Logic here (SmsBlockerDialog, etc.)
@@ -291,24 +310,21 @@ fun StartPage(
 @Composable
 fun StandardStepLayout(
     topContent: @Composable () -> Unit,
-    bottomContent: @Composable () -> Unit
+    bottomContent: @Composable () -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center)
-    {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.75f),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.75f),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        )
-        {
-            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center)
-            {
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 topContent()
             }
-            Column(modifier = Modifier.weight(2f), verticalArrangement = Arrangement.Top)
-            {
+            Column(modifier = Modifier.weight(2f), verticalArrangement = Arrangement.Top) {
                 bottomContent()
             }
         }
@@ -323,28 +339,28 @@ fun WelcomeStep() {
                 "Welcome to Upence",
                 style = MaterialTheme.typography.headlineLarge,
                 modifier = Modifier.padding(20.dp),
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
         },
         bottomContent = {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
                     "We will now run you through the basic set up for getting started.",
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(20.dp)
+                    modifier = Modifier.padding(20.dp),
                 )
                 Text(
                     "We will set up permissions, accounts, and categories before entering the app. You will be able to edit the set up you are about to make later in the app.",
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(20.dp)
+                    modifier = Modifier.padding(20.dp),
                 )
             }
-        }
+        },
     )
 }
 
@@ -352,7 +368,7 @@ fun WelcomeStep() {
 fun PermissionsStep(
     hasSms: Boolean,
     hasNotif: Boolean,
-    onPermissionsChanged: (Boolean, Boolean) -> Unit
+    onPermissionsChanged: (Boolean, Boolean) -> Unit,
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
@@ -363,39 +379,45 @@ fun PermissionsStep(
     var isNotifPermanentlyDenied by remember { mutableStateOf(false) }
 
     // Launcher for multiple permissions
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { result ->
-        val smsGranted = result[Manifest.permission.RECEIVE_SMS] ?: false
-        val notifGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            result[Manifest.permission.POST_NOTIFICATIONS] ?: false
-        } else true
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestMultiplePermissions(),
+        ) { result ->
+            val smsGranted = result[Manifest.permission.RECEIVE_SMS] ?: false
+            val notifGranted =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    result[Manifest.permission.POST_NOTIFICATIONS] ?: false
+                } else {
+                    true
+                }
 
-        onPermissionsChanged(smsGranted, notifGranted)
+            onPermissionsChanged(smsGranted, notifGranted)
 
-        // Logic to detect if permission was permanently denied inside the callback
-        if (activity != null) {
-            // Check SMS status
-            if (!smsGranted) {
-                isSmsPermanentlyDenied = !ActivityCompat.shouldShowRequestPermissionRationale(
-                    activity,
-                    Manifest.permission.RECEIVE_SMS
-                )
-            } else {
-                isSmsPermanentlyDenied = false
-            }
+            // Logic to detect if permission was permanently denied inside the callback
+            if (activity != null) {
+                // Check SMS status
+                if (!smsGranted) {
+                    isSmsPermanentlyDenied =
+                        !ActivityCompat.shouldShowRequestPermissionRationale(
+                            activity,
+                            Manifest.permission.RECEIVE_SMS,
+                        )
+                } else {
+                    isSmsPermanentlyDenied = false
+                }
 
-            // Check Notification status (Tiramisu+)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !notifGranted) {
-                isNotifPermanentlyDenied = !ActivityCompat.shouldShowRequestPermissionRationale(
-                    activity,
-                    Manifest.permission.POST_NOTIFICATIONS
-                )
-            } else {
-                isNotifPermanentlyDenied = false
+                // Check Notification status (Tiramisu+)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !notifGranted) {
+                    isNotifPermanentlyDenied =
+                        !ActivityCompat.shouldShowRequestPermissionRationale(
+                            activity,
+                            Manifest.permission.POST_NOTIFICATIONS,
+                        )
+                } else {
+                    isNotifPermanentlyDenied = false
+                }
             }
         }
-    }
 
     StandardStepLayout(
         topContent = {
@@ -403,24 +425,24 @@ fun PermissionsStep(
                 "SMS and Notification Permissions",
                 style = MaterialTheme.typography.headlineLarge,
                 modifier = Modifier.padding(20.dp),
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
         },
         bottomContent = {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
                     "Upence requires the following permissions to run optimally.",
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(20.dp)
+                    modifier = Modifier.padding(20.dp),
                 )
                 Text(
                     "SMS: Upence reads the incoming SMS to check if any of them are related to transactions and if any related ones are found, adds them to the transaction database\n\nNotification: When a transaction SMS is recieved, Upence notifies the user to categorize and tag the transaction for tracking of spending.",
                     style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(20.dp)
+                    modifier = Modifier.padding(20.dp),
                 )
 
                 Button(
@@ -449,7 +471,7 @@ fun PermissionsStep(
                                 showSettingsDialog = true
                             }
                         }
-                    }
+                    },
                 ) {
                     if (hasSms && hasNotif) {
                         Text("Permissions Granted")
@@ -461,14 +483,14 @@ fun PermissionsStep(
                 // --- New Status Text Section ---
                 Column(
                     modifier = Modifier.padding(top = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     AnimatedVisibility(visible = hasSms) {
                         Text(
                             "✓ SMS Permission Granted",
                             color = Color(0xFF4CAF50), // Green
                             style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(vertical = 4.dp)
+                            modifier = Modifier.padding(vertical = 4.dp),
                         )
                     }
                     AnimatedVisibility(visible = hasNotif) {
@@ -476,7 +498,7 @@ fun PermissionsStep(
                             "✓ Notification Permission Granted",
                             color = Color(0xFF4CAF50), // Green
                             style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(vertical = 4.dp)
+                            modifier = Modifier.padding(vertical = 4.dp),
                         )
                     }
                     // Optional: Show warning text if perm denied
@@ -485,7 +507,7 @@ fun PermissionsStep(
                             "⚠ SMS Permission Denied (Requires Settings)",
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(vertical = 4.dp)
+                            modifier = Modifier.padding(vertical = 4.dp),
                         )
                     }
                 }
@@ -495,7 +517,11 @@ fun PermissionsStep(
                     AlertDialog(
                         onDismissRequest = { showSettingsDialog = false },
                         title = { Text("Permission Required") },
-                        text = { Text("One or more required permissions have been permanently denied. Please go to app settings to enable them manually to continue.") },
+                        text = {
+                            Text(
+                                "One or more required permissions have been permanently denied. Please go to app settings to enable them manually to continue.",
+                            )
+                        },
                         confirmButton = {
                             Button(onClick = {
                                 showSettingsDialog = false
@@ -512,11 +538,11 @@ fun PermissionsStep(
                             TextButton(onClick = { showSettingsDialog = false }) {
                                 Text("Cancel")
                             }
-                        }
+                        },
                     )
                 }
             }
-        }
+        },
     )
 }
 
@@ -529,28 +555,27 @@ fun AccountStep(
     accountDesc: String,
     onAccountDescChange: (String) -> Unit,
     isError: Boolean,
-    shakeOffset: Float
+    shakeOffset: Float,
 ) {
     StandardStepLayout(topContent = {
         Column(modifier = Modifier, horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 "Set up Bank Account",
                 style = MaterialTheme.typography.headlineLarge,
-                modifier = Modifier.padding(20.dp)
+                modifier = Modifier.padding(20.dp),
             )
             Text(
                 "The account will be used for storing\nthe transaction information.",
                 style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
             Text(
                 "You can add more bank accounts later",
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 5.dp)
+                modifier = Modifier.padding(top = 5.dp),
             )
         }
-
     }, bottomContent = {
         OutlinedTextField(
             value = accountName,
@@ -558,25 +583,28 @@ fun AccountStep(
             label = { Text("Account Name") },
             singleLine = true,
             isError = isError,
-            modifier = Modifier
-                .padding(top = 16.dp)
-                .offset { IntOffset(shakeOffset.roundToInt(), 0) },
+            modifier =
+                Modifier
+                    .padding(top = 16.dp)
+                    .offset { IntOffset(shakeOffset.roundToInt(), 0) },
         )
         OutlinedTextField(
             value = accountNumber,
             onValueChange = onAccountNumberChange,
             label = { Text("Account Number(Optional)") },
             singleLine = true,
-            modifier = Modifier
-                .padding(top = 16.dp)
+            modifier =
+                Modifier
+                    .padding(top = 16.dp),
         )
         OutlinedTextField(
             value = accountDesc,
             onValueChange = onAccountDescChange,
             label = { Text("Description(Optional)") },
             singleLine = true,
-            modifier = Modifier
-                .padding(top = 16.dp)
+            modifier =
+                Modifier
+                    .padding(top = 16.dp),
         )
     })
 }
@@ -588,7 +616,7 @@ private enum class SheetView { FORM, ICON_PICKER, COLOR_PICKER }
 fun CategoriesStep(
     categories: List<CategoryData>,
     onCategoryDelete: (CategoryData) -> Unit,
-    onCategoryAdd: (CategoryData) -> Unit
+    onCategoryAdd: (CategoryData) -> Unit,
 ) {
     var showBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -609,34 +637,35 @@ fun CategoriesStep(
     StandardStepLayout(topContent = {
         Text("Set up Categories", style = MaterialTheme.typography.headlineLarge)
     }, bottomContent = {
-        Column(modifier = Modifier, horizontalAlignment = Alignment.CenterHorizontally)
-        {
+        Column(modifier = Modifier, horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 "Currently we have the following categories set up.\nFeel free to add your own",
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth(0.75f)
-                    .padding(bottom = 10.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth(0.75f)
+                        .padding(bottom = 10.dp),
             )
             FlowRow(
-                modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .border(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.secondary,
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    .padding(12.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth(0.9f)
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.secondary,
+                            shape = RoundedCornerShape(12.dp),
+                        )
+                        .padding(12.dp),
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+                verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 categories.forEach { item ->
                     CategoryItem(
                         color = item.color,
                         text = item.text,
                         icon = item.icon,
-                        onClose = { onCategoryDelete(item) }
+                        onClose = { onCategoryDelete(item) },
                     )
                 }
             }
@@ -653,17 +682,18 @@ fun CategoriesStep(
                     currentView = SheetView.FORM // Reset to form
                     showBottomSheet = true
                 },
-                modifier = Modifier
-                    .fillMaxWidth(0.5f)
-                    .background(
-                        color = MaterialTheme.colorScheme.primary,
-                        shape = RoundedCornerShape(100)
-                    )
+                modifier =
+                    Modifier
+                        .fillMaxWidth(0.5f)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = RoundedCornerShape(100),
+                        ),
             ) {
                 Icon(
                     Icons.Default.Add,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary
+                    tint = MaterialTheme.colorScheme.onPrimary,
                 )
             }
 
@@ -675,25 +705,28 @@ fun CategoriesStep(
                 ) {
                     // Main Container
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp)
-                            .padding(bottom = 24.dp)
-                            .navigationBarsPadding()
-                            .imePadding()
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
+                                .padding(bottom = 24.dp)
+                                .navigationBarsPadding()
+                                .imePadding(),
                         // REMOVED .animateContentSize() here to prevent conflict
                     ) {
                         // Dynamic Title
                         Text(
-                            text = when (currentView) {
-                                SheetView.ICON_PICKER -> "Select Icon"
-                                SheetView.COLOR_PICKER -> "Select Color"
-                                SheetView.FORM -> "New Category"
-                            },
+                            text =
+                                when (currentView) {
+                                    SheetView.ICON_PICKER -> "Select Icon"
+                                    SheetView.COLOR_PICKER -> "Select Color"
+                                    SheetView.FORM -> "New Category"
+                                },
                             style = MaterialTheme.typography.headlineSmall,
-                            modifier = Modifier
-                                .align(Alignment.CenterHorizontally)
-                                .padding(bottom = 24.dp)
+                            modifier =
+                                Modifier
+                                    .align(Alignment.CenterHorizontally)
+                                    .padding(bottom = 24.dp),
                         )
 
                         // Animated Content Switcher
@@ -709,30 +742,38 @@ fun CategoriesStep(
 
                                 if (targetState != SheetView.FORM) {
                                     // Opening a picker: Slide in from Right
-                                    (slideInHorizontally(slideSpec) { width -> width } + fadeIn(
-                                        fadeSpec
-                                    )).togetherWith(
-                                        slideOutHorizontally(slideSpec) { width -> -width } + fadeOut(
-                                            fadeSpec
-                                        )
+                                    (
+                                        slideInHorizontally(slideSpec) { width -> width } +
+                                            fadeIn(
+                                                fadeSpec,
+                                            )
+                                    ).togetherWith(
+                                        slideOutHorizontally(slideSpec) { width -> -width } +
+                                            fadeOut(
+                                                fadeSpec,
+                                            ),
                                     )
                                 } else {
                                     // Going back to Form: Slide in from Left
-                                    (slideInHorizontally(slideSpec) { width -> -width } + fadeIn(
-                                        fadeSpec
-                                    )).togetherWith(
-                                        slideOutHorizontally(slideSpec) { width -> width } + fadeOut(
-                                            fadeSpec
-                                        )
+                                    (
+                                        slideInHorizontally(slideSpec) { width -> -width } +
+                                            fadeIn(
+                                                fadeSpec,
+                                            )
+                                    ).togetherWith(
+                                        slideOutHorizontally(slideSpec) { width -> width } +
+                                            fadeOut(
+                                                fadeSpec,
+                                            ),
                                     )
                                 }.using(
                                     // Synchronize the size animation with the slide using the same duration
                                     SizeTransform(
                                         clip = true,
-                                        sizeAnimationSpec = { _, _ -> sizeSpec }
-                                    )
+                                        sizeAnimationSpec = { _, _ -> sizeSpec },
+                                    ),
                                 )
-                            }
+                            },
                         ) { viewState ->
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 when (viewState) {
@@ -740,13 +781,14 @@ fun CategoriesStep(
                                         IconPicker(
                                             selectedIcon = newCategoryIcon,
                                             onIconSelect = { newCategoryIcon = it },
-                                            modifier = Modifier.heightIn(max = 400.dp)
+                                            modifier = Modifier.heightIn(max = 400.dp),
                                         )
                                         Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(top = 16.dp),
-                                            horizontalArrangement = Arrangement.End
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(top = 16.dp),
+                                            horizontalArrangement = Arrangement.End,
                                         ) {
                                             Button(onClick = { currentView = SheetView.FORM }) {
                                                 Text("Done")
@@ -757,25 +799,29 @@ fun CategoriesStep(
                                     SheetView.COLOR_PICKER -> {
                                         ColorPicker(
                                             modifier = Modifier.fillMaxWidth(),
-                                            colorBoxPickerModifier = Modifier
-                                                .fillMaxWidth()
-                                                .aspectRatio(1f)
-                                                .border(1.dp, Color.Black),
-                                            colorSliderModifier = Modifier
-                                                .fillMaxWidth()
-                                                .aspectRatio(10f)
-                                                .padding(top = 5.dp),
-                                            colorBoxModifier = Modifier
-                                                .fillMaxWidth(0.2f)
-                                                .aspectRatio(1f)
-                                                .padding(top = 5.dp),
-                                            onColorChange = { newCategoryColor.value = it }
+                                            colorBoxPickerModifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .aspectRatio(1f)
+                                                    .border(1.dp, Color.Black),
+                                            colorSliderModifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .aspectRatio(10f)
+                                                    .padding(top = 5.dp),
+                                            colorBoxModifier =
+                                                Modifier
+                                                    .fillMaxWidth(0.2f)
+                                                    .aspectRatio(1f)
+                                                    .padding(top = 5.dp),
+                                            onColorChange = { newCategoryColor.value = it },
                                         )
                                         Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(top = 16.dp),
-                                            horizontalArrangement = Arrangement.End
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(top = 16.dp),
+                                            horizontalArrangement = Arrangement.End,
                                         ) {
                                             Button(onClick = { currentView = SheetView.FORM }) {
                                                 Text("Done")
@@ -793,13 +839,14 @@ fun CategoriesStep(
                                                 Icon(
                                                     imageVector = newCategoryIcon,
                                                     contentDescription = null,
-                                                    modifier = Modifier
-                                                        .size(32.dp)
-                                                        .background(
-                                                            Color.Black.copy(alpha = 0.05f),
-                                                            shape = RoundedCornerShape(8.dp)
-                                                        )
-                                                        .padding(4.dp)
+                                                    modifier =
+                                                        Modifier
+                                                            .size(32.dp)
+                                                            .background(
+                                                                Color.Black.copy(alpha = 0.05f),
+                                                                shape = RoundedCornerShape(8.dp),
+                                                            )
+                                                            .padding(4.dp),
                                                 )
                                             }
                                         }
@@ -814,60 +861,64 @@ fun CategoriesStep(
                                             label = { Text("Name") },
                                             singleLine = true,
                                             isError = isNameError,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .offset {
-                                                    IntOffset(
-                                                        shakeOffset.value.roundToInt(),
-                                                        0
-                                                    )
-                                                }
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .offset {
+                                                        IntOffset(
+                                                            shakeOffset.value.roundToInt(),
+                                                            0,
+                                                        )
+                                                    },
                                         )
 
                                         // Desc Input
                                         OutlinedTextField(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(top = 8.dp, bottom = 10.dp),
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(top = 8.dp, bottom = 10.dp),
                                             value = newCategoryDesc,
                                             onValueChange = { newCategoryDesc = it },
-                                            label = { Text("Description") }
+                                            label = { Text("Description") },
                                         )
 
                                         // Color Row
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.padding(top = 10.dp)
+                                            modifier = Modifier.padding(top = 10.dp),
                                         ) {
                                             Text(
                                                 "Color",
                                                 style = MaterialTheme.typography.bodyLarge,
-                                                modifier = Modifier.padding(end = 16.dp)
+                                                modifier = Modifier.padding(end = 16.dp),
                                             )
                                             Box(
-                                                modifier = Modifier
-                                                    .size(36.dp)
-                                                    .background(
-                                                        color = newCategoryColor.value,
-                                                        shape = RoundedCornerShape(8.dp)
-                                                    )
-                                                    .border(
-                                                        1.dp,
-                                                        MaterialTheme.colorScheme.onSurface,
-                                                        RoundedCornerShape(8.dp)
-                                                    )
-                                                    .clickable {
-                                                        currentView = SheetView.COLOR_PICKER
-                                                    }
+                                                modifier =
+                                                    Modifier
+                                                        .size(36.dp)
+                                                        .background(
+                                                            color = newCategoryColor.value,
+                                                            shape = RoundedCornerShape(8.dp),
+                                                        )
+                                                        .border(
+                                                            1.dp,
+                                                            MaterialTheme.colorScheme.onSurface,
+                                                            RoundedCornerShape(8.dp),
+                                                        )
+                                                        .clickable {
+                                                            currentView = SheetView.COLOR_PICKER
+                                                        },
                                             )
                                         }
 
                                         // Action Buttons
                                         Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(top = 32.dp),
-                                            horizontalArrangement = Arrangement.End
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(top = 32.dp),
+                                            horizontalArrangement = Arrangement.End,
                                         ) {
                                             TextButton(onClick = { showBottomSheet = false }) {
                                                 Text("Cancel")
@@ -882,11 +933,11 @@ fun CategoriesStep(
                                                             repeat(3) {
                                                                 shakeOffset.animateTo(
                                                                     15f,
-                                                                    tween(50)
+                                                                    tween(50),
                                                                 )
                                                                 shakeOffset.animateTo(
                                                                     -15f,
-                                                                    tween(50)
+                                                                    tween(50),
                                                                 )
                                                             }
                                                             shakeOffset.animateTo(0f, tween(50))
@@ -898,11 +949,11 @@ fun CategoriesStep(
                                                                 color = newCategoryColor.value,
                                                                 text = newCategoryName,
                                                                 icon = newCategoryIcon,
-                                                                desc = newCategoryDesc
-                                                            )
+                                                                desc = newCategoryDesc,
+                                                            ),
                                                         )
                                                     }
-                                                }
+                                                },
                                             ) {
                                                 Text("Save")
                                             }
@@ -919,42 +970,51 @@ fun CategoriesStep(
 }
 
 @Composable
-fun CategoryItem(color: Color, text: String, icon: ImageVector, onClose: () -> Unit) {
+fun CategoryItem(
+    color: Color,
+    text: String,
+    icon: ImageVector,
+    onClose: () -> Unit,
+) {
     Row(
-        modifier = Modifier.background(
-            color = color,
-            shape = RoundedCornerShape(100)
-        ),
-    )
-    {
+        modifier =
+            Modifier.background(
+                color = color,
+                shape = RoundedCornerShape(100),
+            ),
+    ) {
         IconButton(
             onClick = onClose,
-            modifier = Modifier
-                .padding(10.dp)
-                .size(22.dp)
-                .align(Alignment.CenterVertically)
+            modifier =
+                Modifier
+                    .padding(10.dp)
+                    .size(22.dp)
+                    .align(Alignment.CenterVertically),
         ) {
             Icon(
-                modifier = Modifier
-                    .padding(start = 1.dp)
-                    .align(Alignment.CenterVertically)
-                    .size(24.dp),
+                modifier =
+                    Modifier
+                        .padding(start = 1.dp)
+                        .align(Alignment.CenterVertically)
+                        .size(24.dp),
                 imageVector = Icons.Default.Close,
-                contentDescription = null
+                contentDescription = null,
             )
         }
         Icon(
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .size(18.dp),
+            modifier =
+                Modifier
+                    .align(Alignment.CenterVertically)
+                    .size(18.dp),
             imageVector = icon,
-            contentDescription = null
+            contentDescription = null,
         )
         Text(
             text,
-            modifier = Modifier
-                .padding(top = 5.dp, bottom = 5.dp, start = 2.dp, end = 10.dp)
-                .align(Alignment.CenterVertically)
+            modifier =
+                Modifier
+                    .padding(top = 5.dp, bottom = 5.dp, start = 2.dp, end = 10.dp)
+                    .align(Alignment.CenterVertically),
         )
     }
 }
@@ -963,7 +1023,7 @@ data class CategoryData(
     val color: Color,
     val text: String,
     val icon: ImageVector,
-    val desc: String
+    val desc: String,
 )
 
 @Preview(showBackground = true)

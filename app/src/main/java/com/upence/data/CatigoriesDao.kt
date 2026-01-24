@@ -7,7 +7,6 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
-
 @Dao
 interface CategoriesDao {
     @Query("SELECT * FROM categories")
@@ -23,7 +22,10 @@ interface CategoriesDao {
     suspend fun getTransactionCount(categoryId: String): Int
 
     @Query("UPDATE transactions SET categoryID = :newCategoryId WHERE categoryID = :oldCategoryId")
-    suspend fun migrateCategoryTransactions(oldCategoryId: String, newCategoryId: String)
+    suspend fun migrateCategoryTransactions(
+        oldCategoryId: String,
+        newCategoryId: String,
+    )
 
     @Query("SELECT * FROM categories ORDER BY name ASC")
     fun getAllCategoriesSorted(): Flow<List<Categories>>
