@@ -1374,35 +1374,36 @@ fun EnhancedWordChip(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            when (analysis.fieldType) {
-                FieldType.AMOUNT -> {
-                    Badge(
-                        containerColor = FieldType.AMOUNT.color().copy(alpha = 0.2f),
-                        contentColor = FieldType.AMOUNT.color(),
-                    ) {
-                        Text("₹", fontSize = 10.sp)
+            if (analysis.isSelected && analysis.fieldType != null) {
+                when (analysis.fieldType) {
+                    FieldType.AMOUNT -> {
+                        Badge(
+                            containerColor = FieldType.AMOUNT.color().copy(alpha = 0.2f),
+                            contentColor = FieldType.AMOUNT.color(),
+                        ) {
+                            Text("₹", fontSize = 10.sp)
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
                     }
-                    Spacer(modifier = Modifier.width(4.dp))
-                }
-                FieldType.COUNTERPARTY -> {
-                    Badge(
-                        containerColor = FieldType.COUNTERPARTY.color().copy(alpha = 0.2f),
-                        contentColor = FieldType.COUNTERPARTY.color(),
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.CompareArrows, contentDescription = null, modifier = Modifier.size(10.dp))
+                    FieldType.COUNTERPARTY -> {
+                        Badge(
+                            containerColor = FieldType.COUNTERPARTY.color().copy(alpha = 0.2f),
+                            contentColor = FieldType.COUNTERPARTY.color(),
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.CompareArrows, contentDescription = null, modifier = Modifier.size(10.dp))
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
                     }
-                    Spacer(modifier = Modifier.width(4.dp))
-                }
-                FieldType.REFERENCE -> {
-                    Badge(
-                        containerColor = FieldType.REFERENCE.color().copy(alpha = 0.2f),
-                        contentColor = FieldType.REFERENCE.color(),
-                    ) {
-                        Text("R", fontSize = 10.sp)
+                    FieldType.REFERENCE -> {
+                        Badge(
+                            containerColor = FieldType.REFERENCE.color().copy(alpha = 0.2f),
+                            contentColor = FieldType.REFERENCE.color(),
+                        ) {
+                            Text("R", fontSize = 10.sp)
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
                     }
-                    Spacer(modifier = Modifier.width(4.dp))
                 }
-                null -> {}
             }
             Text(
                 text = analysis.displayText,
