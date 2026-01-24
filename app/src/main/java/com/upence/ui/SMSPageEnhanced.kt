@@ -1787,14 +1787,16 @@ fun extractUsingPattern(
     if (!pattern.referencePattern.isNullOrEmpty()) {
         val referencePositions = pattern.referencePattern.split(",").mapNotNull { it.toIntOrNull() }
         val referenceWords = referencePositions.mapNotNull { words.getOrNull(it) }
-        val reference = referenceWords.joinToString(" ")
+        val rawReference = referenceWords.joinToString(" ")
 
         android.util.Log.d("SMSPageEnhanced", "  Reference positions: $referencePositions")
         android.util.Log.d("SMSPageEnhanced", "  Reference words: $referenceWords")
-        android.util.Log.d("SMSPageEnhanced", "  Reference: $reference")
+        android.util.Log.d("SMSPageEnhanced", "  Raw reference: $rawReference")
 
-        if (reference.isNotBlank()) {
-            result["reference"] = reference
+        if (rawReference.isNotBlank()) {
+            val cleanReference = extractNumbersOnly(rawReference)
+            android.util.Log.d("SMSPageEnhanced", "  Clean reference: $cleanReference")
+            result["reference"] = cleanReference
         }
     }
 
