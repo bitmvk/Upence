@@ -461,6 +461,11 @@ fun SMSPageEnhanced(
                     amount = ""
                     counterparty = ""
                     reference = ""
+
+                    // Mark data as modified when user clears selections
+                    if (isDataAutoRetrieved) {
+                        userHasModifiedData = true
+                    }
                 },
                 onCancel = onBack,
                 onNotATransactionClick = { showNotATransactionDialog = true },
