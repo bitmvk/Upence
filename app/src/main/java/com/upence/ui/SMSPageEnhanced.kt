@@ -439,6 +439,18 @@ fun SMSPageEnhanced(
                         if (newReference.isNotBlank()) reference = extractNumbersOnly(newReference).trim('.')
                     }
                 },
+                onClearSelection = {
+                    wordAnalysis = wordAnalysis.map { analysis ->
+                        if (analysis.fieldType == selectedFieldType) {
+                            analysis.copy(fieldType = null, isSelected = false)
+                        } else {
+                            analysis
+                        }
+                    }
+                    amount = ""
+                    counterparty = ""
+                    reference = ""
+                },
                 onCancel = onBack,
                 onNotATransactionClick = { showNotATransactionDialog = true },
                 onNotATransactionLongPress = {
@@ -639,6 +651,7 @@ fun UnifiedTransactionScreen(
     onSMSBodyCollapseChange: (Boolean) -> Unit,
     onFieldTypeSelected: (FieldType) -> Unit,
     onWordClicked: (Int) -> Unit,
+    onClearSelection: () -> Unit,
     onCancel: () -> Unit,
     onNotATransactionClick: () -> Unit,
     onNotATransactionLongPress: () -> Unit,
@@ -859,11 +872,29 @@ fun UnifiedTransactionScreen(
 
                         if (selectedFieldType != null) {
                             Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = "Click words to mark as ${selectedFieldType.displayName}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = "Click words to mark as ${selectedFieldType.displayName}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                val selectedCount = wordAnalysis.count { it.fieldType == selectedFieldType && it.isSelected }
+                                if (selectedCount > 0) {
+                                    TextButton(
+                                        onClick = onClearSelection,
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                    ) {
+                                        Text(
+                                            "Clear ($selectedCount)",
+                                            style = MaterialTheme.typography.bodySmall,
+                                        )
+                                    }
+                                }
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
