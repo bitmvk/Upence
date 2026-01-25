@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.upence.data.*
+import com.upence.ui.settings.PatternManagementCard
 import com.upence.ui.settings.*
 import kotlinx.coroutines.launch
 
@@ -27,6 +28,7 @@ fun SettingsPage(
     categoryDao: CategoriesDao,
     bankAccountsDao: BankAccountsDao,
     senderDao: SenderDao,
+    smsParsingPatternDao: SMSParsingPatternDao,
     navController: NavController,
     modifier: Modifier = Modifier,
 ) {
@@ -85,6 +87,14 @@ fun SettingsPage(
 
             item {
                 DataManagementCard(navController = navController)
+            }
+
+            item {
+                val patterns by smsParsingPatternDao.getAllActivePatterns().collectAsState(initial = emptyList())
+                PatternManagementCard(
+                    patternCount = patterns.size,
+                    navController = navController,
+                )
             }
 
             item {

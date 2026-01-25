@@ -47,11 +47,13 @@ import com.upence.data.AppDatabase
 import com.upence.data.UserStore
 import com.upence.ui.HomePage
 import com.upence.ui.SMSPageEnhanced
+import com.upence.ui.SettingsPage
 import com.upence.ui.StartPage
 import com.upence.ui.UnprocessedSMSListPage
 import com.upence.ui.settings.AccountManagementPage
 import com.upence.ui.settings.CategoryManagementPage
 import com.upence.ui.settings.TagsManagementPage
+import com.upence.ui.settings.PatternManagementPage
 import com.upence.ui.theme.UpenceTheme
 import kotlinx.coroutines.launch
 
@@ -165,6 +167,22 @@ class MainActivity : ComponentActivity() {
                     composable("unprocessed_sms") {
                         UnprocessedSMSListPage(
                             smsDao = smsDao,
+                            navController = navController,
+                        )
+                    }
+                    composable("settings") {
+                        SettingsPage(
+                            userStore = userStore,
+                            categoryDao = categoryDao,
+                            bankAccountsDao = bankAccountsDao,
+                            senderDao = database.SenderDao(),
+                            smsParsingPatternDao = database.SMSParsingPatternDao(),
+                            navController = navController,
+                        )
+                    }
+                    composable("manage_patterns") {
+                        PatternManagementPage(
+                            smsParsingPatternDao = database.SMSParsingPatternDao(),
                             navController = navController,
                         )
                     }

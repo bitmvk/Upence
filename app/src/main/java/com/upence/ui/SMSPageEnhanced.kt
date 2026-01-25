@@ -1772,6 +1772,7 @@ fun createPatternFromAnalysis(
         referencePattern = referencePositions.joinToString(",").ifEmpty { null },
         transactionType = transactionType,
         isActive = true,
+        sampleSMS = message,
     )
 }
 

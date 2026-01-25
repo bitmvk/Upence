@@ -77,7 +77,7 @@ fun HomePage(
                     )
                 },
                 actions = {
-                    IconButton(onClick = { /* Open settings */ }) {
+                    IconButton(onClick = { navController.navigate("settings") }) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
                 },

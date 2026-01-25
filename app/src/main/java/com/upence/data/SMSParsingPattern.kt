@@ -20,6 +20,7 @@ data class SMSParsingPattern(
     val defaultAccountID: String = "",
     val autoSelectAccount: Boolean = false,
     val senderName: String = "",
+    val sampleSMS: String = "", // Exact SMS message used when pattern was created
     val createdTimestamp: Long = System.currentTimeMillis(),
     val lastUsedTimestamp: Long? = null,
 )
