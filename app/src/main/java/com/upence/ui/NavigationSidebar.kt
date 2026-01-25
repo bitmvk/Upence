@@ -109,17 +109,14 @@ fun NavigationSidebar(
                         icon = { Icon(item.icon, contentDescription = item.label) },
                         selected = currentRoute == item.route,
                         onClick = {
-                            onClose()
-                            scope.launch {
-                                delay(50)
-                                navController.navigate(item.route) {
-                                    popUpTo("home") {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
+                            navController.navigate(item.route) {
+                                popUpTo("home") {
+                                    saveState = true
                                 }
+                                launchSingleTop = true
+                                restoreState = true
                             }
+                            onClose()
                         },
                         modifier = Modifier.fillMaxWidth(),
                     )
