@@ -49,6 +49,7 @@ fun CategoryManagementPage(
     val categories by categoryDao.getAllCategories().collectAsState(initial = emptyList())
 
     var showAddDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf<Categories?>(null) }
     var showDeleteDialog by remember { mutableStateOf<Categories?>(null) }
     var showMigrationDialog by remember { mutableStateOf<Categories?>(null) }
     var showSimpleConfirmDialog by remember { mutableStateOf<Categories?>(null) }
@@ -71,6 +72,32 @@ fun CategoryManagementPage(
                         categoryDao.insertCategory(newCategory)
                     }
                     showAddDialog = false
+                }
+            },
+            allCategories = categories,
+        )
+    }
+
+    if (showEditDialog != null) {
+        AddEditCategoryDialog(
+            category = showEditDialog,
+            onDismiss = { showEditDialog = null },
+            onSave = { icon, name, color, description ->
+                scope.launch {
+                    withContext(Dispatchers.IO) {
+                        if (showEditDialog != null) {
+                            categoryDao.insertCategory(
+                                Categories(
+                                    id = showEditDialog!!.id,
+                                    icon = icon,
+                                    name = name,
+                                    color = color,
+                                    description = description,
+                                )
+                            )
+                        }
+                    }
+                    showEditDialog = null
                 }
             },
             allCategories = categories,
@@ -177,7 +204,7 @@ fun CategoryManagementPage(
                 items(categories) { category ->
                     CategoryItem(
                         category = category,
-                        onEdit = {},
+                        onEdit = { showEditDialog = category },
                         onDelete = {
                             scope.launch {
                                 val count = categoryDao.getTransactionCount(category.id.toString())

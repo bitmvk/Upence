@@ -1209,7 +1209,7 @@ fun UnifiedTransactionScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(
-                            onClick = { navController.navigate("tags_management") },
+                            onClick = { navController.navigate("manage_tags") },
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text("Manage Tags")

@@ -33,6 +33,7 @@ fun AccountManagementPage(
     val accounts by bankAccountsDao.getAllAccounts().collectAsState(initial = emptyList())
 
     var showAddDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf<BankAccounts?>(null) }
     var showDeleteDialog by remember { mutableStateOf<BankAccounts?>(null) }
     var showMigrationDialog by remember { mutableStateOf<BankAccounts?>(null) }
     var showSimpleConfirmDialog by remember { mutableStateOf<BankAccounts?>(null) }
@@ -54,6 +55,28 @@ fun AccountManagementPage(
                         )
                     }
                     showAddDialog = false
+                }
+            },
+        )
+    }
+
+    if (showEditDialog != null) {
+        AddEditAccountDialog(
+            account = showEditDialog,
+            onDismiss = { showEditDialog = null },
+            onSave = { accountName, accountNumber, description ->
+                scope.launch {
+                    withContext(Dispatchers.IO) {
+                        bankAccountsDao.insertBankAccount(
+                            BankAccounts(
+                                id = showEditDialog!!.id,
+                                accountName = accountName,
+                                accountNumber = accountNumber,
+                                description = description,
+                            )
+                        )
+                    }
+                    showEditDialog = null
                 }
             },
         )
@@ -160,9 +183,7 @@ fun AccountManagementPage(
                 items(accounts) { account ->
                     AccountItem(
                         account = account,
-                        onEdit = {
-                            // For simplicity, we'll only handle delete in this version
-                        },
+                        onEdit = { showEditDialog = account },
                         onDelete = {
                             scope.launch {
                                 val count = bankAccountsDao.getTransactionCount(account.id.toString())
