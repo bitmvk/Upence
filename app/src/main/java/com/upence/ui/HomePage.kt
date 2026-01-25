@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Settings
@@ -38,6 +39,7 @@ fun HomePage(
     smsDao: SMSDao,
     navController: androidx.navigation.NavController,
 ) {
+    var isSidebarOpen by remember { mutableStateOf(false) }
     val transactions by transactionDao.getAllTransactions().collectAsState(initial = emptyList())
     val categories by categoryDao.getAllCategories().collectAsState(initial = emptyList())
     val bankAccounts by bankAccountsDao.getAllAccounts().collectAsState(initial = emptyList())
@@ -66,7 +68,11 @@ fun HomePage(
             Triple(totalIncome - totalExpense, totalIncome, totalExpense)
         }
 
-    Scaffold(
+    Box(modifier = Modifier.fillMaxSize()) {
+        SlideInFromRightAnimation(
+            key = "home",
+        ) {
+            Scaffold(
         topBar = {
             TopAppBar(
                 title = {
@@ -76,9 +82,9 @@ fun HomePage(
                         fontWeight = FontWeight.Bold,
                     )
                 },
-                actions = {
-                    IconButton(onClick = { navController.navigate("settings") }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                navigationIcon = {
+                    IconButton(onClick = { isSidebarOpen = true }) {
+                        Icon(Icons.Default.Menu, contentDescription = "Menu")
                     }
                 },
                 colors =
@@ -394,6 +400,15 @@ fun HomePage(
                 }
             }
         }
+            }
+        }
+
+        NavigationSidebar(
+            isOpen = isSidebarOpen,
+            onClose = { isSidebarOpen = false },
+            currentRoute = "home",
+            navController = navController,
+        )
     }
 }
 

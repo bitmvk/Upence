@@ -1,6 +1,7 @@
 package com.upence.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -8,11 +9,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -34,6 +39,7 @@ fun SettingsPage(
     navController: NavController,
     modifier: Modifier = Modifier,
 ) {
+    var isSidebarOpen by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val themeMode by userStore.themeMode.collectAsState(initial = 2)
     val currencyCode by userStore.currencyCode.collectAsState(initial = "INR")
@@ -41,13 +47,17 @@ fun SettingsPage(
     val useCustomCurrency by userStore.useCustomCurrency.collectAsState(initial = false)
     val useIndiaRuleset by userStore.useIndiaSenderRuleset.collectAsState(initial = true)
 
-    Scaffold(
+    Box(modifier = Modifier.fillMaxSize()) {
+        SlideInFromRightAnimation(
+            key = "settings",
+        ) {
+            Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Settings") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = { isSidebarOpen = true }) {
+                        Icon(Icons.Default.Menu, contentDescription = "Menu")
                     }
                 },
             )
@@ -172,5 +182,14 @@ fun SettingsPage(
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
+            }
+        }
+
+        NavigationSidebar(
+            isOpen = isSidebarOpen,
+            onClose = { isSidebarOpen = false },
+            currentRoute = "settings",
+            navController = navController,
+        )
     }
 }

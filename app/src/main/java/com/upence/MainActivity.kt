@@ -13,8 +13,11 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.AlertDialog
@@ -43,8 +46,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.upence.ui.AnalyticsPage
+import com.upence.ui.NavigationSidebar
 import com.upence.data.AppDatabase
 import com.upence.data.UserStore
+import com.upence.ui.AnalyticsPage
 import com.upence.ui.HomePage
 import com.upence.ui.SMSPageEnhanced
 import com.upence.ui.SettingsPage
@@ -62,7 +68,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
 
         handleIntent(intent)
 
@@ -91,7 +96,10 @@ class MainActivity : ComponentActivity() {
                 themeMode = themeMode,
                 dynamicColor = false,
             ) {
-                NavHost(navController = navController, startDestination = "home") {
+                NavHost(
+                    navController = navController,
+                    startDestination = "home",
+                ) {
                     composable("home") {
                         when (isSetupComplete) {
                             null -> Box(modifier = Modifier.fillMaxSize())
@@ -180,6 +188,9 @@ class MainActivity : ComponentActivity() {
                             tagsDao = database.TagsDao(),
                             navController = navController,
                         )
+                    }
+                    composable("analytics") {
+                        AnalyticsPage(navController = navController)
                     }
                     composable("manage_patterns") {
                         PatternManagementPage(
