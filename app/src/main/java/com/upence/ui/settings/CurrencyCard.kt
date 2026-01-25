@@ -21,6 +21,11 @@ fun CurrencyCard(
     onUseCustomCurrencyChange: (Boolean) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var customSymbolState by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(currencySymbol)) }
+
+    androidx.compose.runtime.LaunchedEffect(currencySymbol) {
+        customSymbolState = customSymbolState.copy(text = currencySymbol)
+    }
 
     Card {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -34,13 +39,14 @@ fun CurrencyCard(
             }
 
             ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded },
+                expanded = expanded && !useCustomCurrency,
+                onExpandedChange = { if (!useCustomCurrency) expanded = !expanded },
             ) {
                 OutlinedTextField(
                     value = ALL_CURRENCIES.find { it.code == currencyCode }?.name ?: "Select Currency",
                     onValueChange = {},
                     readOnly = true,
+                    enabled = !useCustomCurrency,
                     label = { Text("Currency") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     modifier =
@@ -50,10 +56,10 @@ fun CurrencyCard(
                 )
 
                 DropdownMenu(
-                    expanded = expanded,
+                    expanded = expanded && !useCustomCurrency,
                     onDismissRequest = { expanded = false },
                 ) {
-                    ALL_CURRENCIES.forEach { currency ->
+                    ALL_CURRENCIES.filter { it.code != "CUSTOM" }.forEach { currency ->
                         DropdownMenuItem(
                             text = {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -62,9 +68,11 @@ fun CurrencyCard(
                                 }
                             },
                             onClick = {
-                                onCurrencyCodeChange(currency.code)
-                                onCurrencySymbolChange(currency.symbol)
-                                expanded = false
+                                if (!useCustomCurrency) {
+                                    onCurrencyCodeChange(currency.code)
+                                    onCurrencySymbolChange(currency.symbol)
+                                    expanded = false
+                                }
                             },
                         )
                     }
@@ -88,8 +96,11 @@ fun CurrencyCard(
             if (useCustomCurrency) {
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
-                    value = currencySymbol,
-                    onValueChange = onCurrencySymbolChange,
+                    value = customSymbolState,
+                    onValueChange = { newValue ->
+                        customSymbolState = newValue
+                        onCurrencySymbolChange(newValue.text)
+                    },
                     label = { Text("Custom Symbol") },
                     placeholder = { Text("e.g., BTC, 🪙, ★") },
                     modifier = Modifier.fillMaxWidth(),

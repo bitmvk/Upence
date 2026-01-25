@@ -39,6 +39,7 @@ import androidx.navigation.NavController
 import com.upence.data.SMSParsingPattern
 import com.upence.data.TransactionType
 import com.upence.ui.components.ConfirmDeleteDialog
+import com.upence.ui.extractUsingPattern
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -144,16 +145,17 @@ fun PatternListItem(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        pattern.patternName,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            pattern.patternName,
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
                         TransactionTypeBadge(pattern.transactionType)
                     }
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         "From: ${pattern.senderName.ifEmpty { pattern.senderIdentifier }}",
                         style = MaterialTheme.typography.bodySmall,
@@ -197,6 +199,43 @@ fun PatternListItem(
                         fontFamily = FontFamily.Monospace,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+
+                Text(
+                    "Auto Retrieved Data:",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                )
+
+                val extractedData = extractUsingPattern(pattern.sampleSMS, pattern)
+                val dataText = buildString {
+                    if (extractedData.containsKey("amount")) {
+                        append("Amount: ${extractedData["amount"]}\n")
+                    }
+                    if (extractedData.containsKey("counterparty")) {
+                        append("Counterparty: ${extractedData["counterparty"]}\n")
+                    }
+                    if (extractedData.containsKey("reference")) {
+                        append("Reference: ${extractedData["reference"]}")
+                    }
+                }
+
+                if (dataText.isNotBlank()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors =
+                            CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            ),
+                        shape = RoundedCornerShape(8.dp),
+                    ) {
+                        Text(
+                            dataText.trim(),
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        )
+                    }
                 }
             }
 

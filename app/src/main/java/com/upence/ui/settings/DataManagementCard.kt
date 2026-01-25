@@ -19,7 +19,7 @@ fun DataManagementCard(navController: androidx.navigation.NavController) {
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
-                    onClick = { navController.navigate("category_management") },
+                    onClick = { navController.navigate("manage_categories") },
                     modifier = Modifier.fillMaxWidth(),
                     colors =
                         ButtonDefaults.buttonColors(
@@ -32,7 +32,7 @@ fun DataManagementCard(navController: androidx.navigation.NavController) {
                 }
 
                 Button(
-                    onClick = { navController.navigate("account_management") },
+                    onClick = { navController.navigate("manage_accounts") },
                     modifier = Modifier.fillMaxWidth(),
                     colors =
                         ButtonDefaults.buttonColors(
