@@ -57,7 +57,7 @@ fun SettingsPage(
                     .fillMaxSize()
                     .padding(paddingValues)
                     .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
             item {
                 AppearanceCard(
@@ -66,6 +66,10 @@ fun SettingsPage(
                         scope.launch { userStore.setThemeMode(mode) }
                     },
                 )
+            }
+
+            item {
+                HorizontalDivider()
             }
 
             item {
@@ -86,15 +90,27 @@ fun SettingsPage(
             }
 
             item {
+                HorizontalDivider()
+            }
+
+            item {
                 DataManagementCard(navController = navController)
             }
 
             item {
-                val patterns by smsParsingPatternDao.getAllActivePatterns().collectAsState(initial = emptyList())
+                HorizontalDivider()
+            }
+
+            item {
+                val patterns by smsParsingPatternDao.getAllPatterns().collectAsState(initial = emptyList())
                 PatternManagementCard(
                     patternCount = patterns.size,
                     navController = navController,
                 )
+            }
+
+            item {
+                HorizontalDivider()
             }
 
             item {
@@ -103,6 +119,10 @@ fun SettingsPage(
                     ignoredSendersCount = ignoredSenders.size,
                     navController = navController,
                 )
+            }
+
+            item {
+                HorizontalDivider()
             }
 
             item {
@@ -115,11 +135,19 @@ fun SettingsPage(
             }
 
             item {
+                HorizontalDivider()
+            }
+
+            item {
                 ResetDefaultsCard(
                     categoryDao = categoryDao,
                     bankAccountsDao = bankAccountsDao,
                     scope = scope,
                 )
+            }
+
+            item {
+                HorizontalDivider()
             }
 
             item {

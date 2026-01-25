@@ -27,103 +27,101 @@ fun CurrencyCard(
         customSymbolState = customSymbolState.copy(text = currencySymbol)
     }
 
-    Card {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 16.dp),
-            ) {
-                Icon(Icons.Default.AttachMoney, contentDescription = null, modifier = Modifier.size(24.dp))
-                Spacer(modifier = Modifier.width(12.dp))
-                Text("Currency", style = MaterialTheme.typography.titleMedium)
-            }
+    Column(modifier = Modifier.padding(16.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(bottom = 16.dp),
+        ) {
+            Icon(Icons.Default.AttachMoney, contentDescription = null, modifier = Modifier.size(24.dp))
+            Spacer(modifier = Modifier.width(12.dp))
+            Text("Currency", style = MaterialTheme.typography.titleMedium)
+        }
 
-            ExposedDropdownMenuBox(
+        ExposedDropdownMenuBox(
+            expanded = expanded && !useCustomCurrency,
+            onExpandedChange = { if (!useCustomCurrency) expanded = !expanded },
+        ) {
+            OutlinedTextField(
+                value = ALL_CURRENCIES.find { it.code == currencyCode }?.name ?: "Select Currency",
+                onValueChange = {},
+                readOnly = true,
+                enabled = !useCustomCurrency,
+                label = { Text("Currency") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(),
+            )
+
+            DropdownMenu(
                 expanded = expanded && !useCustomCurrency,
-                onExpandedChange = { if (!useCustomCurrency) expanded = !expanded },
+                onDismissRequest = { expanded = false },
             ) {
-                OutlinedTextField(
-                    value = ALL_CURRENCIES.find { it.code == currencyCode }?.name ?: "Select Currency",
-                    onValueChange = {},
-                    readOnly = true,
-                    enabled = !useCustomCurrency,
-                    label = { Text("Currency") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(),
-                )
-
-                DropdownMenu(
-                    expanded = expanded && !useCustomCurrency,
-                    onDismissRequest = { expanded = false },
-                ) {
-                    ALL_CURRENCIES.filter { it.code != "CUSTOM" }.forEach { currency ->
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(currency.flagEmoji, modifier = Modifier.padding(end = 8.dp))
-                                    Text("${currency.name} (${currency.code})")
-                                }
-                            },
-                            onClick = {
-                                if (!useCustomCurrency) {
-                                    onCurrencyCodeChange(currency.code)
-                                    onCurrencySymbolChange(currency.symbol)
-                                    expanded = false
-                                }
-                            },
-                        )
-                    }
+                ALL_CURRENCIES.filter { it.code != "CUSTOM" }.forEach { currency ->
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(currency.flagEmoji, modifier = Modifier.padding(end = 8.dp))
+                                Text("${currency.name} (${currency.code})")
+                            }
+                        },
+                        onClick = {
+                            if (!useCustomCurrency) {
+                                onCurrencyCodeChange(currency.code)
+                                onCurrencySymbolChange(currency.symbol)
+                                expanded = false
+                            }
+                        },
+                    )
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Switch(
+                checked = useCustomCurrency,
+                onCheckedChange = onUseCustomCurrencyChange,
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text("Use custom currency symbol")
+        }
+
+        if (useCustomCurrency) {
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = customSymbolState,
+                onValueChange = { newValue ->
+                    customSymbolState = newValue
+                    onCurrencySymbolChange(newValue.text)
+                },
+                label = { Text("Custom Symbol") },
+                placeholder = { Text("e.g., BTC, 🪙, ★") },
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Switch(
-                    checked = useCustomCurrency,
-                    onCheckedChange = onUseCustomCurrencyChange,
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text("Use custom currency symbol")
-            }
+                singleLine = true,
+            )
+        }
 
-            if (useCustomCurrency) {
-                Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = customSymbolState,
-                    onValueChange = { newValue ->
-                        customSymbolState = newValue
-                        onCurrencySymbolChange(newValue.text)
-                    },
-                    label = { Text("Custom Symbol") },
-                    placeholder = { Text("e.g., BTC, 🪙, ★") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-            }
+        Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors =
-                    CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    ),
-            ) {
-                Text(
-                    "Preview: $currencySymbol 1,234.56",
-                    modifier = Modifier.padding(12.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-            }
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                ),
+        ) {
+            Text(
+                "Preview: $currencySymbol 1,234.56",
+                modifier = Modifier.padding(12.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
         }
     }
 }

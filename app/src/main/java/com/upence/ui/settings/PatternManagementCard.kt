@@ -19,35 +19,34 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 
 @Composable
 fun PatternManagementCard(
     patternCount: Int,
-    navController: androidx.navigation.NavController,
+    navController: NavController,
 ) {
-    Card {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row {
-                Icon(Icons.Default.TextSnippet, contentDescription = null, modifier = Modifier.size(24.dp))
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text("Pattern Management", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "$patternCount pattern${if (patternCount != 1) "s" else ""}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                    )
-                }
+    Column(modifier = Modifier.padding(16.dp)) {
+        Row {
+            Icon(Icons.Default.TextSnippet, contentDescription = null, modifier = Modifier.size(24.dp))
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text("Pattern Management", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "$patternCount pattern${if (patternCount != 1) "s" else ""}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                )
             }
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
-                onClick = { navController.navigate("manage_patterns") },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Manage Patterns")
-            }
+        Button(
+            onClick = { navController.navigate("manage_patterns") },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Manage Patterns")
         }
     }
 }

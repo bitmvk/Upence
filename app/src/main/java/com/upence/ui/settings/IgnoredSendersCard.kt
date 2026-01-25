@@ -16,30 +16,28 @@ fun IgnoredSendersCard(
     navController: NavController,
 ) {
     if (ignoredSendersCount > 0) {
-        Card {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = 16.dp),
-                ) {
-                    Icon(Icons.Default.Block, contentDescription = null, modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text("Ignored Senders", style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            "$ignoredSendersCount sender(s) ignored",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 16.dp),
+            ) {
+                Icon(Icons.Default.Block, contentDescription = null, modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text("Ignored Senders", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "$ignoredSendersCount sender(s) ignored",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
+            }
 
-                OutlinedButton(
-                    onClick = { navController.navigate("ignored_senders") },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("View & Manage Ignored Senders")
-                }
+            OutlinedButton(
+                onClick = { navController.navigate("ignored_senders") },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("View & Manage Ignored Senders")
             }
         }
     }

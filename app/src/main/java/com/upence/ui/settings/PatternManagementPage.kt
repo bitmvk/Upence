@@ -225,7 +225,7 @@ fun PatternListItem(
                         modifier = Modifier.fillMaxWidth(),
                         colors =
                             CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
                             ),
                         shape = RoundedCornerShape(8.dp),
                     ) {
@@ -233,7 +233,7 @@ fun PatternListItem(
                             dataText.trim(),
                             modifier = Modifier.padding(12.dp),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
