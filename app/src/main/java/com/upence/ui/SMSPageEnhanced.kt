@@ -1873,7 +1873,6 @@ fun validateTransaction(
     account: BankAccounts?,
 ): Boolean {
     return amount.isNotBlank() &&
-        counterparty.isNotBlank() &&
         amount.toDoubleOrNull() != null &&
         category != null &&
         account != null
