@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.upence.data.*
 import com.upence.ui.settings.PatternManagementCard
+import com.upence.ui.settings.TagsManagementCard
 import com.upence.ui.settings.*
 import kotlinx.coroutines.launch
 
@@ -29,6 +30,7 @@ fun SettingsPage(
     bankAccountsDao: BankAccountsDao,
     senderDao: SenderDao,
     smsParsingPatternDao: SMSParsingPatternDao,
+    tagsDao: com.upence.data.TagsDao,
     navController: NavController,
     modifier: Modifier = Modifier,
 ) {
@@ -95,6 +97,18 @@ fun SettingsPage(
 
             item {
                 DataManagementCard(navController = navController)
+            }
+
+            item {
+                HorizontalDivider()
+            }
+
+            item {
+                val tags by tagsDao.getAllTags().collectAsState(initial = emptyList())
+                TagsManagementCard(
+                    tagCount = tags.size,
+                    navController = navController,
+                )
             }
 
             item {

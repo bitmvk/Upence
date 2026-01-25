@@ -177,6 +177,7 @@ class MainActivity : ComponentActivity() {
                             bankAccountsDao = bankAccountsDao,
                             senderDao = database.SenderDao(),
                             smsParsingPatternDao = database.SMSParsingPatternDao(),
+                            tagsDao = database.TagsDao(),
                             navController = navController,
                         )
                     }
