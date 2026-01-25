@@ -45,40 +45,40 @@ fun AnalyticsPage(navController: androidx.navigation.NavController) {
                 },
             ) { paddingValues ->
                 Box(
-                modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-            contentAlignment = Alignment.Center,
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.padding(32.dp),
-            ) {
-                Icon(
-                    Icons.Default.Analytics,
-                    contentDescription = "Analytics",
-                    modifier = Modifier.size(120.dp),
-                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    "Analytics Coming Soon",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    "Advanced analytics and insights will be available in future updates.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                )
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(32.dp),
+                    ) {
+                        Icon(
+                            Icons.Default.Analytics,
+                            contentDescription = "Analytics",
+                            modifier = Modifier.size(120.dp),
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            "Analytics Coming Soon",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            "Advanced analytics and insights will be available in future updates.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        )
+                    }
+                }
             }
         }
-            }
-}
 
         NavigationSidebar(
             isOpen = isSidebarOpen,

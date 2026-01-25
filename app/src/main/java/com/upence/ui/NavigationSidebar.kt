@@ -22,6 +22,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,8 +35,7 @@ fun NavigationSidebar(
     modifier: Modifier = Modifier,
     navController: NavController,
 ) {
-    var pendingNavigation by remember { mutableStateOf<String?>(null) }
-
+    val scope = rememberCoroutineScope()
     val screenWidth = with(LocalDensity.current) { 400.dp.toPx() }
     val sidebarWidth = screenWidth * 0.7f
 
@@ -42,18 +43,6 @@ fun NavigationSidebar(
         targetValue = if (isOpen) 0f else -sidebarWidth,
         animationSpec = androidx.compose.animation.core.tween(durationMillis = 200),
         label = "sidebarOffset",
-        finishedListener = { if (!isOpen && pendingNavigation != null) {
-            pendingNavigation?.let { route ->
-                navController.navigate(route) {
-                    popUpTo("home") {
-                        saveState = true
-                    }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-                pendingNavigation = null
-            }
-        } },
     )
 
     val backdropAlpha by animateFloatAsState(
@@ -120,8 +109,17 @@ fun NavigationSidebar(
                         icon = { Icon(item.icon, contentDescription = item.label) },
                         selected = currentRoute == item.route,
                         onClick = {
-                            pendingNavigation = item.route
                             onClose()
+                            scope.launch {
+                                delay(50)
+                                navController.navigate(item.route) {
+                                    popUpTo("home") {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
                         },
                         modifier = Modifier.fillMaxWidth(),
                     )
