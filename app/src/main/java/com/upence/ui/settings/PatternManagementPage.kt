@@ -49,7 +49,7 @@ fun PatternManagementPage(
     navController: NavController,
 ) {
     val scope = rememberCoroutineScope()
-    val patterns by smsParsingPatternDao.getAllActivePatterns().collectAsState(initial = emptyList())
+    val patterns by smsParsingPatternDao.getAllPatterns().collectAsState(initial = emptyList())
 
     var showDeleteDialog by remember { mutableStateOf<SMSParsingPattern?>(null) }
 

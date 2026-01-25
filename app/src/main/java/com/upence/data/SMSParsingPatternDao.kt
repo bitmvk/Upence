@@ -23,6 +23,9 @@ interface SMSParsingPatternDao {
     @Query("SELECT * FROM sms_parsing_patterns WHERE isActive = 1 ORDER BY lastUsedTimestamp DESC")
     fun getAllActivePatterns(): Flow<List<SMSParsingPattern>>
 
+    @Query("SELECT * FROM sms_parsing_patterns ORDER BY lastUsedTimestamp DESC")
+    fun getAllPatterns(): Flow<List<SMSParsingPattern>>
+
     @Query("UPDATE sms_parsing_patterns SET lastUsedTimestamp = :timestamp WHERE id = :patternId")
     suspend fun updateLastUsedTimestamp(
         patternId: Int,
