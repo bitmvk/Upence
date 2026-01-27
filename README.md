@@ -1,127 +1,192 @@
-# Upence
+# Upence - Flutter Port
 
-Upence is an Android application that automatically tracks your financial transactions through SMS messages. The app parses bank transaction SMS messages and categorizes them, helping you manage your finances effortlessly.
+Flutter port of Upence Android SMS transaction tracker app.
 
-## Features
+## Current Status
 
-- **Automatic SMS Transaction Tracking** - Receives and parses transaction SMS messages from your bank
-- **Smart Transaction Parsing** - Customizable patterns to extract transaction details
-- **Category Management** - Organize transactions into customizable categories with icons and colors
-- **Tag System** - Add tags to transactions for better organization and filtering
-- **Multiple Account Support** - Manage multiple bank accounts
-- **Currency Support** - Multi-currency formatting and display
-- **Detailed Transaction History** - View and search through all your transactions
-- **Ignored Senders** - Filter out SMS messages from unwanted senders
-- **Material Design 3** - Modern, clean UI following Android's latest design guidelines
-- **Dark/Light Theme** - Automatic theme switching based on system preferences
-- **Data Management** - Export, import, and reset your transaction data
-- **Privacy-Focused** - All data stored locally on your device using Room database
+### ✅ Completed
+- [x] Project structure created
+- [x] Dependencies configured (Drift, Riverpod, Material 3)
+- [x] Database schema defined (8 tables)
+- [x] Database code generated
+- [x] Theme system (light/dark mode)
+- [x] Basic app entry point with Riverpod
+- [x] Core constants and utilities
+- [x] Data models (Transaction, Category, Tag, BankAccount, SMS, Sender, SMSParsingPattern)
+
+### ⏳️ In Progress
+- SMS reading service (needs API verification)
+- Notification service (needs API verification)
+- SMS parsing and pattern matching
+- Android platform channel for SMS receiver
+- Transaction repositories
+- UI implementation (home page, SMS processing, settings)
+- Permission handling
+
+### ❌ Not Started
+- Transaction CRUD operations
+- Category management UI
+- Account management UI
+- Tag management UI
+- Pattern management UI
+- Sender filtering UI
+- Analytics page
+- Data export/import
+- India sender ruleset
+- Background SMS processing
+
+## Architecture
+
+```
+lib/
+├── core/
+│   ├── constants/
+│   │   └── app_constants.dart
+│   ├── theme/
+│   │   └── app_theme.dart
+│   └── utils/
+│       ├── currency_formatter.dart
+│       ├── date_formatter.dart
+│       └── validators.dart
+├── data/
+│   ├── models/
+│   │   ├── transaction.dart
+│   │   ├── category.dart
+│   │   ├── tag.dart
+│   │   ├── bank_account.dart
+│   │   ├── sms.dart
+│   │   ├── sender.dart
+│   │   ├── sms_parsing_pattern.dart
+│   │   └── transaction_model.dart
+│   └── database/
+│       ├── app_database.dart
+│       ├── app_database.g.dart (generated)
+│       └── tables/
+│           ├── transactions.dart
+│           ├── categories.dart
+│           ├── tags.dart
+│           ├── transaction_tags.dart
+│           ├── bank_accounts.dart
+│           ├── sms.dart
+│           ├── sms_parsing_patterns.dart
+│           └── senders.dart
+└── main.dart
+```
 
 ## Tech Stack
 
-- **Language**: Kotlin
-- **UI Framework**: Jetpack Compose with Material Design 3
-- **Architecture**: MVVM with Compose ViewModel
-- **Database**: Room Database (SQLite)
-- **Navigation**: Jetpack Navigation Compose
-- **Data Storage**: DataStore Preferences
-- **Build System**: Gradle with Kotlin DSL
-- **Minimum SDK**: 29 (Android 10)
-- **Target SDK**: 36
-
-## Permissions
-
-The app requires the following permissions:
-
-- `READ_SMS` - To read transaction SMS messages
-- `RECEIVE_SMS` - To receive new SMS messages
-- `POST_NOTIFICATIONS` - To show transaction notifications
-- `FOREGROUND_SERVICE` - For background SMS processing
-
-## Installation
-
-### Prerequisites
-
-- Android Studio Hedgehog (2023.1.1) or later
-- JDK 11 or later
-- Android SDK with API level 36
-
-### Build Instructions
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/bitmvk/Upence.git
-   cd Upence
-   ```
-
-2. Open the project in Android Studio
-
-3. Sync Gradle files
-
-4. Build and run on an Android device or emulator:
-   ```bash
-   ./gradlew assembleDebug
-   ./gradlew installDebug
-   ```
-
-## Project Structure
-
-```
-app/src/main/java/com/upence/
-├── data/                    # Database models and DAOs
-│   ├── AppDatabase.kt      # Room database configuration
-│   ├── Transaction.kt       # Transaction entity
-│   ├── Categories.kt       # Category entity
-│   ├── Tags.kt            # Tag entity
-│   ├── BankAccounts.kt    # Account entity
-│   └── *.dao              # Data Access Objects
-├── ui/                     # Compose UI screens and components
-│   ├── HomePage.kt         # Main dashboard
-│   ├── SettingsPage.kt     # Settings screen
-│   ├── SMSPageEnhanced.kt  # Transaction list
-│   ├── theme/             # App theme and styling
-│   └── settings/          # Settings sub-pages
-├── util/                   # Utility classes
-│   ├── SMSUtils.kt        # SMS parsing utilities
-│   ├── CurrencyFormatter.kt
-│   └── IconUtils.kt
-├── MainActivity.kt         # Main entry point
-├── SmsReceiver.kt          # SMS broadcast receiver
-└── NotificationActionReceiver.kt  # Notification action handler
-```
-
-## Usage
-
-1. **Grant Permissions**: Allow SMS and notification permissions when prompted
-2. **Setup Categories**: Create or customize transaction categories in Settings
-3. **Add Accounts**: Add your bank accounts in Settings
-4. **SMS Parsing**: Configure parsing patterns for your bank's SMS format
-5. **Automatic Tracking**: The app will automatically detect and categorize transactions from SMS
-6. **Manage Transactions**: View, edit, or delete transactions from the home screen
+- **Flutter**: 3.10.7+
+- **Database**: Drift (SQLite)
+- **State Management**: Riverpod
+- **UI**: Material Design 3
+- **SMS**: To be implemented (flutter_sms_inbox)
+- **Notifications**: To be implemented (flutter_local_notifications)
 
 ## Database Schema
 
-The app uses Room database with the following main tables:
+### Tables Created:
+1. `transactions` - Financial transactions
+2. `categories` - Transaction categories with icons and colors
+3. `tags` - Transaction tags
+4. `transaction_tags` - Junction table for transaction-tag relationships
+5. `bank_accounts` - User's bank accounts
+6. `sms` - Stored SMS messages
+7. `sms_parsing_patterns` - Pattern matching rules for SMS parsing
+8. `senders` - SMS sender filtering and ignore list
 
-- `transactions` - Stores individual financial transactions
-- `categories` - Stores transaction categories with icons and colors
-- `tags` - Stores tags for transaction organization
-- `bank_accounts` - Stores linked bank account information
-- `senders` - Stores allowed and ignored SMS senders
-- `sms_parsing_patterns` - Stores patterns for extracting transaction data
+## Next Steps
 
-## Contributing
+1. **Implement SMS Service**:
+   - Set up flutter_sms_inbox for reading SMS
+   - Filter bank SMS messages (BANK, UPI, -S suffix)
+   - Store SMS in database
+   - Auto-delete old SMS (keep 50 most recent)
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+2. **Implement Notification Service**:
+   - Set up flutter_local_notifications
+   - Create notification channel
+   - Show notifications for new SMS
+   - Handle notification actions (Add Transaction, Ignore Sender, Not This SMS)
 
-## License
+3. **Create Android Platform Channel**:
+   - BroadcastReceiver for SMS_RECEIVED
+   - Trigger Flutter notification
+   - Auto-parse transactions using patterns
 
-This project is licensed under the terms specified in the [LICENSE](LICENSE) file.
+4. **Implement SMS Parsing**:
+   - Port pattern matching algorithm from Kotlin
+   - Structure-based matching (≥50% threshold)
+   - Amount, counterparty, reference extraction
+   - Auto-create transactions
 
-## Author
+5. **Build UI Pages**:
+   - Home page with financial overview
+   - SMS processing page with field selection
+   - Settings page with all subpages
+   - Analytics page
+   - Navigation sidebar
 
-Built by [bitmvk](https://github.com/bitmvk)
+6. **Add Permission Handling**:
+   - SMS permissions (READ_SMS, RECEIVE_SMS)
+   - Notification permission (POST_NOTIFICATIONS)
+   - Foreground service permission
+   - Permission request dialogs
 
-## Privacy Notice
+7. **Create Repositories**:
+   - TransactionRepository
+   - CategoryRepository
+   - TagRepository
+   - BankAccountRepository
+   - SMSRepository
+   - PatternRepository
+   - SenderRepository
 
-This application processes SMS messages locally on your device. No data is transmitted to external servers. All transaction data is stored in the local Room database.
+## Critical Features (as per user request)
+
+### SMS Reading
+- ✅ Database schema ready
+- ⏳️ Service implementation needed
+- ⏳️ Query SMS inbox
+- ⏳️ Filter bank-related messages
+- ⏳️ Store in database
+
+### Notifications
+- ✅ Constants defined
+- ⏳️ Service implementation needed
+- ⏳️ Create notification channel
+- ⏳️ Show high-priority notifications
+- ⏳️ Handle action buttons
+- ⏳️ Auto-cancel after 60 seconds
+
+## How to Test
+
+1. Run `flutter run -d android` to launch on emulator/device
+2. App will show "Database initialized successfully!"
+3. Next step: Implement SMS and notification services
+
+## Original Features to Port
+
+From Upence_old (Kotlin):
+- Automatic SMS transaction tracking ✓
+- Smart transaction parsing ⏳️
+- Category management ⏳️
+- Tag system ⏳️
+- Multiple account support ⏳️
+- Currency support ✓
+- Detailed transaction history ⏳️
+- Ignored senders ⏳️
+- Material Design 3 ✓
+- Dark/Light theme ✓
+- Data management (export/import) ⏳️
+
+## Notes
+
+- The database uses Drift which provides compile-time safety
+- Riverpod is used for state management
+- Material 3 is used for theming
+- SMS parsing will use a structure-based algorithm similar to the original Kotlin implementation
+- The app is configured for Android only (minSdk 29, targetSdk 36)
+
+---
+
+*Last Updated: January 27, 2026*
