@@ -6,7 +6,7 @@ part 'sms_dao.g.dart';
 
 @DriftAccessor(tables: [SmsTable])
 class SmsDao extends DatabaseAccessor<AppDatabase> with _$SmsDaoMixin {
-  SmsDao(AppDatabase db) : super(db);
+  SmsDao(super.db);
 
   Future<List<Sms>> getAllSMS() => select(smsTable).get();
 

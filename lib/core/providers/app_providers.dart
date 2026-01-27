@@ -17,6 +17,7 @@ import '../../data/models/sms_parsing_pattern.dart' as models;
 import '../../services/permission_service.dart';
 import '../../services/sms_service.dart';
 import '../../services/notification_service.dart';
+import 'package:upence/features/onboarding/presentation/setup_provider.dart';
 
 // Database Provider
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -73,7 +74,9 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
 });
 
 // SharedPreferences Provider
-final sharedPreferencesProvider = FutureProvider<SharedPreferences>((ref) async {
+final sharedPreferencesProvider = FutureProvider<SharedPreferences>((
+  ref,
+) async {
   return await SharedPreferences.getInstance();
 });
 
@@ -111,13 +114,17 @@ final unprocessedSMSCountProvider = FutureProvider<int>((ref) async {
 });
 
 // Transaction List Provider
-final transactionListProvider = FutureProvider<List<models.Transaction>>((ref) async {
+final transactionListProvider = FutureProvider<List<models.Transaction>>((
+  ref,
+) async {
   final repo = ref.watch(transactionRepositoryProvider);
   return await repo.getAllTransactions();
 });
 
 // Recent Transactions Provider
-final recentTransactionsProvider = FutureProvider<List<models.Transaction>>((ref) async {
+final recentTransactionsProvider = FutureProvider<List<models.Transaction>>((
+  ref,
+) async {
   final repo = ref.watch(transactionRepositoryProvider);
   return await repo.getRecentTransactions(20);
 });
@@ -129,7 +136,9 @@ final categoriesProvider = FutureProvider<List<models.Category>>((ref) async {
 });
 
 // Bank Accounts Provider
-final bankAccountsProvider = FutureProvider<List<models.BankAccount>>((ref) async {
+final bankAccountsProvider = FutureProvider<List<models.BankAccount>>((
+  ref,
+) async {
   final repo = ref.watch(bankAccountRepositoryProvider);
   return await repo.getAllAccounts();
 });
@@ -141,7 +150,9 @@ final tagsProvider = FutureProvider<List<models.Tag>>((ref) async {
 });
 
 // SMS Patterns Provider
-final patternsProvider = FutureProvider<List<models.SMSParsingPattern>>((ref) async {
+final patternsProvider = FutureProvider<List<models.SMSParsingPattern>>((
+  ref,
+) async {
   final repo = ref.watch(patternRepositoryProvider);
   return await repo.getAllPatterns();
 });

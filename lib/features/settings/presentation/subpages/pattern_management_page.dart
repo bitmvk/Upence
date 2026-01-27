@@ -212,8 +212,9 @@ class _PatternManagementPageState extends ConsumerState<PatternManagementPage> {
             ElevatedButton(
               onPressed: () async {
                 if (nameController.text.isEmpty ||
-                    senderController.text.isEmpty)
+                    senderController.text.isEmpty) {
                   return;
+                }
 
                 final repo = ref.read(patternRepositoryProvider);
                 final now = DateTime.now().millisecondsSinceEpoch;

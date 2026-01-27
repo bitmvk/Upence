@@ -6,7 +6,7 @@ part 'pattern_dao.g.dart';
 
 @DriftAccessor(tables: [SMSParsingPatterns])
 class PatternDao extends DatabaseAccessor<AppDatabase> with _$PatternDaoMixin {
-  PatternDao(AppDatabase db) : super(db);
+  PatternDao(super.db);
 
   Future<List<SMSParsingPattern>> getAllPatterns() =>
       select(sMSParsingPatterns).get();

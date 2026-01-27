@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum NavItem { home, accounts, analytics, settings }
 
-class NavigationSidebar extends ConsumerStatefulWidget {
+class NavigationSidebar extends ConsumerWidget {
   final NavItem selectedItem;
   final Function(NavItem) onItemSelected;
 
@@ -14,91 +14,61 @@ class NavigationSidebar extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<NavigationSidebar> createState() => _NavigationSidebarState();
-}
-
-class _NavigationSidebarState extends ConsumerState<NavigationSidebar>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<Offset> _slideAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(-1, 0), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: Curves.easeInOut,
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Container(
+      width: 280,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(2, 0),
           ),
-        );
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SlideTransition(
-      position: _slideAnimation,
-      child: Container(
-        width: 280,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(2, 0),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildHeader(context),
+          const Divider(),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.home,
+                  label: 'Home',
+                  item: NavItem.home,
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.account_balance_wallet,
+                  label: 'Accounts',
+                  item: NavItem.accounts,
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.bar_chart,
+                  label: 'Analytics',
+                  item: NavItem.analytics,
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.settings,
+                  label: 'Settings',
+                  item: NavItem.settings,
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Column(
-          children: [
-            _buildHeader(),
-            const Divider(),
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  _buildNavItem(
-                    icon: Icons.home,
-                    label: 'Home',
-                    item: NavItem.home,
-                  ),
-                  _buildNavItem(
-                    icon: Icons.account_balance_wallet,
-                    label: 'Accounts',
-                    item: NavItem.accounts,
-                  ),
-                  _buildNavItem(
-                    icon: Icons.bar_chart,
-                    label: 'Analytics',
-                    item: NavItem.analytics,
-                  ),
-                  _buildNavItem(
-                    icon: Icons.settings,
-                    label: 'Settings',
-                    item: NavItem.settings,
-                  ),
-                ],
-              ),
-            ),
-            _buildFooter(),
-          ],
-        ),
+          ),
+          _buildFooter(context),
+        ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -142,10 +112,7 @@ class _NavigationSidebarState extends ConsumerState<NavigationSidebar>
                     ),
                     Text(
                       'SMS Transaction Tracker',
-                      style: const TextStyle(
-                        color: Color(0xCCFFFFFF),
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Color(0xCCFFFFFF), fontSize: 12),
                     ),
                   ],
                 ),
@@ -158,11 +125,12 @@ class _NavigationSidebarState extends ConsumerState<NavigationSidebar>
   }
 
   Widget _buildNavItem({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required NavItem item,
   }) {
-    final isSelected = widget.selectedItem == item;
+    final isSelected = selectedItem == item;
     return ListTile(
       leading: Icon(
         icon,
@@ -182,13 +150,13 @@ class _NavigationSidebarState extends ConsumerState<NavigationSidebar>
       selected: isSelected,
       selectedTileColor: Theme.of(context).colorScheme.primaryContainer,
       onTap: () {
-        widget.onItemSelected(item);
+        onItemSelected(item);
         Navigator.pop(context);
       },
     );
   }
 
-  Widget _buildFooter() {
+  Widget _buildFooter(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -215,13 +183,5 @@ class _NavigationSidebarState extends ConsumerState<NavigationSidebar>
         ],
       ),
     );
-  }
-
-  void open() {
-    _animationController.forward();
-  }
-
-  void close() {
-    _animationController.reverse();
   }
 }

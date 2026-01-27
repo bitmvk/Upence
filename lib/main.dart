@@ -10,6 +10,7 @@ import 'package:upence/features/sms/presentation/unprocessed_sms_page.dart';
 import 'package:upence/features/settings/presentation/settings_page.dart';
 import 'package:upence/features/analytics/presentation/analytics_page.dart';
 import 'package:upence/features/accounts/presentation/account_page.dart';
+import 'package:upence/features/onboarding/presentation/setup_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,14 +41,51 @@ void main() async {
   );
 }
 
-class MyApp extends ConsumerStatefulWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  ConsumerState<MyApp> createState() => _MyAppState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final setupCompletedAsync = ref.watch(setupCompletedProvider);
+    final themeModeAsync = ref.watch(themeModeProvider);
+
+    return setupCompletedAsync.when(
+      data: (setupCompleted) {
+        return themeModeAsync.when(
+          data: (themeMode) => MaterialApp(
+            title: 'Upence',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeMode,
+            home: setupCompleted ? const MainApp() : const SetupPage(),
+          ),
+          loading: () => MaterialApp(
+            home: Scaffold(body: Center(child: CircularProgressIndicator())),
+          ),
+          error: (error, stack) => MaterialApp(
+            home: Scaffold(body: Center(child: Text('Error: $error'))),
+          ),
+        );
+      },
+      loading: () => MaterialApp(
+        home: Scaffold(body: Center(child: CircularProgressIndicator())),
+      ),
+      error: (error, stack) => MaterialApp(
+        home: Scaffold(body: Center(child: Text('Error: $error'))),
+      ),
+    );
+  }
 }
 
-class _MyAppState extends ConsumerState<MyApp> {
+class MainApp extends ConsumerStatefulWidget {
+  const MainApp({super.key});
+
+  @override
+  ConsumerState<MainApp> createState() => _MainAppState();
+}
+
+class _MainAppState extends ConsumerState<MainApp> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   NavItem _selectedNavItem = NavItem.home;
 
@@ -64,7 +102,7 @@ class _MyAppState extends ConsumerState<MyApp> {
         themeMode: themeMode,
         home: _buildMainPage(),
       ),
-      loading: () => const MaterialApp(
+      loading: () => MaterialApp(
         home: Scaffold(body: Center(child: CircularProgressIndicator())),
       ),
       error: (error, stack) => MaterialApp(

@@ -6,7 +6,7 @@ part 'sender_dao.g.dart';
 
 @DriftAccessor(tables: [Senders])
 class SenderDao extends DatabaseAccessor<AppDatabase> with _$SenderDaoMixin {
-  SenderDao(AppDatabase db) : super(db);
+  SenderDao(super.db);
 
   Future<List<Sender>> getAllSenders() => select(senders).get();
 

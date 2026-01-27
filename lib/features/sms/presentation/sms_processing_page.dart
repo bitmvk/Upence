@@ -369,7 +369,7 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
                         hintText: 'Select category',
                         border: OutlineInputBorder(),
                       ),
-                      value: _selectedCategoryId,
+                      initialValue: _selectedCategoryId,
                       items: categories.map((category) {
                         return DropdownMenuItem(
                           value: category.id.toString(),
@@ -419,7 +419,7 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
                         hintText: 'Select account',
                         border: OutlineInputBorder(),
                       ),
-                      value: _selectedAccountId,
+                      initialValue: _selectedAccountId,
                       items: accounts.map((account) {
                         return DropdownMenuItem(
                           value: account.id.toString(),
