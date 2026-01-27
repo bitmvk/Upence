@@ -1,4 +1,4 @@
-package com.example.upence
+package com.upence.upence
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -9,7 +9,7 @@ import io.flutter.plugin.common.MethodChannel
 
 class SMSReceiver : BroadcastReceiver() {
     companion object {
-        private const val CHANNEL = "com.example.upence/sms"
+        private const val CHANNEL = "com.upence.upence/sms"
         private var methodChannel: MethodChannel? = null
 
         fun setMethodChannel(channel: MethodChannel) {

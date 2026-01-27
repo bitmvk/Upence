@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:drift/drift.dart';
 import 'package:upence/core/theme/app_theme.dart';
 import 'package:upence/core/providers/app_providers.dart';
 import 'package:upence/core/widgets/navigation_sidebar.dart';
@@ -17,7 +18,7 @@ void main() async {
   final database = await AppDatabase.getDatabase();
 
   // Set up SMS method channel
-  const smsChannel = MethodChannel('com.example.upence/sms');
+  const smsChannel = MethodChannel('com.upence.upence/sms');
   smsChannel.setMethodCallHandler((call) async {
     if (call.method == 'onSMSReceived') {
       final sender = call.arguments['sender'] as String?;
@@ -26,9 +27,21 @@ void main() async {
 
       if (sender != null && message != null && timestamp != null) {
         // Store SMS in database
-        // This would need to be handled via a service or provider
-        // For now, we'll just log it
-        debugPrint('SMS received: $sender - $message');
+        try {
+          await database
+              .into(database.smsTable)
+              .insert(
+                SmsTableCompanion(
+                  sender: Value(sender),
+                  message: Value(message),
+                  timestamp: Value(timestamp),
+                  processed: const Value(0),
+                ),
+              );
+          debugPrint('SMS received and stored: $sender');
+        } catch (e) {
+          debugPrint('Error storing SMS: $e');
+        }
       }
     }
   });

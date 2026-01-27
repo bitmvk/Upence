@@ -35,7 +35,7 @@
 
         <!-- SMS Receiver -->
         <receiver
-            android:name=".SMSReceiver"
+            android:name="com.upence.upence.SMSReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>

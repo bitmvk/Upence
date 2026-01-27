@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/icon_utils.dart';
+import '../../../core/widgets/icon_picker_widget.dart';
+import '../../../core/widgets/color_picker_widget.dart';
 import '../../../data/models/category.dart';
 import '../../../data/models/tag.dart';
 import '../../../data/models/bank_account.dart';
 import 'setup_provider.dart';
-import 'widgets/icon_picker.dart';
 
 class SetupPage extends ConsumerWidget {
   const SetupPage({super.key});
@@ -592,6 +593,7 @@ class SetupPage extends ConsumerWidget {
               const SizedBox(height: 24),
               TextField(
                 controller: accountNameController,
+                autofocus: true,
                 decoration: const InputDecoration(
                   labelText: 'Account Name *',
                   border: OutlineInputBorder(),
@@ -644,248 +646,419 @@ class SetupPage extends ConsumerWidget {
   }
 
   void _showAddCategoryDialog(BuildContext context, SetupNotifier notifier) {
-    final nameController = TextEditingController();
-    final descriptionController = TextEditingController();
-    String selectedIcon = 'restaurant';
-    int selectedColor = AppColors.primary.toARGB32();
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: StatefulBuilder(
-          builder: (context, setState) => Container(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Add Category',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 24),
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Name *'),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: descriptionController,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                ),
-                const SizedBox(height: 16),
-                const Text('Icon'),
-                const SizedBox(height: 8),
-                IconPicker(
-                  selectedIcon: selectedIcon,
-                  onIconSelected: (icon) => setState(() => selectedIcon = icon),
-                ),
-                const SizedBox(height: 16),
-                const Text('Color'),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    _buildColorOption(
-                      AppColors.primary.toARGB32(),
-                      selectedColor,
-                      setState,
-                    ),
-                    _buildColorOption(
-                      AppColors.income.toARGB32(),
-                      selectedColor,
-                      setState,
-                    ),
-                    _buildColorOption(
-                      AppColors.expense.toARGB32(),
-                      selectedColor,
-                      setState,
-                    ),
-                    _buildColorOption(
-                      AppColors.warning.toARGB32(),
-                      selectedColor,
-                      setState,
-                    ),
-                    _buildColorOption(
-                      AppColors.gray600.toARGB32(),
-                      selectedColor,
-                      setState,
-                    ),
-                    _buildColorOption(
-                      AppColors.gray800.toARGB32(),
-                      selectedColor,
-                      setState,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (nameController.text.isNotEmpty) {
-                            notifier.addCategory(
-                              Category(
-                                id: DateTime.now().millisecondsSinceEpoch,
-                                name: nameController.text,
-                                icon: selectedIcon,
-                                color: selectedColor,
-                                description: descriptionController.text,
-                              ),
-                            );
-                            Navigator.pop(context);
-                          }
-                        },
-                        child: const Text('Add'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildColorOption(
-    int colorValue,
-    int selectedColor,
-    StateSetter setState,
-  ) {
-    final isSelected = colorValue == selectedColor;
-    return GestureDetector(
-      onTap: () => setState(() => selectedColor = colorValue),
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: Color(colorValue),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: isSelected ? Colors.black : Colors.transparent,
-            width: 2,
-          ),
-        ),
-      ),
+      builder: (context) => _AddCategoryBottomSheet(notifier: notifier),
     );
   }
 
   void _showAddTagDialog(BuildContext context, SetupNotifier notifier) {
-    final nameController = TextEditingController();
-    int selectedColor = AppColors.primary.toARGB32();
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => Padding(
+      builder: (context) => _AddTagBottomSheet(notifier: notifier),
+    );
+  }
+}
+
+enum _BottomSheetMode { form, iconPicker, colorPicker }
+
+class _AddCategoryBottomSheet extends StatefulWidget {
+  final SetupNotifier notifier;
+
+  const _AddCategoryBottomSheet({super.key, required this.notifier});
+
+  @override
+  State<_AddCategoryBottomSheet> createState() =>
+      _AddCategoryBottomSheetState();
+}
+
+class _AddCategoryBottomSheetState extends State<_AddCategoryBottomSheet> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  String _selectedIcon = 'restaurant';
+  int _selectedColor = AppColors.primary.toARGB32();
+  _BottomSheetMode _mode = _BottomSheetMode.form;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: _mode == _BottomSheetMode.form,
+      onPopInvokedWithResult: (didPop, result) {
+        if (_mode != _BottomSheetMode.form && !didPop) {
+          setState(() {
+            _mode = _BottomSheetMode.form;
+          });
+        }
+      },
+      child: Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: StatefulBuilder(
-          builder: (context, setState) => Container(
-            padding: const EdgeInsets.all(24.0),
+        child: Container(
+          padding: const EdgeInsets.all(24.0),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.9,
+          ),
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Add Tag',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 24),
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Name *'),
-                ),
-                const SizedBox(height: 16),
-                const Text('Color'),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    _buildColorOption(
-                      AppColors.primary.toARGB32(),
-                      selectedColor,
-                      setState,
-                    ),
-                    _buildColorOption(
-                      AppColors.income.toARGB32(),
-                      selectedColor,
-                      setState,
-                    ),
-                    _buildColorOption(
-                      AppColors.expense.toARGB32(),
-                      selectedColor,
-                      setState,
-                    ),
-                    _buildColorOption(
-                      AppColors.warning.toARGB32(),
-                      selectedColor,
-                      setState,
-                    ),
-                    _buildColorOption(
-                      AppColors.gray600.toARGB32(),
-                      selectedColor,
-                      setState,
-                    ),
-                    _buildColorOption(
-                      AppColors.gray800.toARGB32(),
-                      selectedColor,
-                      setState,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (nameController.text.isNotEmpty) {
-                            final colorHex =
-                                '#${selectedColor.toRadixString(16).substring(2)}';
-                            notifier.addTag(
-                              Tag(
-                                id: DateTime.now().millisecondsSinceEpoch,
-                                name: nameController.text,
-                                color: colorHex,
-                              ),
-                            );
-                            Navigator.pop(context);
-                          }
-                        },
-                        child: const Text('Add'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                if (_mode == _BottomSheetMode.form) _buildFormContent(),
+                if (_mode != _BottomSheetMode.form)
+                  Expanded(child: _buildPickerContent()),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFormContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Add Category',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 24),
+        TextField(
+          controller: _nameController,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Name *'),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _descriptionController,
+          decoration: const InputDecoration(labelText: 'Description'),
+        ),
+        const SizedBox(height: 16),
+        const Text('Icon'),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () => setState(() => _mode = _BottomSheetMode.iconPicker),
+          child: Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+            child: Icon(IconUtils.getIcon(_selectedIcon), size: 32),
+          ),
+        ),
+        const SizedBox(height: 16),
+        const Text('Color'),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () => setState(() => _mode = _BottomSheetMode.colorPicker),
+          child: Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Color(_selectedColor),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: const Icon(Icons.palette, color: Colors.white),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            Expanded(
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () {
+                  if (_nameController.text.isNotEmpty) {
+                    widget.notifier.addCategory(
+                      Category(
+                        id: DateTime.now().millisecondsSinceEpoch,
+                        name: _nameController.text,
+                        icon: _selectedIcon,
+                        color: _selectedColor,
+                        description: _descriptionController.text,
+                      ),
+                    );
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('Add'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildPickerContent() {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      switchInCurve: Curves.easeIn,
+      switchOutCurve: Curves.easeOut,
+      transitionBuilder: (child, animation) {
+        const begin = Offset(1.0, 0.0);
+        const end = Offset.zero;
+        final tween = Tween(begin: begin, end: end);
+        final offsetAnimation = animation.drive(tween);
+        return SlideTransition(position: offsetAnimation, child: child);
+      },
+      child: Column(
+        key: ValueKey(_mode),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 8.0, top: 4.0, bottom: 4.0),
+            child: IconButton(
+              onPressed: () {
+                setState(() {
+                  _mode = _BottomSheetMode.form;
+                });
+              },
+              icon: const Icon(Icons.arrow_back),
+            ),
+          ),
+          const Divider(),
+          Expanded(
+            child: _mode == _BottomSheetMode.iconPicker
+                ? IconPickerWidget(
+                    selectedIcon: _selectedIcon,
+                    onIconSelected: (icon) {
+                      setState(() {
+                        _selectedIcon = icon;
+                      });
+                    },
+                  )
+                : ColorPickerWidget(
+                    selectedColor: Color(_selectedColor),
+                    onColorChanged: (color) {
+                      setState(() {
+                        _selectedColor = color.toARGB32();
+                      });
+                    },
+                  ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Center(
+              child: SizedBox(
+                width: 120,
+                height: 40,
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _mode = _BottomSheetMode.form;
+                    });
+                  },
+                  child: const Text('Done'),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AddTagBottomSheet extends StatefulWidget {
+  final SetupNotifier notifier;
+
+  const _AddTagBottomSheet({super.key, required this.notifier});
+
+  @override
+  State<_AddTagBottomSheet> createState() => _AddTagBottomSheetState();
+}
+
+class _AddTagBottomSheetState extends State<_AddTagBottomSheet> {
+  final TextEditingController _nameController = TextEditingController();
+  int _selectedColor = AppColors.primary.toARGB32();
+  _BottomSheetMode _mode = _BottomSheetMode.form;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: _mode == _BottomSheetMode.form,
+      onPopInvokedWithResult: (didPop, result) {
+        if (_mode != _BottomSheetMode.form && !didPop) {
+          setState(() {
+            _mode = _BottomSheetMode.form;
+          });
+        }
+      },
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(24.0),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.9,
+          ),
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_mode == _BottomSheetMode.form) _buildFormContent(),
+                if (_mode != _BottomSheetMode.form)
+                  Expanded(child: _buildPickerContent()),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFormContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Add Tag',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 24),
+        TextField(
+          controller: _nameController,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Name *'),
+        ),
+        const SizedBox(height: 16),
+        const Text('Color'),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () => setState(() => _mode = _BottomSheetMode.colorPicker),
+          child: Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Color(_selectedColor),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: const Icon(Icons.palette, color: Colors.white),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            Expanded(
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () {
+                  if (_nameController.text.isNotEmpty) {
+                    final colorHex =
+                        '#${_selectedColor.toRadixString(16).substring(2)}';
+                    widget.notifier.addTag(
+                      Tag(
+                        id: DateTime.now().millisecondsSinceEpoch,
+                        name: _nameController.text,
+                        color: colorHex,
+                      ),
+                    );
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('Add'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildPickerContent() {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      switchInCurve: Curves.easeIn,
+      switchOutCurve: Curves.easeOut,
+      transitionBuilder: (child, animation) {
+        const begin = Offset(1.0, 0.0);
+        const end = Offset.zero;
+        final tween = Tween(begin: begin, end: end);
+        final offsetAnimation = animation.drive(tween);
+        return SlideTransition(position: offsetAnimation, child: child);
+      },
+      child: Column(
+        key: const ValueKey('colorPicker'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 8.0, top: 4.0, bottom: 4.0),
+            child: IconButton(
+              onPressed: () {
+                setState(() {
+                  _mode = _BottomSheetMode.form;
+                });
+              },
+              icon: const Icon(Icons.arrow_back),
+            ),
+          ),
+          const Divider(),
+          Expanded(
+            child: ColorPickerWidget(
+              selectedColor: Color(_selectedColor),
+              onColorChanged: (color) {
+                setState(() {
+                  _selectedColor = color.toARGB32();
+                });
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Center(
+              child: SizedBox(
+                width: 120,
+                height: 40,
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _mode = _BottomSheetMode.form;
+                    });
+                  },
+                  child: const Text('Done'),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -14,6 +14,7 @@ import '../../data/models/category.dart' as models;
 import '../../data/models/tag.dart' as models;
 import '../../data/models/bank_account.dart' as models;
 import '../../data/models/sms_parsing_pattern.dart' as models;
+import '../../data/models/sms.dart' as models;
 import '../../services/permission_service.dart';
 import '../../services/sms_service.dart';
 import '../../services/notification_service.dart';
@@ -155,4 +156,10 @@ final patternsProvider = FutureProvider<List<models.SMSParsingPattern>>((
 ) async {
   final repo = ref.watch(patternRepositoryProvider);
   return await repo.getAllPatterns();
+});
+
+// Recent SMS Provider
+final recentSMSProvider = FutureProvider<List<models.SMSMessage>>((ref) async {
+  final smsRepo = ref.watch(smsRepositoryProvider);
+  return await smsRepo.getRecentSMS(20);
 });
