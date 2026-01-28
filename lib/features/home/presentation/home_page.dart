@@ -12,113 +12,123 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final recentTransactionsAsync = ref.watch(recentTransactionsProvider);
     final currencyAsync = ref.watch(currencyProvider);
+    final financialOverviewAsync = ref.watch(financialOverviewProvider);
 
     return currencyAsync.when(
       data: (currency) {
-        return Scaffold(
-          body: RefreshIndicator(
-            onRefresh: () => _refreshData(ref),
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: FinancialOverviewCard(
-                      balance: 0.0, // TODO: Get from provider
-                      income: 0.0, // TODO: Get from provider
-                      expense: 0.0, // TODO: Get from provider
-                      currency: currency,
-                    ),
-                  ),
-                ),
-                SliverToBoxAdapter(child: _buildProcessSMSBanner(context)),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        const Text(
-                          'Recent Transactions',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+        return financialOverviewAsync.when(
+          data: (overview) {
+            return Scaffold(
+              body: RefreshIndicator(
+                onRefresh: () => _refreshData(ref),
+                child: CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: FinancialOverviewCard(
+                          balance: overview.balance,
+                          income: overview.income,
+                          expense: overview.expense,
+                          currency: currency,
                         ),
-                        const Spacer(),
-                        TextButton.icon(
-                          onPressed: () {
-                            // TODO: Navigate to all transactions
-                          },
-                          icon: const Icon(Icons.chevron_right),
-                          label: const Text('View All'),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-                recentTransactionsAsync.when(
-                  data: (transactions) {
-                    if (transactions.isEmpty) {
-                      return SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.receipt_long,
-                                  size: 64,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.outline.withOpacity(0.5),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'No transactions yet',
-                                  style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.outline.withOpacity(0.5),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                TextButton.icon(
-                                  onPressed: () {
-                                    // TODO: Navigate to SMS processing
-                                  },
-                                  icon: const Icon(Icons.add),
-                                  label: const Text('Add Transaction'),
-                                ),
-                              ],
+                    SliverToBoxAdapter(child: _buildProcessSMSBanner(context)),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            const Text(
+                              'Recent Transactions',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
+                            const Spacer(),
+                            TextButton.icon(
+                              onPressed: () {
+                                // TODO: Navigate to all transactions
+                              },
+                              icon: const Icon(Icons.chevron_right),
+                              label: const Text('View All'),
+                            ),
+                          ],
                         ),
-                      );
-                    }
+                      ),
+                    ),
+                    recentTransactionsAsync.when(
+                      data: (transactions) {
+                        if (transactions.isEmpty) {
+                          return SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.receipt_long,
+                                      size: 64,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.outline.withOpacity(0.5),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No transactions yet',
+                                      style: TextStyle(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.outline.withOpacity(0.5),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    TextButton.icon(
+                                      onPressed: () {
+                                        // TODO: Navigate to SMS processing
+                                      },
+                                      icon: const Icon(Icons.add),
+                                      label: const Text('Add Transaction'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }
 
-                    return SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final transaction = transactions[index];
-                        return TransactionListItem(
-                          transaction: transaction,
-                          onTap: () {
-                            // TODO: Show transaction details
-                          },
+                        return SliverList(
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final transaction = transactions[index];
+                            return TransactionListItem(
+                              transaction: transaction,
+                              onTap: () {
+                                // TODO: Show transaction details
+                              },
+                            );
+                          }, childCount: transactions.length),
                         );
-                      }, childCount: transactions.length),
-                    );
-                  },
-                  loading: () => const SliverFillRemaining(
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                  error: (error, stack) => SliverFillRemaining(
-                    child: Center(child: Text('Error: $error')),
-                  ),
+                      },
+                      loading: () => const SliverFillRemaining(
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                      error: (error, stack) => SliverFillRemaining(
+                        child: Center(child: Text('Error: $error')),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => Center(child: Text('Error: $error')),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -192,5 +202,6 @@ class HomePage extends ConsumerWidget {
 
   Future<void> _refreshData(WidgetRef ref) async {
     ref.invalidate(recentTransactionsProvider);
+    ref.invalidate(financialOverviewProvider);
   }
 }

@@ -59,7 +59,7 @@ class FinancialOverviewCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildStatItem(
-                  icon: Icons.arrow_upward,
+                  icon: Icons.arrow_downward,
                   label: 'Income',
                   amount: income,
                   color: AppColors.income,
@@ -69,7 +69,7 @@ class FinancialOverviewCard extends StatelessWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: _buildStatItem(
-                  icon: Icons.arrow_downward,
+                  icon: Icons.arrow_upward,
                   label: 'Expense',
                   amount: expense,
                   color: AppColors.expense,

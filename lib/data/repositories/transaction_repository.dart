@@ -72,7 +72,7 @@ class TransactionRepository {
       description: t.description,
       accountId: t.accountId,
       transactionType: enums.TransactionType.values.firstWhere(
-        (e) => e.name == t.transactionType,
+        (e) => e.value == t.transactionType,
         orElse: () => enums.TransactionType.debit,
       ),
       referenceNumber: t.referenceNumber,

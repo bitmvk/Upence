@@ -161,11 +161,14 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
         // Find all words that make up the reference
         for (final word in words) {
           final processedWord = word.replaceAll(RegExp(r'[^0-9]'), '');
-          if (processedWord.isNotEmpty && referenceValue.contains(processedWord)) {
+          if (processedWord.isNotEmpty &&
+              referenceValue.contains(processedWord)) {
             _selectedReferenceWords.add(word);
           }
         }
-        debugPrint('[AUTO PARSE] ✓ Updated reference field: $_selectedReference');
+        debugPrint(
+          '[AUTO PARSE] ✓ Updated reference field: $_selectedReference',
+        );
         debugPrint('[AUTO PARSE] ✓ Reference words: $_selectedReferenceWords');
         updated = true;
       }
@@ -290,6 +293,9 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
           .read(transactionRepositoryProvider)
           .insertTransaction(transaction);
 
+      ref.invalidate(recentTransactionsProvider);
+      ref.invalidate(financialOverviewProvider);
+
       var message = 'Transaction saved successfully';
 
       if (_savePattern) {
@@ -367,7 +373,9 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
     debugPrint('  Message structure: ${pattern.messageStructure}');
     debugPrint('  Amount word indices: ${pattern.amountPattern}');
     debugPrint('  Counterparty word indices: ${pattern.counterpartyPattern}');
-    debugPrint('  Reference word indices: ${pattern.referencePattern ?? "NULL"}');
+    debugPrint(
+      '  Reference word indices: ${pattern.referencePattern ?? "NULL"}',
+    );
     debugPrint('  Transaction type: ${pattern.transactionType}');
     debugPrint('  Default category ID: ${pattern.defaultCategoryId}');
     debugPrint('  Default account ID: ${pattern.defaultAccountId}');
@@ -462,12 +470,13 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
     final isAmountMode = _selectionMode == SelectionMode.amount;
     final isReferenceMode = _selectionMode == SelectionMode.reference;
     final isNoModeSelected = _selectionMode == null;
-    
+
     // Words are disabled if:
     // - No mode is selected, OR
     // - In amount mode and word has no digits, OR
     // - In reference mode and word has no digits
-    final isWordDisabled = isNoModeSelected ||
+    final isWordDisabled =
+        isNoModeSelected ||
         (isAmountMode && !hasDigits) ||
         (isReferenceMode && !hasDigits);
 
@@ -641,10 +650,7 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: isSelected ? color : Colors.transparent,
-          border: Border.all(
-            color: color,
-            width: 1.5,
-          ),
+          border: Border.all(color: color, width: 1.5),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
@@ -667,7 +673,7 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
             label: 'Credit',
             type: TransactionType.credit,
             color: AppColors.income,
-            icon: Icons.arrow_upward,
+            icon: Icons.arrow_downward,
           ),
         ),
         const SizedBox(width: 16),
@@ -676,7 +682,7 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
             label: 'Debit',
             type: TransactionType.debit,
             color: AppColors.expense,
-            icon: Icons.arrow_downward,
+            icon: Icons.arrow_upward,
           ),
         ),
       ],
@@ -697,10 +703,7 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: isSelected ? color : Colors.transparent,
-          border: Border.all(
-            color: color,
-            width: 1.5,
-          ),
+          border: Border.all(color: color, width: 1.5),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(

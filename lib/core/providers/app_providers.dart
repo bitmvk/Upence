@@ -15,6 +15,7 @@ import '../../data/models/tag.dart' as models;
 import '../../data/models/bank_account.dart' as models;
 import '../../data/models/sms_parsing_pattern.dart' as models;
 import '../../data/models/sms.dart' as models;
+import '../../data/models/financial_overview.dart';
 import '../../services/permission_service.dart';
 import '../../services/sms_service.dart';
 import '../../services/notification_service.dart';
@@ -127,6 +128,23 @@ final recentTransactionsProvider = FutureProvider<List<models.Transaction>>((
 ) async {
   final repo = ref.watch(transactionRepositoryProvider);
   return await repo.getRecentTransactions(20);
+});
+
+// Financial Overview Provider
+final financialOverviewProvider = FutureProvider<FinancialOverview>((
+  ref,
+) async {
+  final repo = ref.watch(transactionRepositoryProvider);
+  final results = await Future.wait([
+    repo.getTotalBalance(),
+    repo.getTotalIncome(),
+    repo.getTotalExpense(),
+  ]);
+  return FinancialOverview(
+    balance: results[0],
+    income: results[1],
+    expense: results[2],
+  );
 });
 
 // Categories Provider

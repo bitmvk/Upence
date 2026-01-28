@@ -43,7 +43,7 @@ class TransactionListItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
-            isCredit ? Icons.arrow_upward : Icons.arrow_downward,
+            isCredit ? Icons.arrow_downward : Icons.arrow_upward,
             color: amountColor,
           ),
         ),

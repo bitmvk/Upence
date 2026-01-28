@@ -34,7 +34,7 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
 
   Future<double> getTotalBalance() async {
     final result = await customSelect(
-      'SELECT SUM(CASE WHEN transactionType = ? THEN amount ELSE -amount END) as total FROM transactions',
+      'SELECT SUM(CASE WHEN transaction_type = ? THEN amount ELSE -amount END) as total FROM transactions',
       variables: [Variable('CREDIT')],
       readsFrom: {transactions},
     ).getSingle();
@@ -43,7 +43,7 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
 
   Future<double> getTotalIncome() async {
     final result = await customSelect(
-      'SELECT SUM(amount) as total FROM transactions WHERE transactionType = ?',
+      'SELECT SUM(amount) as total FROM transactions WHERE transaction_type = ?',
       variables: [Variable('CREDIT')],
       readsFrom: {transactions},
     ).getSingle();
@@ -52,7 +52,7 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
 
   Future<double> getTotalExpense() async {
     final result = await customSelect(
-      'SELECT SUM(amount) as total FROM transactions WHERE transactionType = ?',
+      'SELECT SUM(amount) as total FROM transactions WHERE transaction_type = ?',
       variables: [Variable('DEBIT')],
       readsFrom: {transactions},
     ).getSingle();
