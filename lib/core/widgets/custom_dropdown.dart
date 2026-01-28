@@ -58,25 +58,36 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
 
     _overlayEntry = OverlayEntry(
       builder: (context) {
-        return Positioned(
-          left: offset.dx,
-          top: offset.dy + size.height,
-          width: size.width,
-          child: CompositedTransformFollower(
-            link: _layerLink,
-            showWhenUnlinked: false,
-            offset: Offset(0, size.height),
-            child: _DropdownMenu<T>(
-              items: widget.items,
-              value: widget.value,
-              dropdownColor: widget.dropdownColor,
-              menuMaxHeight: widget.menuMaxHeight,
-              onItemSelected: (item) {
-                widget.onChanged?.call(item);
-                _removeOverlay();
-              },
-              onDismiss: _removeOverlay,
-            ),
+        return GestureDetector(
+          onTap: _removeOverlay,
+          behavior: HitTestBehavior.translucent,
+          child: Stack(
+            children: [
+              Positioned(
+                left: offset.dx,
+                top: offset.dy + size.height,
+                width: size.width,
+                child: CompositedTransformFollower(
+                  link: _layerLink,
+                  showWhenUnlinked: false,
+                  offset: Offset(0, size.height),
+                  child: GestureDetector(
+                    onTap: () {},
+                    child: _DropdownMenu<T>(
+                      items: widget.items,
+                      value: widget.value,
+                      dropdownColor: widget.dropdownColor,
+                      menuMaxHeight: widget.menuMaxHeight,
+                      onItemSelected: (item) {
+                        widget.onChanged?.call(item);
+                        _removeOverlay();
+                      },
+                      onDismiss: () {},
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       },
