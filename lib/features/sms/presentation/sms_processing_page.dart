@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/sms.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction.dart';
+import '../../../data/models/sms_parsing_pattern.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/custom_dropdown.dart';
+import '../../../features/sms/services/sms_parsing_service.dart';
 
 enum SelectionMode { amount, counterparty, reference }
 
@@ -31,6 +33,9 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
   final List<String> _selectedTagIds = [];
   String _description = '';
   SelectionMode _selectionMode = SelectionMode.amount;
+  bool _savePattern = false;
+  bool _saveBankAccountForPattern = true;
+  bool _saveCategoryForPattern = false;
   late TextEditingController _amountController;
   late TextEditingController _counterpartyController;
   late TextEditingController _referenceController;
@@ -48,14 +53,175 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
     _autoParseSMS();
   }
 
-  void _autoParseSMS() {
-    // TODO: Get patterns from database and try to match
+  void _autoParseSMS() async {
+    debugPrint('══════════════════════════════════════════════════════');
+    debugPrint(
+      '[AUTO PARSE] Starting auto-parse for SMS from: ${widget.sms.sender}',
+    );
+    debugPrint('  Message: ${widget.sms.message}');
+
+    final patternsAsync = await ref.read(patternsProvider.future);
+    final smsParsingService = SMSParsingService();
+
+    debugPrint(
+      '[AUTO PARSE] Total patterns loaded from DB: ${patternsAsync.length}',
+    );
+
+    final senderPatterns = patternsAsync
+        .where((p) => p.senderIdentifier == widget.sms.sender && p.isActive)
+        .toList();
+
+    debugPrint(
+      '[AUTO PARSE] Patterns matching sender "${widget.sms.sender}": ${senderPatterns.length}',
+    );
+    for (final p in senderPatterns) {
+      debugPrint(
+        '  - Pattern ID: ${p.id}, Name: ${p.patternName}, Active: ${p.isActive}',
+      );
+    }
+
+    if (senderPatterns.isEmpty) {
+      debugPrint('[AUTO PARSE] No matching patterns found for sender');
+      debugPrint('══════════════════════════════════════════════════════');
+      return;
+    }
+
+    final matchingPatterns = smsParsingService.findMatchingPatterns(
+      widget.sms,
+      senderPatterns,
+    );
+
+    if (matchingPatterns.isEmpty) {
+      debugPrint('[AUTO PARSE] No patterns matched (score < 0.5 threshold)');
+      debugPrint('══════════════════════════════════════════════════════');
+      return;
+    }
+
+    final bestPattern = matchingPatterns.first;
+    debugPrint(
+      '[AUTO PARSE] Best pattern selected: ${bestPattern.patternName} (ID: ${bestPattern.id})',
+    );
+
+    final extractedFields = smsParsingService.extractFields(
+      widget.sms.message,
+      bestPattern,
+    );
+
+    debugPrint('[AUTO PARSE] Extracted fields:');
+    debugPrint('  Amount: ${extractedFields['amount']}');
+    debugPrint('  Counterparty: ${extractedFields['counterparty']}');
+    debugPrint('  Reference: ${extractedFields['reference']}');
+
+    setState(() {
+      bool updated = false;
+
+      if (extractedFields['amount'] != null &&
+          extractedFields['amount']!.isNotEmpty) {
+        _selectedAmount = extractedFields['amount'];
+        _amountController.text = _selectedAmount!;
+        debugPrint('[AUTO PARSE] ✓ Updated amount field: $_selectedAmount');
+        updated = true;
+      }
+
+      if (extractedFields['counterparty'] != null &&
+          extractedFields['counterparty']!.isNotEmpty) {
+        final counterpartyWords = extractedFields['counterparty']!.split(' ');
+        _selectedCounterpartyWords.clear();
+        _selectedCounterpartyWords.addAll(counterpartyWords);
+        _counterpartyController.text = extractedFields['counterparty']!;
+        debugPrint(
+          '[AUTO PARSE] ✓ Updated counterparty field: ${extractedFields['counterparty']}',
+        );
+        updated = true;
+      }
+
+      if (extractedFields['reference'] != null &&
+          extractedFields['reference']!.isNotEmpty) {
+        _selectedReference = extractedFields['reference'];
+        _referenceController.text = _selectedReference!;
+        debugPrint(
+          '[AUTO PARSE] ✓ Updated reference field: $_selectedReference',
+        );
+        updated = true;
+      }
+
+      _transactionType = bestPattern.transactionType;
+      debugPrint('[AUTO PARSE] ✓ Updated transaction type: $_transactionType');
+
+      if (bestPattern.defaultAccountId.isNotEmpty) {
+        _selectedAccountId = bestPattern.defaultAccountId;
+        debugPrint(
+          '[AUTO PARSE] ✓ Updated default account: $_selectedAccountId',
+        );
+        updated = true;
+      }
+
+      debugPrint('[AUTO PARSE] Form updated: $updated');
+      debugPrint('══════════════════════════════════════════════════════');
+    });
   }
 
   Color _getSurfaceColor() {
     return Theme.of(context).brightness == Brightness.light
         ? AppColors.primarySurfaceLight
         : AppColors.primarySurfaceDark;
+  }
+
+  Widget _buildPatternSaveOptions() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CheckboxListTile(
+              title: const Text('Save this as a new pattern'),
+              value: _savePattern,
+              onChanged: (value) {
+                setState(() {
+                  _savePattern = value ?? false;
+                  if (!_savePattern) {
+                    _saveBankAccountForPattern = false;
+                  }
+                });
+              },
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+            if (_savePattern)
+              Padding(
+                padding: const EdgeInsets.only(left: 40),
+                child: Column(
+                  children: [
+                    CheckboxListTile(
+                      title: const Text('Save bank account for this pattern'),
+                      value: _saveBankAccountForPattern,
+                      onChanged: (value) {
+                        setState(() {
+                          _saveBankAccountForPattern = value ?? false;
+                        });
+                      },
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                    ),
+                    CheckboxListTile(
+                      title: const Text('Save category for this pattern'),
+                      value: _saveCategoryForPattern,
+                      onChanged: (value) {
+                        setState(() {
+                          _saveCategoryForPattern = value ?? false;
+                        });
+                      },
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -98,10 +264,20 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
       await ref
           .read(transactionRepositoryProvider)
           .insertTransaction(transaction);
+
+      var message = 'Transaction saved successfully';
+
+      if (_savePattern) {
+        final pattern = _createPatternFromForm();
+        await ref.read(patternRepositoryProvider).insertPattern(pattern);
+        ref.invalidate(patternsProvider);
+        message += ', Pattern saved';
+      }
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Transaction saved successfully')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
         Navigator.of(context).pop(true);
       }
     } catch (e) {
@@ -111,6 +287,70 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
         ).showSnackBar(SnackBar(content: Text('Error saving transaction: $e')));
       }
     }
+  }
+
+  SMSParsingPattern _createPatternFromForm() {
+    final words = widget.sms.message.split(' ');
+
+    int? amountIndex;
+    if (_selectedAmountWord != null) {
+      amountIndex = words.indexOf(_selectedAmountWord!);
+    }
+
+    final counterpartyIndices = _selectedCounterpartyWords
+        .map((word) => words.indexOf(word))
+        .where((index) => index >= 0)
+        .toList();
+
+    int? referenceIndex;
+    if (_selectedReferenceWord != null) {
+      referenceIndex = words.indexOf(_selectedReferenceWord!);
+    }
+
+    final smsParsingService = SMSParsingService();
+    final messageStructure = smsParsingService.buildMessageStructure(
+      widget.sms.message,
+    );
+
+    final pattern = SMSParsingPattern(
+      senderIdentifier: widget.sms.sender,
+      patternName: _selectedCounterparty.isNotEmpty
+          ? 'Pattern for $_selectedCounterparty'
+          : 'Pattern for ${widget.sms.sender}',
+      messageStructure: messageStructure,
+      amountPattern: amountIndex != null ? amountIndex.toString() : '0',
+      counterpartyPattern: counterpartyIndices.join(','),
+      referencePattern: referenceIndex != null
+          ? referenceIndex.toString()
+          : null,
+      transactionType: _transactionType,
+      defaultCategoryId: _saveCategoryForPattern
+          ? (_selectedCategoryId ?? '')
+          : '',
+      defaultAccountId: _saveBankAccountForPattern
+          ? (_selectedAccountId ?? '')
+          : '',
+      autoSelectAccount: _saveBankAccountForPattern,
+      sampleSms: widget.sms.message,
+      createdTimestamp: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    debugPrint('══════════════════════════════════════════════════════');
+    debugPrint('[PATTERN CREATION] Saving pattern to database:');
+    debugPrint('  Sender: ${pattern.senderIdentifier}');
+    debugPrint('  Name: ${pattern.patternName}');
+    debugPrint('  Message structure: ${pattern.messageStructure}');
+    debugPrint('  Amount word index: ${pattern.amountPattern}');
+    debugPrint('  Counterparty word indices: ${pattern.counterpartyPattern}');
+    debugPrint('  Reference word index: ${pattern.referencePattern ?? "NULL"}');
+    debugPrint('  Transaction type: ${pattern.transactionType}');
+    debugPrint('  Default category ID: ${pattern.defaultCategoryId}');
+    debugPrint('  Default account ID: ${pattern.defaultAccountId}');
+    debugPrint('  Auto-select account: ${pattern.autoSelectAccount}');
+    debugPrint('  Sample SMS: ${pattern.sampleSms}');
+    debugPrint('══════════════════════════════════════════════════════');
+
+    return pattern;
   }
 
   @override
@@ -129,6 +369,8 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
             _buildTagSelector(),
             const SizedBox(height: 24),
             _buildDescriptionField(),
+            const SizedBox(height: 24),
+            _buildPatternSaveOptions(),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -199,27 +441,54 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
     final isWordDisabled =
         isWordDisabledForAmount || isWordDisabledForReference;
 
-    Color? backgroundColor;
+    final isSelected =
+        isAmountSelected || isCounterpartySelected || isReferenceSelected;
 
-    if (isAmountSelected) {
-      backgroundColor = AppColors.primary;
-    } else if (isCounterpartySelected) {
-      backgroundColor = AppColors.success;
-    } else if (isReferenceSelected) {
-      backgroundColor = AppColors.warning;
+    // Get the color for the selected type
+    Color getSelectedColor() {
+      if (isAmountSelected) return AppColors.primary;
+      if (isCounterpartySelected) return AppColors.success;
+      if (isReferenceSelected) return AppColors.warning;
+      return Colors.transparent;
+    }
+
+    Color? backgroundColor;
+    Color? textColor;
+
+    if (isWordDisabled) {
+      // Disabled words
+      if (isSelected) {
+        // Selected disabled word: color of selected type with opacity 0.2
+        backgroundColor = getSelectedColor().withOpacity(0.2);
+      } else {
+        // Not selected disabled word: transparent
+        backgroundColor = Colors.transparent;
+      }
+      // Text color: grey disabled
+      textColor = AppColors.gray400;
+    } else {
+      // Enabled words
+      if (isSelected) {
+        // Selected enabled word: color of selected type
+        backgroundColor = getSelectedColor();
+      } else {
+        // Not selected enabled word: grey with opacity 0.2
+        backgroundColor = Colors.grey.withOpacity(0.1);
+      }
+      // Text color: white or black depending on light/dark mode
+      textColor = Theme.of(context).brightness == Brightness.light
+          ? AppColors.black
+          : AppColors.white;
     }
 
     return InkWell(
       onTap: isWordDisabled ? null : () => _selectWordForMode(word),
       child: Chip(
         label: Text(word),
-        backgroundColor: isWordDisabled
-            ? Colors.grey.withOpacity(0.1)
-            : (backgroundColor ?? AppColors.primary.withOpacity(0.2)),
+        backgroundColor: backgroundColor,
         labelStyle: TextStyle(
-          color: isWordDisabled
-              ? Colors.grey
-              : Theme.of(context).colorScheme.onSurface,
+          color: textColor,
+          fontWeight: isSelected ? FontWeight.bold : null,
         ),
         side: BorderSide.none,
         elevation: 0,
