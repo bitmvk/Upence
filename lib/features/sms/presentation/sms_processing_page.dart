@@ -215,7 +215,7 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
         label: Text(word),
         backgroundColor: isWordDisabled
             ? Colors.grey.withOpacity(0.1)
-            : (backgroundColor ?? AppColors.primary.withOpacity(0.15)),
+            : (backgroundColor ?? AppColors.primary.withOpacity(0.2)),
         labelStyle: TextStyle(
           color: isWordDisabled
               ? Colors.grey
