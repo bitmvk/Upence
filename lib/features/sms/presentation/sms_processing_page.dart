@@ -502,8 +502,9 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
         // Selected enabled word: color of selected type
         backgroundColor = getSelectedColor();
       } else {
-        // Not selected enabled word: grey with opacity 0.2
-        backgroundColor = Colors.grey.withOpacity(0.2);
+        // Not selected enabled word: grey with opacity 0.1 in light mode, 0.2 in dark mode
+        final isLightMode = Theme.of(context).brightness == Brightness.light;
+        backgroundColor = Colors.grey.withOpacity(isLightMode ? 0.1 : 0.2);
       }
       // Text color: white or black depending on light/dark mode
       textColor = Theme.of(context).brightness == Brightness.light
@@ -630,24 +631,27 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
     required Color color,
   }) {
     final isSelected = _selectionMode == mode;
-    return InkWell(
+    return GestureDetector(
       onTap: () => setState(() {
         // Toggle the mode: if already selected, deselect it; otherwise select it
         _selectionMode = isSelected ? null : mode;
       }),
+      behavior: HitTestBehavior.opaque,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(1.0) : color.withOpacity(0.2),
+          color: isSelected ? color : Colors.transparent,
+          border: Border.all(
+            color: color,
+            width: 1.5,
+          ),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: isSelected
-                ? Colors.white
-                : Theme.of(context).colorScheme.onSurface,
+            color: isSelected ? Colors.white : color,
             fontWeight: isSelected ? FontWeight.bold : null,
           ),
         ),
@@ -686,26 +690,29 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
     required IconData icon,
   }) {
     final isSelected = _transactionType == type;
-    return InkWell(
+    return GestureDetector(
       onTap: () => setState(() => _transactionType = type),
+      behavior: HitTestBehavior.opaque,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(1.0) : color.withOpacity(0.15),
+          color: isSelected ? color : Colors.transparent,
+          border: Border.all(
+            color: color,
+            width: 1.5,
+          ),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: isSelected ? Colors.white : null, size: 20),
+            Icon(icon, color: isSelected ? Colors.white : color, size: 20),
             const SizedBox(width: 8),
             Text(
               label,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: isSelected
-                    ? Colors.white
-                    : Theme.of(context).colorScheme.onSurface,
+                color: isSelected ? Colors.white : color,
                 fontWeight: isSelected ? FontWeight.bold : null,
               ),
             ),
