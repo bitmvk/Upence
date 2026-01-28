@@ -5,6 +5,7 @@ import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/widgets/custom_dropdown.dart';
 
 enum SelectionMode { amount, counterparty, reference }
 
@@ -524,22 +525,14 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
                     color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: DropdownButtonFormField<String>(
-                    decoration: InputDecoration(
-                      hintText: 'Select category',
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                    ),
+                  child: CustomDropdown<String>(
+                    hint: 'Select category',
+                    value: _selectedCategoryId,
                     dropdownColor: Color.alphaBlend(
                       AppColors.primary.withOpacity(0.1),
                       Theme.of(context).colorScheme.surface,
                     ),
-                    alignment: AlignmentDirectional.bottomStart,
                     menuMaxHeight: 300,
-                    initialValue: _selectedCategoryId,
                     items: categories.map((category) {
                       return DropdownMenuItem(
                         value: category.id.toString(),
@@ -606,23 +599,14 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
                     color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: DropdownButtonFormField<String>(
-                    decoration: InputDecoration(
-                      hintText: 'Select account',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                    ),
+                  child: CustomDropdown<String>(
+                    hint: 'Select account',
+                    value: _selectedAccountId,
                     dropdownColor: Color.alphaBlend(
                       AppColors.primary.withOpacity(0.1),
                       Theme.of(context).colorScheme.surface,
                     ),
-                    // alignment: AlignmentDirectional.bottomStart,
-                    isExpanded: true,
                     menuMaxHeight: 300,
-                    initialValue: _selectedAccountId,
                     items: accounts.map((account) {
                       return DropdownMenuItem(
                         value: account.id.toString(),
