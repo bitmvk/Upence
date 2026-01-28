@@ -22,17 +22,17 @@ class SMSProcessingPage extends ConsumerStatefulWidget {
 
 class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
   String? _selectedAmount;
-  String? _selectedAmountWord;
+  final List<String> _selectedAmountWords = [];
   final List<String> _selectedCounterpartyWords = [];
   String get _selectedCounterparty => _selectedCounterpartyWords.join(' ');
   String? _selectedReference;
-  String? _selectedReferenceWord;
+  final List<String> _selectedReferenceWords = [];
   TransactionType _transactionType = TransactionType.debit;
   String? _selectedCategoryId;
   String? _selectedAccountId;
   final List<String> _selectedTagIds = [];
   String _description = '';
-  SelectionMode _selectionMode = SelectionMode.amount;
+  SelectionMode? _selectionMode;
   bool _savePattern = false;
   bool _saveBankAccountForPattern = true;
   bool _saveCategoryForPattern = false;
@@ -119,7 +119,22 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
           extractedFields['amount']!.isNotEmpty) {
         _selectedAmount = extractedFields['amount'];
         _amountController.text = _selectedAmount!;
+        // Also update the words list from the original message
+        final words = widget.sms.message.split(' ');
+        final amountValue = extractedFields['amount']!;
+        _selectedAmountWords.clear();
+        // Find all words that make up the amount
+        for (final word in words) {
+          final processedWord = word
+              .replaceAll(RegExp(r'[a-zA-Z]'), '')
+              .trim()
+              .replaceAll(RegExp(r'^\.+|\.$'), '');
+          if (processedWord.isNotEmpty && amountValue.contains(processedWord)) {
+            _selectedAmountWords.add(word);
+          }
+        }
         debugPrint('[AUTO PARSE] ✓ Updated amount field: $_selectedAmount');
+        debugPrint('[AUTO PARSE] ✓ Amount words: $_selectedAmountWords');
         updated = true;
       }
 
@@ -139,9 +154,19 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
           extractedFields['reference']!.isNotEmpty) {
         _selectedReference = extractedFields['reference'];
         _referenceController.text = _selectedReference!;
-        debugPrint(
-          '[AUTO PARSE] ✓ Updated reference field: $_selectedReference',
-        );
+        // Also update the words list from the original message
+        final words = widget.sms.message.split(' ');
+        final referenceValue = extractedFields['reference']!;
+        _selectedReferenceWords.clear();
+        // Find all words that make up the reference
+        for (final word in words) {
+          final processedWord = word.replaceAll(RegExp(r'[^0-9]'), '');
+          if (processedWord.isNotEmpty && referenceValue.contains(processedWord)) {
+            _selectedReferenceWords.add(word);
+          }
+        }
+        debugPrint('[AUTO PARSE] ✓ Updated reference field: $_selectedReference');
+        debugPrint('[AUTO PARSE] ✓ Reference words: $_selectedReferenceWords');
         updated = true;
       }
 
@@ -292,20 +317,20 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
   SMSParsingPattern _createPatternFromForm() {
     final words = widget.sms.message.split(' ');
 
-    int? amountIndex;
-    if (_selectedAmountWord != null) {
-      amountIndex = words.indexOf(_selectedAmountWord!);
-    }
+    final amountIndices = _selectedAmountWords
+        .map((word) => words.indexOf(word))
+        .where((index) => index >= 0)
+        .toList();
 
     final counterpartyIndices = _selectedCounterpartyWords
         .map((word) => words.indexOf(word))
         .where((index) => index >= 0)
         .toList();
 
-    int? referenceIndex;
-    if (_selectedReferenceWord != null) {
-      referenceIndex = words.indexOf(_selectedReferenceWord!);
-    }
+    final referenceIndices = _selectedReferenceWords
+        .map((word) => words.indexOf(word))
+        .where((index) => index >= 0)
+        .toList();
 
     final smsParsingService = SMSParsingService();
     final messageStructure = smsParsingService.buildMessageStructure(
@@ -318,10 +343,10 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
           ? 'Pattern for $_selectedCounterparty'
           : 'Pattern for ${widget.sms.sender}',
       messageStructure: messageStructure,
-      amountPattern: amountIndex != null ? amountIndex.toString() : '0',
+      amountPattern: amountIndices.isNotEmpty ? amountIndices.join(',') : '0',
       counterpartyPattern: counterpartyIndices.join(','),
-      referencePattern: referenceIndex != null
-          ? referenceIndex.toString()
+      referencePattern: referenceIndices.isNotEmpty
+          ? referenceIndices.join(',')
           : null,
       transactionType: _transactionType,
       defaultCategoryId: _saveCategoryForPattern
@@ -340,9 +365,9 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
     debugPrint('  Sender: ${pattern.senderIdentifier}');
     debugPrint('  Name: ${pattern.patternName}');
     debugPrint('  Message structure: ${pattern.messageStructure}');
-    debugPrint('  Amount word index: ${pattern.amountPattern}');
+    debugPrint('  Amount word indices: ${pattern.amountPattern}');
     debugPrint('  Counterparty word indices: ${pattern.counterpartyPattern}');
-    debugPrint('  Reference word index: ${pattern.referencePattern ?? "NULL"}');
+    debugPrint('  Reference word indices: ${pattern.referencePattern ?? "NULL"}');
     debugPrint('  Transaction type: ${pattern.transactionType}');
     debugPrint('  Default category ID: ${pattern.defaultCategoryId}');
     debugPrint('  Default account ID: ${pattern.defaultAccountId}');
@@ -429,17 +454,22 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
   }
 
   Widget _buildWordChip(String word) {
-    final isAmountSelected = word == _selectedAmountWord;
+    final isAmountSelected = _selectedAmountWords.contains(word);
     final isCounterpartySelected = _selectedCounterpartyWords.contains(word);
-    final isReferenceSelected = word == _selectedReferenceWord;
+    final isReferenceSelected = _selectedReferenceWords.contains(word);
 
     final hasDigits = RegExp(r'\d').hasMatch(word);
     final isAmountMode = _selectionMode == SelectionMode.amount;
     final isReferenceMode = _selectionMode == SelectionMode.reference;
-    final isWordDisabledForAmount = isAmountMode && !hasDigits;
-    final isWordDisabledForReference = isReferenceMode && !hasDigits;
-    final isWordDisabled =
-        isWordDisabledForAmount || isWordDisabledForReference;
+    final isNoModeSelected = _selectionMode == null;
+    
+    // Words are disabled if:
+    // - No mode is selected, OR
+    // - In amount mode and word has no digits, OR
+    // - In reference mode and word has no digits
+    final isWordDisabled = isNoModeSelected ||
+        (isAmountMode && !hasDigits) ||
+        (isReferenceMode && !hasDigits);
 
     final isSelected =
         isAmountSelected || isCounterpartySelected || isReferenceSelected;
@@ -473,7 +503,7 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
         backgroundColor = getSelectedColor();
       } else {
         // Not selected enabled word: grey with opacity 0.2
-        backgroundColor = Colors.grey.withOpacity(0.1);
+        backgroundColor = Colors.grey.withOpacity(0.2);
       }
       // Text color: white or black depending on light/dark mode
       textColor = Theme.of(context).brightness == Brightness.light
@@ -500,21 +530,17 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
     setState(() {
       switch (_selectionMode) {
         case SelectionMode.amount:
-          final processedWord = word
-              .replaceAll(RegExp(r'[a-zA-Z]'), '')
-              .trim()
-              .replaceAll(RegExp(r'^\.+|\.$'), '');
-          if (processedWord.isNotEmpty) {
-            if (_selectedAmountWord == word) {
-              _selectedAmount = null;
-              _selectedAmountWord = null;
-              _amountController.text = '';
-            } else {
-              _selectedAmount = processedWord;
-              _selectedAmountWord = word;
-              _amountController.text = processedWord;
-            }
+          if (_selectedAmountWords.contains(word)) {
+            _selectedAmountWords.remove(word);
+          } else {
+            _selectedAmountWords.add(word);
           }
+          // Update the amount value by joining all selected words
+          _selectedAmount = _selectedAmountWords
+              .map((w) => w.replaceAll(RegExp(r'[a-zA-Z]'), '').trim())
+              .where((w) => w.isNotEmpty)
+              .join('');
+          _amountController.text = _selectedAmount ?? '';
           break;
         case SelectionMode.counterparty:
           if (_selectedCounterpartyWords.contains(word)) {
@@ -525,18 +551,20 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
           _counterpartyController.text = _selectedCounterpartyWords.join(' ');
           break;
         case SelectionMode.reference:
-          final processedWord = word.replaceAll(RegExp(r'[^0-9]'), '');
-          if (processedWord.isNotEmpty) {
-            if (_selectedReferenceWord == word) {
-              _selectedReference = null;
-              _selectedReferenceWord = null;
-              _referenceController.text = '';
-            } else {
-              _selectedReference = processedWord;
-              _selectedReferenceWord = word;
-              _referenceController.text = processedWord;
-            }
+          if (_selectedReferenceWords.contains(word)) {
+            _selectedReferenceWords.remove(word);
+          } else {
+            _selectedReferenceWords.add(word);
           }
+          // Update the reference value by joining all selected words
+          _selectedReference = _selectedReferenceWords
+              .map((w) => w.replaceAll(RegExp(r'[^0-9]'), ''))
+              .where((w) => w.isNotEmpty)
+              .join('');
+          _referenceController.text = _selectedReference ?? '';
+          break;
+        case null:
+          // No mode selected, do nothing
           break;
       }
     });
@@ -603,7 +631,10 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
   }) {
     final isSelected = _selectionMode == mode;
     return InkWell(
-      onTap: () => setState(() => _selectionMode = mode),
+      onTap: () => setState(() {
+        // Toggle the mode: if already selected, deselect it; otherwise select it
+        _selectionMode = isSelected ? null : mode;
+      }),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
@@ -710,7 +741,24 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
             ),
             keyboardType: TextInputType.number,
             controller: _amountController,
-            onChanged: (value) => setState(() => _selectedAmount = value),
+            onChanged: (value) {
+              setState(() {
+                _selectedAmount = value;
+                // Also update the words list based on the new value
+                final words = widget.sms.message.split(' ');
+                _selectedAmountWords.clear();
+                for (final word in words) {
+                  final processedWord = word
+                      .replaceAll(RegExp(r'[a-zA-Z]'), '')
+                      .trim()
+                      .replaceAll(RegExp(r'^\.+|\.$'), '');
+                  if (processedWord.isNotEmpty &&
+                      (value.isEmpty || value.contains(processedWord))) {
+                    _selectedAmountWords.add(word);
+                  }
+                }
+              });
+            },
           ),
         ),
       ],
@@ -783,7 +831,21 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
               ),
             ),
             controller: _referenceController,
-            onChanged: (value) => setState(() => _selectedReference = value),
+            onChanged: (value) {
+              setState(() {
+                _selectedReference = value;
+                // Also update the words list based on the new value
+                final words = widget.sms.message.split(' ');
+                _selectedReferenceWords.clear();
+                for (final word in words) {
+                  final processedWord = word.replaceAll(RegExp(r'[^0-9]'), '');
+                  if (processedWord.isNotEmpty &&
+                      (value.isEmpty || value.contains(processedWord))) {
+                    _selectedReferenceWords.add(word);
+                  }
+                }
+              });
+            },
           ),
         ),
       ],
