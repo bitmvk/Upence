@@ -43,6 +43,10 @@ class AppColors {
   static const Color surfaceLight = Color(0xFFFFFFFF);
   static const Color surfaceDark = Color(0xFF1E1E1E);
 
+  // Primary surface colors (10% primary opacity blended with surface)
+  static const Color primarySurfaceLight = Color(0xFFECEFFD);
+  static const Color primarySurfaceDark = Color(0xFF222533);
+
   // Text colors
   static const Color textLight = Color(0xFF000000);
   static const Color textDark = Color(0xFFFFFFFF);

@@ -52,6 +52,12 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
     // TODO: Get patterns from database and try to match
   }
 
+  Color _getSurfaceColor() {
+    return Theme.of(context).brightness == Brightness.light
+        ? AppColors.primarySurfaceLight
+        : AppColors.primarySurfaceDark;
+  }
+
   @override
   void dispose() {
     _amountController.dispose();
@@ -417,7 +423,7 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: _getSurfaceColor(),
             borderRadius: BorderRadius.circular(8),
           ),
           child: TextField(
@@ -426,6 +432,8 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
               hintStyle: TextStyle(color: AppColors.gray500),
               prefixText: '₹',
               border: InputBorder.none,
+              filled: true,
+              fillColor: Colors.transparent,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 12,
                 vertical: 12,
@@ -451,7 +459,7 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: _getSurfaceColor(),
             borderRadius: BorderRadius.circular(8),
           ),
           child: TextField(
@@ -459,6 +467,8 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
               hintText: 'Enter counterparty',
               hintStyle: TextStyle(color: AppColors.gray500),
               border: InputBorder.none,
+              filled: true,
+              fillColor: Colors.transparent,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 12,
                 vertical: 12,
@@ -488,7 +498,7 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: _getSurfaceColor(),
             borderRadius: BorderRadius.circular(8),
           ),
           child: TextField(
@@ -496,6 +506,8 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
               hintText: 'Enter reference number (optional)',
               hintStyle: TextStyle(color: AppColors.gray500),
               border: InputBorder.none,
+              filled: true,
+              fillColor: Colors.transparent,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 12,
                 vertical: 12,
@@ -520,38 +532,30 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
             final categoriesAsync = ref.watch(categoriesProvider);
             return categoriesAsync.when(
               data: (categories) {
-                return Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: CustomDropdown<String>(
-                    hint: 'Select category',
-                    value: _selectedCategoryId,
-                    dropdownColor: Color.alphaBlend(
-                      AppColors.primary.withOpacity(0.1),
-                      Theme.of(context).colorScheme.surface,
-                    ),
-                    menuMaxHeight: 300,
-                    items: categories.map((category) {
-                      return DropdownMenuItem(
-                        value: category.id.toString(),
-                        child: Row(
-                          children: [
-                            Icon(
-                              _getIconData(category.icon),
-                              size: 20,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                            const SizedBox(width: 12),
-                            Text(category.name),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (value) =>
-                        setState(() => _selectedCategoryId = value),
-                  ),
+                return CustomDropdown<String>(
+                  hint: 'Select category',
+                  value: _selectedCategoryId,
+                  fillColor: _getSurfaceColor(),
+                  dropdownColor: _getSurfaceColor(),
+                  menuMaxHeight: 300,
+                  items: categories.map((category) {
+                    return DropdownMenuItem(
+                      value: category.id.toString(),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _getIconData(category.icon),
+                            size: 20,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(category.name),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) =>
+                      setState(() => _selectedCategoryId = value),
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -594,28 +598,20 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
             final accountsAsync = ref.watch(bankAccountsProvider);
             return accountsAsync.when(
               data: (accounts) {
-                return Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: CustomDropdown<String>(
-                    hint: 'Select account',
-                    value: _selectedAccountId,
-                    dropdownColor: Color.alphaBlend(
-                      AppColors.primary.withOpacity(0.1),
-                      Theme.of(context).colorScheme.surface,
-                    ),
-                    menuMaxHeight: 300,
-                    items: accounts.map((account) {
-                      return DropdownMenuItem(
-                        value: account.id.toString(),
-                        child: Text(account.accountName),
-                      );
-                    }).toList(),
-                    onChanged: (value) =>
-                        setState(() => _selectedAccountId = value),
-                  ),
+                return CustomDropdown<String>(
+                  hint: 'Select account',
+                  value: _selectedAccountId,
+                  fillColor: _getSurfaceColor(),
+                  dropdownColor: _getSurfaceColor(),
+                  menuMaxHeight: 300,
+                  items: accounts.map((account) {
+                    return DropdownMenuItem(
+                      value: account.id.toString(),
+                      child: Text(account.accountName),
+                    );
+                  }).toList(),
+                  onChanged: (value) =>
+                      setState(() => _selectedAccountId = value),
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -711,7 +707,7 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
             const SizedBox(height: 8),
             Container(
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: _getSurfaceColor(),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: TextField(
@@ -719,6 +715,8 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
                   hintText: 'Enter description (optional)',
                   hintStyle: TextStyle(color: AppColors.gray500),
                   border: InputBorder.none,
+                  filled: true,
+                  fillColor: Colors.transparent,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 12,

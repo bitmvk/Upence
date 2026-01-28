@@ -10,6 +10,7 @@ class CustomDropdown<T> extends StatefulWidget {
   final Widget? icon;
   final Widget Function(T? value)? selectedItemBuilder;
   final bool isExpanded;
+  final Color? fillColor;
 
   const CustomDropdown({
     super.key,
@@ -22,6 +23,7 @@ class CustomDropdown<T> extends StatefulWidget {
     this.icon,
     this.selectedItemBuilder,
     this.isExpanded = false,
+    this.fillColor,
   });
 
   @override
@@ -89,11 +91,11 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
     final selectedWidget = widget.selectedItemBuilder != null
         ? widget.selectedItemBuilder!(widget.value)
         : widget.items
-                .firstWhere(
-                  (item) => item.value == widget.value,
-                  orElse: () => const DropdownMenuItem(child: SizedBox()),
-                )
-                .child;
+              .firstWhere(
+                (item) => item.value == widget.value,
+                orElse: () => const DropdownMenuItem(child: SizedBox()),
+              )
+              .child;
 
     return CompositedTransformTarget(
       link: _layerLink,
@@ -108,7 +110,7 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.transparent,
+            color: widget.fillColor ?? Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -118,9 +120,7 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
                     ? selectedWidget
                     : Text(
                         widget.hint,
-                        style: TextStyle(
-                          color: Theme.of(context).hintColor,
-                        ),
+                        style: TextStyle(color: Theme.of(context).hintColor),
                       ),
               ),
               widget.icon ??
@@ -165,7 +165,7 @@ class _DropdownMenu<T> extends StatelessWidget {
           GestureDetector(
             onTap: () {},
             child: Material(
-              elevation: 8,
+              elevation: 0,
               borderRadius: BorderRadius.circular(8),
               color: dropdownColor ?? Theme.of(context).canvasColor,
               child: ConstrainedBox(
@@ -187,10 +187,9 @@ class _DropdownMenu<T> extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withValues(alpha: 0.1)
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.1)
                               : null,
                         ),
                         child: item.child,
