@@ -19,8 +19,11 @@ class SMSProcessingPage extends ConsumerStatefulWidget {
 
 class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
   String? _selectedAmount;
-  String? _selectedCounterparty;
+  String? _selectedAmountWord;
+  final List<String> _selectedCounterpartyWords = [];
+  String get _selectedCounterparty => _selectedCounterpartyWords.join(' ');
   String? _selectedReference;
+  String? _selectedReferenceWord;
   TransactionType _transactionType = TransactionType.debit;
   String? _selectedCategoryId;
   String? _selectedAccountId;
@@ -58,7 +61,7 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
   }
 
   void _saveTransaction() async {
-    if (_selectedAmount == null || _selectedCounterparty == null) {
+    if (_selectedAmount == null || _selectedCounterpartyWords.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select amount and counterparty')),
       );
@@ -74,7 +77,7 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
     }
 
     final transaction = Transaction(
-      counterParty: _selectedCounterparty!,
+      counterParty: _selectedCounterparty,
       amount: amount,
       timestamp: widget.sms.dateTime,
       categoryId: _selectedCategoryId ?? '',
@@ -106,22 +109,7 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Process SMS'),
-        actions: [
-          TextButton(
-            onPressed: _saveTransaction,
-            child: const Text(
-              'Done',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Process SMS')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -134,6 +122,25 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
             _buildTagSelector(),
             const SizedBox(height: 24),
             _buildDescriptionField(),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _saveTransaction,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Done',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -173,34 +180,39 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
   }
 
   Widget _buildWordChip(String word) {
-    final isAmountSelected = word == _selectedAmount;
-    final isCounterpartySelected = word == _selectedCounterparty;
-    final isReferenceSelected = word == _selectedReference;
+    final isAmountSelected = word == _selectedAmountWord;
+    final isCounterpartySelected = _selectedCounterpartyWords.contains(word);
+    final isReferenceSelected = word == _selectedReferenceWord;
+
+    final hasDigits = RegExp(r'\d').hasMatch(word);
+    final isAmountMode = _selectionMode == SelectionMode.amount;
+    final isReferenceMode = _selectionMode == SelectionMode.reference;
+    final isWordDisabledForAmount = isAmountMode && !hasDigits;
+    final isWordDisabledForReference = isReferenceMode && !hasDigits;
+    final isWordDisabled =
+        isWordDisabledForAmount || isWordDisabledForReference;
 
     Color? backgroundColor;
-    Color? textColor;
 
     if (isAmountSelected) {
-      backgroundColor = AppColors.primary.withOpacity(0.2);
-      textColor = AppColors.primary;
+      backgroundColor = AppColors.primary;
     } else if (isCounterpartySelected) {
-      backgroundColor = AppColors.success.withOpacity(0.2);
-      textColor = AppColors.success;
+      backgroundColor = AppColors.success;
     } else if (isReferenceSelected) {
-      backgroundColor = AppColors.warning.withOpacity(0.2);
-      textColor = AppColors.warning;
+      backgroundColor = AppColors.warning;
     }
 
-    final isSelected =
-        isAmountSelected || isCounterpartySelected || isReferenceSelected;
-
     return InkWell(
-      onTap: () => _selectWordForMode(word),
+      onTap: isWordDisabled ? null : () => _selectWordForMode(word),
       child: Chip(
         label: Text(word),
-        backgroundColor: AppColors.primary.withOpacity(0.15),
+        backgroundColor: isWordDisabled
+            ? Colors.grey.withOpacity(0.1)
+            : (backgroundColor ?? AppColors.primary.withOpacity(0.15)),
         labelStyle: TextStyle(
-          color: textColor ?? Theme.of(context).colorScheme.onSurface,
+          color: isWordDisabled
+              ? Colors.grey
+              : Theme.of(context).colorScheme.onSurface,
         ),
         side: BorderSide.none,
         elevation: 0,
@@ -212,13 +224,43 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
     setState(() {
       switch (_selectionMode) {
         case SelectionMode.amount:
-          _selectedAmount = word;
+          final processedWord = word
+              .replaceAll(RegExp(r'[a-zA-Z]'), '')
+              .trim()
+              .replaceAll(RegExp(r'^\.+|\.$'), '');
+          if (processedWord.isNotEmpty) {
+            if (_selectedAmountWord == word) {
+              _selectedAmount = null;
+              _selectedAmountWord = null;
+              _amountController.text = '';
+            } else {
+              _selectedAmount = processedWord;
+              _selectedAmountWord = word;
+              _amountController.text = processedWord;
+            }
+          }
           break;
         case SelectionMode.counterparty:
-          _selectedCounterparty = word;
+          if (_selectedCounterpartyWords.contains(word)) {
+            _selectedCounterpartyWords.remove(word);
+          } else {
+            _selectedCounterpartyWords.add(word);
+          }
+          _counterpartyController.text = _selectedCounterpartyWords.join(' ');
           break;
         case SelectionMode.reference:
-          _selectedReference = word;
+          final processedWord = word.replaceAll(RegExp(r'[^0-9]'), '');
+          if (processedWord.isNotEmpty) {
+            if (_selectedReferenceWord == word) {
+              _selectedReference = null;
+              _selectedReferenceWord = null;
+              _referenceController.text = '';
+            } else {
+              _selectedReference = processedWord;
+              _selectedReferenceWord = word;
+              _referenceController.text = processedWord;
+            }
+          }
           break;
       }
     });
@@ -342,26 +384,21 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.15) : null,
-          border: Border.all(
-            color: isSelected ? color : Colors.grey.shade300,
-            width: isSelected ? 2 : 1,
-          ),
+          color: isSelected ? color.withOpacity(1.0) : color.withOpacity(0.15),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: isSelected ? color : Colors.grey.shade400,
-              size: 20,
-            ),
+            Icon(icon, color: isSelected ? Colors.white : null, size: 20),
             const SizedBox(width: 8),
             Text(
               label,
+              textAlign: TextAlign.center,
               style: TextStyle(
-                color: isSelected ? color : null,
+                color: isSelected
+                    ? Colors.white
+                    : Theme.of(context).colorScheme.onSurface,
                 fontWeight: isSelected ? FontWeight.bold : null,
               ),
             ),
@@ -377,21 +414,26 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
       children: [
         const Text('Amount', style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        TextField(
-          decoration: InputDecoration(
-            hintText: 'Enter amount',
-            prefixText: '₹',
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
-            ),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
           ),
-          keyboardType: TextInputType.number,
-          controller: _amountController,
-          onChanged: (value) => setState(() => _selectedAmount = value),
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: 'Enter amount',
+              hintStyle: TextStyle(color: AppColors.gray500),
+              prefixText: '₹',
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
+            ),
+            keyboardType: TextInputType.number,
+            controller: _amountController,
+            onChanged: (value) => setState(() => _selectedAmount = value),
+          ),
         ),
       ],
     );
@@ -406,19 +448,29 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        TextField(
-          decoration: InputDecoration(
-            hintText: 'Enter counterparty',
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
-            ),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
           ),
-          controller: _counterpartyController,
-          onChanged: (value) => setState(() => _selectedCounterparty = value),
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: 'Enter counterparty',
+              hintStyle: TextStyle(color: AppColors.gray500),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
+            ),
+            controller: _counterpartyController,
+            onChanged: (value) => setState(() {
+              _selectedCounterpartyWords.clear();
+              _selectedCounterpartyWords.addAll(
+                value.split(' ').where((w) => w.isNotEmpty),
+              );
+            }),
+          ),
         ),
       ],
     );
@@ -433,19 +485,24 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        TextField(
-          decoration: InputDecoration(
-            hintText: 'Enter reference number (optional)',
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
-            ),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
           ),
-          controller: _referenceController,
-          onChanged: (value) => setState(() => _selectedReference = value),
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: 'Enter reference number (optional)',
+              hintStyle: TextStyle(color: AppColors.gray500),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
+            ),
+            controller: _referenceController,
+            onChanged: (value) => setState(() => _selectedReference = value),
+          ),
         ),
       ],
     );
@@ -464,23 +521,24 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
               data: (categories) {
                 return Container(
                   decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
+                    color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Select category',
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
+                      contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 12,
                       ),
                     ),
-                    dropdownColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
+                    dropdownColor: Color.alphaBlend(
+                      AppColors.primary.withOpacity(0.1),
+                      Theme.of(context).colorScheme.surface,
+                    ),
+                    alignment: AlignmentDirectional.bottomStart,
+                    menuMaxHeight: 300,
                     initialValue: _selectedCategoryId,
                     items: categories.map((category) {
                       return DropdownMenuItem(
@@ -545,13 +603,11 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
               data: (accounts) {
                 return Container(
                   decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
+                    color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Select account',
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(
@@ -559,9 +615,13 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
                         vertical: 12,
                       ),
                     ),
-                    dropdownColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
+                    dropdownColor: Color.alphaBlend(
+                      AppColors.primary.withOpacity(0.1),
+                      Theme.of(context).colorScheme.surface,
+                    ),
+                    // alignment: AlignmentDirectional.bottomStart,
+                    isExpanded: true,
+                    menuMaxHeight: 300,
                     initialValue: _selectedAccountId,
                     items: accounts.map((account) {
                       return DropdownMenuItem(
@@ -597,14 +657,17 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
                 final tagsAsync = ref.watch(tagsProvider);
                 return tagsAsync.when(
                   data: (tags) {
-                    return Row(
-                      children: tags.map((tag) {
-                        final isSelected = _selectedTagIds.contains(
-                          tag.id.toString(),
-                        );
-                        return Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 8),
+                    return SizedBox(
+                      width: double.infinity,
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: tags.map((tag) {
+                          final isSelected = _selectedTagIds.contains(
+                            tag.id.toString(),
+                          );
+                          return Padding(
+                            padding: EdgeInsets.zero,
                             child: FilterChip(
                               label: Text(
                                 tag.name,
@@ -626,9 +689,9 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
                               ).withOpacity(0.2),
                               checkmarkColor: Color(_parseColor(tag.color)),
                             ),
-                          ),
-                        );
-                      }).toList(),
+                          );
+                        }).toList(),
+                      ),
                     );
                   },
                   loading: () => const CircularProgressIndicator(),
@@ -662,22 +725,25 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            TextField(
-              decoration: InputDecoration(
-                hintText: 'Enter description (optional)',
-                filled: true,
-                fillColor: Theme.of(
-                  context,
-                ).colorScheme.surfaceContainerHighest,
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
-              maxLines: 3,
-              controller: _descriptionController,
-              onChanged: (value) => setState(() => _description = value),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Enter description (optional)',
+                  hintStyle: TextStyle(color: AppColors.gray500),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                ),
+                maxLines: 3,
+                controller: _descriptionController,
+                onChanged: (value) => setState(() => _description = value),
+              ),
             ),
           ],
         ),

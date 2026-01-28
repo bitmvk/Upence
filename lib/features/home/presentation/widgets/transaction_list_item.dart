@@ -43,16 +43,13 @@ class TransactionListItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
-            isCredit ? Icons.arrow_downward : Icons.arrow_upward,
+            isCredit ? Icons.arrow_upward : Icons.arrow_downward,
             color: amountColor,
           ),
         ),
         title: Text(
           transaction.counterParty,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,7 +68,9 @@ class TransactionListItem extends StatelessWidget {
                 transaction.description,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -97,7 +96,9 @@ class TransactionListItem extends StatelessWidget {
                 'Ref: ${transaction.referenceNumber}',
                 style: TextStyle(
                   fontSize: 10,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.5),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

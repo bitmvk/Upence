@@ -68,10 +68,10 @@ class _ColorPickerWidgetState extends State<ColorPickerWidget> {
     final color = _hexToColor(hex);
     if (color != null) {
       setState(() {
-        _currentColor = color!;
+        _currentColor = color;
         _updateRGBControllers();
       });
-      widget.onColorChanged(color!);
+      widget.onColorChanged(color);
     }
   }
 

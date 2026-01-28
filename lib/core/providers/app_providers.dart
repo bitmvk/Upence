@@ -18,7 +18,6 @@ import '../../data/models/sms.dart' as models;
 import '../../services/permission_service.dart';
 import '../../services/sms_service.dart';
 import '../../services/notification_service.dart';
-import 'package:upence/features/onboarding/presentation/setup_provider.dart';
 
 // Database Provider
 final databaseProvider = Provider<AppDatabase>((ref) {

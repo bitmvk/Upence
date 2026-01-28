@@ -21,10 +21,7 @@ class FinancialOverviewCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.primary,
-            AppColors.primaryDark,
-          ],
+          colors: [AppColors.primary, AppColors.primaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -62,7 +59,7 @@ class FinancialOverviewCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildStatItem(
-                  icon: Icons.arrow_downward,
+                  icon: Icons.arrow_upward,
                   label: 'Income',
                   amount: income,
                   color: AppColors.income,
@@ -72,7 +69,7 @@ class FinancialOverviewCard extends StatelessWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: _buildStatItem(
-                  icon: Icons.arrow_upward,
+                  icon: Icons.arrow_downward,
                   label: 'Expense',
                   amount: expense,
                   color: AppColors.expense,
@@ -107,11 +104,7 @@ class FinancialOverviewCard extends StatelessWidget {
               color: color.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 20,
-            ),
+            child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(

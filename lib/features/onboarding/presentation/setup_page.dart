@@ -667,7 +667,7 @@ enum _BottomSheetMode { form, iconPicker, colorPicker }
 class _AddCategoryBottomSheet extends StatefulWidget {
   final SetupNotifier notifier;
 
-  const _AddCategoryBottomSheet({super.key, required this.notifier});
+  const _AddCategoryBottomSheet({required this.notifier});
 
   @override
   State<_AddCategoryBottomSheet> createState() =>
@@ -882,7 +882,7 @@ class _AddCategoryBottomSheetState extends State<_AddCategoryBottomSheet> {
 class _AddTagBottomSheet extends StatefulWidget {
   final SetupNotifier notifier;
 
-  const _AddTagBottomSheet({super.key, required this.notifier});
+  const _AddTagBottomSheet({required this.notifier});
 
   @override
   State<_AddTagBottomSheet> createState() => _AddTagBottomSheetState();
