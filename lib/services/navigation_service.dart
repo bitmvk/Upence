@@ -52,13 +52,15 @@ class NavigationService {
       return;
     }
 
-    // If not on home page, pop until home
-    if (currentRoute != '/') {
+    // Use different navigation strategies based on current and target routes
+    if (currentRoute != '/' && targetRoute != '/') {
+      // Non-home to non-home: replace directly (single animation)
+      navigator.pushReplacementNamed(targetRoute);
+    } else if (currentRoute != '/') {
+      // Non-home to home: pop until home (preserves existing behavior)
       navigator.popUntil((route) => route.isFirst || route.settings.name == '/');
-    }
-
-    // Navigate to target if not home
-    if (targetRoute != '/') {
+    } else if (targetRoute != '/') {
+      // Home to non-home: push (preserves existing behavior)
       navigator.pushNamed(targetRoute);
     }
   }
