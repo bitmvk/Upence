@@ -156,6 +156,7 @@ class NavigationSidebar extends ConsumerWidget {
               context,
               '/accounts',
               scaffoldKey: scaffoldKey,
+              arguments: false, // Show menu button (default behavior)
             );
             break;
           case 'Analytics':

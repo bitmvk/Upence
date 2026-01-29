@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide AboutDialog;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/page_wrapper.dart';
 import 'subpages/category_management_page.dart';
 import 'subpages/tag_management_page.dart';
 import 'subpages/pattern_management_page.dart';
+import 'widgets/about_dialog.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -51,7 +52,7 @@ class SettingsPage extends ConsumerWidget {
             title: 'Bank Accounts',
             subtitle: 'Manage your bank accounts',
             onTap: () {
-              Navigator.pushNamed(context, '/accounts');
+              Navigator.pushNamed(context, '/accounts', arguments: true);
             },
           ),
           _buildDataTile(
@@ -125,9 +126,7 @@ class SettingsPage extends ConsumerWidget {
             icon: Icons.info,
             title: 'About',
             subtitle: 'App version and information',
-            onTap: () {
-              // TODO: Show about dialog
-            },
+            onTap: () => _showAboutDialog(context),
           ),
         ],
       ),
@@ -317,5 +316,9 @@ class SettingsPage extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showDialog(context: context, builder: (context) => const AboutDialog());
   }
 }

@@ -109,7 +109,6 @@ class MainApp extends ConsumerWidget {
         themeMode: themeMode,
         home: const HomePage(),
         routes: {
-          '/accounts': (context) => const AccountPage(),
           '/analytics': (context) => const AnalyticsPage(),
           '/settings': (context) => const SettingsPage(),
           '/transactions': (context) => const TransactionListPage(),
@@ -123,6 +122,13 @@ class MainApp extends ConsumerWidget {
                 builder: (context) => TransactionDetailsPage(transactionId: id),
               );
             }
+          }
+          if (settings.name == '/accounts') {
+            // Check if showBackButton argument is passed
+            final showBackButton = settings.arguments as bool? ?? false;
+            return MaterialPageRoute(
+              builder: (context) => AccountPage(showBackButton: showBackButton),
+            );
           }
           return null;
         },

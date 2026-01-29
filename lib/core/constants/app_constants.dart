@@ -41,4 +41,28 @@ class AppConstants {
   static const String routeTags = '/settings/tags';
   static const String routePatterns = '/settings/patterns';
   static const String routeIgnoredSenders = '/settings/ignored_senders';
+
+  // About
+  static const String appDescription = '''
+A simple expense tracking app that automatically parses SMS messages to track your transactions.
+
+Features:
+• Automatic SMS parsing and transaction tracking
+• Categorize expenses with custom categories
+• Visual analytics and reports
+• Bank account management
+• Ignore unwanted senders
+  ''';
+
+  static const String githubUrl = 'https://github.com/bitmvk/Upence';
+  static const String licenseName = 'MIT License';
+  static const String licenseUrl = 'https://opensource.org/licenses/MIT';
+
+  // TODO: Replace with actual support email before release
+  static const String supportEmail = 'support@upence.com';
+
+  static const String bugReportUrl =
+      'https://github.com/bitmvk/Upence/issues/new';
+  static const String feedbackUrl =
+      'https://github.com/bitmvk/Upence/issues/new?labels=feedback';
 }

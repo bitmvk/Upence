@@ -31,10 +31,12 @@ class NavigationService {
   /// - [context]: The BuildContext for navigation
   /// - [targetRoute]: The route to navigate to (must be a sidebar route)
   /// - [scaffoldKey]: Optional GlobalKey for the Scaffold to close drawer
+  /// - [arguments]: Optional arguments to pass to the route
   static Future<void> navigateToSidebarPage(
     BuildContext context,
     String targetRoute, {
     GlobalKey<ScaffoldState>? scaffoldKey,
+    Object? arguments,
   }) async {
     assert(
       sidebarRoutes.contains(targetRoute),
@@ -55,13 +57,13 @@ class NavigationService {
     // Use different navigation strategies based on current and target routes
     if (currentRoute != '/' && targetRoute != '/') {
       // Non-home to non-home: replace directly (single animation)
-      navigator.pushReplacementNamed(targetRoute);
+      navigator.pushReplacementNamed(targetRoute, arguments: arguments);
     } else if (currentRoute != '/') {
       // Non-home to home: pop until home (preserves existing behavior)
       navigator.popUntil((route) => route.isFirst || route.settings.name == '/');
     } else if (targetRoute != '/') {
       // Home to non-home: push (preserves existing behavior)
-      navigator.pushNamed(targetRoute);
+      navigator.pushNamed(targetRoute, arguments: arguments);
     }
   }
 

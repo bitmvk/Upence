@@ -1,5 +1,5 @@
 name: upence
-description: "A new Flutter project."
+description: "A simple expense tracking app that automatically parses SMS messages to track your transactions."
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -43,6 +43,7 @@ dependencies:
   # Utils
   intl: ^0.19.0
   shared_preferences: ^2.2.3
+  url_launcher: ^6.2.5
 
 dev_dependencies:
   flutter_test:

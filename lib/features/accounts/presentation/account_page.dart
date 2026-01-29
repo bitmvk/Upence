@@ -7,7 +7,11 @@ import 'widgets/account_icon_selector.dart';
 import '../../../data/models/bank_account.dart';
 
 class AccountPage extends ConsumerWidget {
-  const AccountPage({super.key});
+  const AccountPage({super.key, this.showBackButton = false});
+
+  /// If true, shows a back button instead of the menu button.
+  /// This is used when the page is accessed from Settings.
+  final bool showBackButton;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -15,6 +19,7 @@ class AccountPage extends ConsumerWidget {
 
     return PageWrapper(
       title: const Text('Bank Accounts'),
+      showBackButton: showBackButton,
       body: accountsAsync.when(
         data: (accounts) {
           if (accounts.isEmpty) {
