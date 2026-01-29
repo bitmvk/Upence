@@ -88,7 +88,7 @@ class SettingsPage extends ConsumerWidget {
             title: 'Ignored Senders',
             subtitle: 'Manage ignored SMS senders',
             onTap: () {
-              // TODO: Navigate to ignored senders page
+              Navigator.pushNamed(context, '/settings/ignored-senders');
             },
           ),
           _buildSectionHeader('Data'),

@@ -10,6 +10,9 @@ import 'package:upence/features/settings/presentation/settings_page.dart';
 import 'package:upence/features/analytics/presentation/analytics_page.dart';
 import 'package:upence/features/accounts/presentation/account_page.dart';
 import 'package:upence/features/onboarding/presentation/setup_page.dart';
+import 'package:upence/features/transactions/presentation/transaction_list_page.dart';
+import 'package:upence/features/transactions/presentation/transaction_details_page.dart';
+import 'package:upence/features/settings/presentation/subpages/ignored_senders_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -109,6 +112,19 @@ class MainApp extends ConsumerWidget {
           '/accounts': (context) => const AccountPage(),
           '/analytics': (context) => const AnalyticsPage(),
           '/settings': (context) => const SettingsPage(),
+          '/transactions': (context) => const TransactionListPage(),
+          '/settings/ignored-senders': (context) => const IgnoredSendersPage(),
+        },
+        onGenerateRoute: (settings) {
+          if (settings.name != null && settings.name!.startsWith('/transaction/')) {
+            final id = int.tryParse(settings.name!.split('/')[2]);
+            if (id != null) {
+              return MaterialPageRoute(
+                builder: (context) => TransactionDetailsPage(transactionId: id!),
+              );
+            }
+          }
+          return null;
         },
       ),
       loading: () => MaterialApp(

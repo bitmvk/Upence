@@ -15,6 +15,7 @@ import '../../data/models/tag.dart' as models;
 import '../../data/models/bank_account.dart' as models;
 import '../../data/models/sms_parsing_pattern.dart' as models;
 import '../../data/models/sms.dart' as models;
+import '../../data/models/sender.dart' as models;
 import '../../data/models/financial_overview.dart';
 import '../../data/models/account_analytics.dart';
 import '../../services/permission_service.dart';
@@ -212,4 +213,10 @@ final patternsProvider = FutureProvider<List<models.SMSParsingPattern>>((
 final recentSMSProvider = FutureProvider<List<models.SMSMessage>>((ref) async {
   final smsRepo = ref.watch(smsRepositoryProvider);
   return await smsRepo.getRecentSMS(20);
+});
+
+// Ignored Senders Provider
+final ignoredSendersProvider = FutureProvider<List<models.Sender>>((ref) async {
+  final senderRepo = ref.watch(senderRepositoryProvider);
+  return await senderRepo.getIgnoredSenders();
 });

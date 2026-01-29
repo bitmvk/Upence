@@ -105,7 +105,7 @@ class HomePage extends ConsumerWidget {
                             const Spacer(),
                             TextButton.icon(
                               onPressed: () {
-                                // TODO: Navigate to all transactions
+                                Navigator.pushNamed(context, '/transactions');
                               },
                               icon: const Icon(Icons.chevron_right),
                               label: const Text('View All'),
@@ -164,7 +164,10 @@ class HomePage extends ConsumerWidget {
                             return TransactionListItem(
                               transaction: transaction,
                               onTap: () {
-                                // TODO: Show transaction details
+                                Navigator.pushNamed(
+                                  context,
+                                  '/transaction/${transaction.id}',
+                                );
                               },
                             );
                           }, childCount: transactions.length),
