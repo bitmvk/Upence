@@ -547,7 +547,12 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
           }
           // Update the amount value by joining all selected words
           _selectedAmount = _selectedAmountWords
-              .map((w) => w.replaceAll(RegExp(r'[a-zA-Z]'), '').trim())
+              .map(
+                (w) => w
+                    .replaceAll(RegExp(r'[a-zA-Z]'), '')
+                    .trim()
+                    .replaceAll(RegExp(r'^\.+|\.$'), ''),
+              )
               .where((w) => w.isNotEmpty)
               .join('');
           _amountController.text = _selectedAmount ?? '';
