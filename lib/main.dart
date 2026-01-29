@@ -120,7 +120,7 @@ class MainApp extends ConsumerWidget {
             final id = int.tryParse(settings.name!.split('/')[2]);
             if (id != null) {
               return MaterialPageRoute(
-                builder: (context) => TransactionDetailsPage(transactionId: id!),
+                builder: (context) => TransactionDetailsPage(transactionId: id),
               );
             }
           }
