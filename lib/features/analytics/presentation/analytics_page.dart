@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/page_wrapper.dart';
 
 class AnalyticsPage extends StatelessWidget {
   const AnalyticsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Analytics')),
+    return PageWrapper(
+      title: const Text('Analytics'),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

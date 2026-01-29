@@ -4,10 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:drift/drift.dart';
 import 'package:upence/core/theme/app_theme.dart';
 import 'package:upence/core/providers/app_providers.dart';
-import 'package:upence/core/widgets/navigation_sidebar.dart';
 import 'package:upence/data/database/app_database.dart';
 import 'package:upence/features/home/presentation/home_page.dart';
-import 'package:upence/features/sms/presentation/unprocessed_sms_page.dart';
 import 'package:upence/features/settings/presentation/settings_page.dart';
 import 'package:upence/features/analytics/presentation/analytics_page.dart';
 import 'package:upence/features/accounts/presentation/account_page.dart';
@@ -92,18 +90,11 @@ class MyApp extends ConsumerWidget {
   }
 }
 
-class MainApp extends ConsumerStatefulWidget {
+class MainApp extends ConsumerWidget {
   const MainApp({super.key});
 
   @override
-  ConsumerState<MainApp> createState() => _MainAppState();
-}
-
-class _MainAppState extends ConsumerState<MainApp> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final themeModeAsync = ref.watch(themeModeProvider);
 
     return themeModeAsync.when(
@@ -113,7 +104,7 @@ class _MainAppState extends ConsumerState<MainApp> {
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: themeMode,
-        home: _buildMainPage(),
+        home: const HomePage(),
         routes: {
           '/accounts': (context) => const AccountPage(),
           '/analytics': (context) => const AnalyticsPage(),
@@ -125,106 +116,6 @@ class _MainAppState extends ConsumerState<MainApp> {
       ),
       error: (error, stack) => MaterialApp(
         home: Scaffold(body: Center(child: Text('Error: $error'))),
-      ),
-    );
-  }
-
-  Widget _buildMainPage() {
-    return Scaffold(
-      key: _scaffoldKey,
-      drawer: const NavigationSidebar(),
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        ),
-        title: const Text('Upence'),
-        actions: [
-          Consumer(
-            builder: (context, ref, child) {
-              final unprocessedCountAsync = ref.watch(
-                unprocessedSMSCountProvider,
-              );
-              return unprocessedCountAsync.when(
-                data: (count) {
-                  if (count > 0) {
-                    return Stack(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.sms),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const UnprocessedSMSPage(),
-                              ),
-                            );
-                          },
-                        ),
-                        if (count > 0)
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              constraints: const BoxConstraints(
-                                minWidth: 18,
-                                minHeight: 18,
-                              ),
-                              child: Text(
-                                count > 99 ? '99+' : count.toString(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                      ],
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (error, stack) => const SizedBox.shrink(),
-              );
-            },
-          ),
-        ],
-      ),
-      body: const HomePage(),
-      floatingActionButton: Consumer(
-        builder: (context, ref, child) {
-          final unprocessedCountAsync = ref.watch(unprocessedSMSCountProvider);
-          return unprocessedCountAsync.when(
-            data: (count) {
-              if (count > 0) {
-                return FloatingActionButton.extended(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const UnprocessedSMSPage(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.sms),
-                  label: Text('$count Unprocessed'),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-            loading: () => const SizedBox.shrink(),
-            error: (error, stack) => const SizedBox.shrink(),
-          );
-        },
       ),
     );
   }

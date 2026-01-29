@@ -63,6 +63,8 @@ class SMSRepository {
 
   Future<int> deleteAllProcessedSMS() => _smsDao.deleteAllProcessedSMS();
 
+  Future<int> deleteAllUnprocessedSMS() => _smsDao.deleteAllUnprocessedSMS();
+
   Future<void> maintainCacheLimit(int limit) =>
       _smsDao.maintainCacheLimit(limit);
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/widgets/page_wrapper.dart';
 import '../../sms/presentation/unprocessed_sms_page.dart';
 import 'widgets/financial_overview_card.dart';
 import 'widgets/transaction_list_item.dart';
@@ -13,12 +14,66 @@ class HomePage extends ConsumerWidget {
     final recentTransactionsAsync = ref.watch(recentTransactionsProvider);
     final currencyAsync = ref.watch(currencyProvider);
     final financialOverviewAsync = ref.watch(financialOverviewProvider);
+    final unprocessedCountAsync = ref.watch(unprocessedSMSCountProvider);
 
     return currencyAsync.when(
       data: (currency) {
         return financialOverviewAsync.when(
           data: (overview) {
-            return Scaffold(
+            return PageWrapper(
+              title: const Text('Upence'),
+              actions: [
+                unprocessedCountAsync.when(
+                  data: (count) {
+                    if (count > 0) {
+                      return Stack(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.sms),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const UnprocessedSMSPage(),
+                                ),
+                              );
+                            },
+                          ),
+                          if (count > 0)
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 18,
+                                  minHeight: 18,
+                                ),
+                                child: Text(
+                                  count > 99 ? '99+' : count.toString(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                  loading: () => const SizedBox.shrink(),
+                  error: (error, stack) => const SizedBox.shrink(),
+                ),
+              ],
               body: RefreshIndicator(
                 onRefresh: () => _refreshData(ref),
                 child: CustomScrollView(
@@ -124,6 +179,27 @@ class HomePage extends ConsumerWidget {
                     ),
                   ],
                 ),
+              ),
+              floatingActionButton: unprocessedCountAsync.when(
+                data: (count) {
+                  if (count > 0) {
+                    return FloatingActionButton.extended(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const UnprocessedSMSPage(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.sms),
+                      label: Text('$count Unprocessed'),
+                    );
+                  }
+                  return null;
+                },
+                loading: () => null,
+                error: (error, stack) => null,
               ),
             );
           },

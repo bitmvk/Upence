@@ -115,6 +115,14 @@ final unprocessedSMSCountProvider = FutureProvider<int>((ref) async {
   return count;
 });
 
+// Unprocessed SMS List Provider
+final unprocessedSMSProvider = FutureProvider<List<models.SMSMessage>>((
+  ref,
+) async {
+  final smsRepo = ref.watch(smsRepositoryProvider);
+  return await smsRepo.getUnprocessedSMS();
+});
+
 // Transaction List Provider
 final transactionListProvider = FutureProvider<List<models.Transaction>>((
   ref,

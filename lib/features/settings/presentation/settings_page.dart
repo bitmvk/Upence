@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/widgets/page_wrapper.dart';
 import 'subpages/category_management_page.dart';
 import 'subpages/tag_management_page.dart';
 import 'subpages/pattern_management_page.dart';
@@ -13,8 +14,8 @@ class SettingsPage extends ConsumerWidget {
     final themeModeAsync = ref.watch(themeModeProvider);
     final currencyAsync = ref.watch(currencyProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+    return PageWrapper(
+      title: const Text('Settings'),
       body: ListView(
         children: [
           _buildSectionHeader('Appearance'),

@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:upence/services/navigation_service.dart';
 
 enum NavItem { home, accounts, analytics, settings }
 
 class NavigationSidebar extends ConsumerWidget {
-  const NavigationSidebar({super.key});
+  const NavigationSidebar({
+    super.key,
+    this.scaffoldKey,
+  });
+
+  final GlobalKey<ScaffoldState>? scaffoldKey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -137,21 +143,34 @@ class NavigationSidebar extends ConsumerWidget {
         style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
       ),
       onTap: () {
-        final scaffold = Scaffold.of(context);
-        scaffold.closeDrawer();
-        final navigator = Navigator.of(context);
         switch (label) {
           case 'Home':
-            navigator.pushNamed('/');
+            NavigationService.navigateToSidebarPage(
+              context,
+              '/',
+              scaffoldKey: scaffoldKey,
+            );
             break;
           case 'Accounts':
-            navigator.pushNamed('/accounts');
+            NavigationService.navigateToSidebarPage(
+              context,
+              '/accounts',
+              scaffoldKey: scaffoldKey,
+            );
             break;
           case 'Analytics':
-            navigator.pushNamed('/analytics');
+            NavigationService.navigateToSidebarPage(
+              context,
+              '/analytics',
+              scaffoldKey: scaffoldKey,
+            );
             break;
           case 'Settings':
-            navigator.pushNamed('/settings');
+            NavigationService.navigateToSidebarPage(
+              context,
+              '/settings',
+              scaffoldKey: scaffoldKey,
+            );
             break;
         }
       },

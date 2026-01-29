@@ -10,7 +10,7 @@ class UnprocessedSMSPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final smsAsync = ref.watch(smsRepositoryProvider);
+    final unprocessedSMSAsync = ref.watch(unprocessedSMSProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -37,19 +37,8 @@ class UnprocessedSMSPage extends ConsumerWidget {
           ),
         ],
       ),
-      body: FutureBuilder(
-        future: smsAsync.getUnprocessedSMS(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-
-          final messages = snapshot.data ?? [];
-
+      body: unprocessedSMSAsync.when(
+        data: (messages) {
           if (messages.isEmpty) {
             return Center(
               child: Column(
@@ -58,13 +47,17 @@ class UnprocessedSMSPage extends ConsumerWidget {
                   Icon(
                     Icons.sms_failed,
                     size: 64,
-                    color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outline.withOpacity(0.5),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No unprocessed SMS',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.outline.withOpacity(0.5),
                     ),
                   ),
                 ],
@@ -76,15 +69,17 @@ class UnprocessedSMSPage extends ConsumerWidget {
             itemCount: messages.length,
             itemBuilder: (context, index) {
               final sms = messages[index];
-              return _buildSMSItem(context, sms);
+              return _buildSMSItem(context, sms, ref);
             },
           );
         },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(child: Text('Error: $error')),
       ),
     );
   }
 
-  Widget _buildSMSItem(BuildContext context, SMSMessage sms) {
+  Widget _buildSMSItem(BuildContext context, SMSMessage sms, WidgetRef ref) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: ListTile(
@@ -99,10 +94,7 @@ class UnprocessedSMSPage extends ConsumerWidget {
         contentPadding: const EdgeInsets.all(16),
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-          child: Icon(
-            Icons.sms,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+          child: Icon(Icons.sms, color: Theme.of(context).colorScheme.primary),
         ),
         title: Text(
           sms.sender,
@@ -133,13 +125,13 @@ class UnprocessedSMSPage extends ConsumerWidget {
         ),
         trailing: IconButton(
           icon: const Icon(Icons.delete_outline),
-          onPressed: () => _showDeleteDialog(context, sms),
+          onPressed: () => _showDeleteDialog(context, sms, ref),
         ),
       ),
     );
   }
 
-  void _showDeleteDialog(BuildContext context, SMSMessage sms) {
+  void _showDeleteDialog(BuildContext context, SMSMessage sms, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -153,10 +145,17 @@ class UnprocessedSMSPage extends ConsumerWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              // TODO: Implement delete SMS
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('SMS deleted')),
-              );
+              final smsRepo = ref.read(smsRepositoryProvider);
+              final deleted = await smsRepo.deleteSMS(sms.id);
+              if (deleted) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('SMS deleted')));
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Failed to delete SMS')),
+                );
+              }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
@@ -166,12 +165,24 @@ class UnprocessedSMSPage extends ConsumerWidget {
     );
   }
 
-  void _showDeleteAllDialog(BuildContext context, WidgetRef ref) {
+  void _showDeleteAllDialog(BuildContext context, WidgetRef ref) async {
+    final smsRepo = ref.read(smsRepositoryProvider);
+    final count = await smsRepo.getUnprocessedCount();
+
+    if (count == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No unprocessed SMS to delete')),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete All SMS'),
-        content: const Text('Are you sure you want to delete all unprocessed SMS?'),
+        content: Text(
+          'Are you sure you want to delete $count unprocessed SMS?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -180,10 +191,10 @@ class UnprocessedSMSPage extends ConsumerWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              // TODO: Implement delete all SMS
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('All SMS deleted')),
-              );
+              final deleted = await smsRepo.deleteAllUnprocessedSMS();
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('$deleted SMS deleted')));
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete All'),

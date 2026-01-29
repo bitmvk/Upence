@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/widgets/page_wrapper.dart';
 import 'widgets/account_card.dart';
 import 'widgets/account_icon_selector.dart';
 import '../../../data/models/bank_account.dart';
@@ -12,8 +13,8 @@ class AccountPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final accountsAsync = ref.watch(bankAccountsProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Bank Accounts')),
+    return PageWrapper(
+      title: const Text('Bank Accounts'),
       body: accountsAsync.when(
         data: (accounts) {
           if (accounts.isEmpty) {

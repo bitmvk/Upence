@@ -44,6 +44,9 @@ class SmsDao extends DatabaseAccessor<AppDatabase> with _$SmsDaoMixin {
   Future<int> deleteAllProcessedSMS() =>
       (delete(smsTable)..where((s) => s.processed.equals(1))).go();
 
+  Future<int> deleteAllUnprocessedSMS() =>
+      (delete(smsTable)..where((s) => s.processed.equals(0))).go();
+
   Future<int> getUnprocessedCount() async {
     final result = await customSelect(
       'SELECT COUNT(*) as count FROM sms WHERE processed = ?',
