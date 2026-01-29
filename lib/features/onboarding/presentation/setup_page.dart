@@ -539,24 +539,58 @@ class SetupPage extends ConsumerWidget {
       children: [
         _buildStepIndicator(context, currentPageIndex, 5),
         const SizedBox(height: 16),
+        if (state.errorMessage != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      state.errorMessage!,
+                      style: const TextStyle(fontSize: 12, color: Colors.red),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        if (state.errorMessage != null) const SizedBox(height: 8),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Row(
             children: [
               if (!state.isFirstPage)
                 TextButton(
-                  onPressed: () => notifier.previousPage(),
+                  onPressed: state.isLoading ? null : () => notifier.previousPage(),
                   child: const Text('Back'),
                 ),
               const Spacer(),
               ElevatedButton(
-                onPressed: state.canProceedToNext
-                    ? () => notifier.nextPage()
-                    : null,
+                onPressed: state.isLoading || !state.canProceedToNext
+                    ? null
+                    : () => notifier.nextPage(),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(120, 48),
                 ),
-                child: Text(state.isLastPage ? 'Complete Setup' : 'Next'),
+                child: state.isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(state.isLastPage ? 'Complete Setup' : 'Next'),
               ),
             ],
           ),

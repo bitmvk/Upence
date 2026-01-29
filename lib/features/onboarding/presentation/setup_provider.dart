@@ -22,6 +22,8 @@ class SetupState {
   final List<models.Category> categories;
   final List<Tag> tags;
   final bool isCompleted;
+  final bool isLoading;
+  final String? errorMessage;
 
   SetupState({
     this.currentPage = SetupStep.welcome,
@@ -35,6 +37,8 @@ class SetupState {
     this.categories = const [],
     this.tags = const [],
     this.isCompleted = false,
+    this.isLoading = false,
+    this.errorMessage,
   });
 
   SetupState copyWith({
@@ -49,6 +53,8 @@ class SetupState {
     List<models.Category>? categories,
     List<Tag>? tags,
     bool? isCompleted,
+    bool? isLoading,
+    String? errorMessage,
   }) {
     return SetupState(
       currentPage: currentPage ?? this.currentPage,
@@ -69,6 +75,8 @@ class SetupState {
       categories: categories ?? this.categories,
       tags: tags ?? this.tags,
       isCompleted: isCompleted ?? this.isCompleted,
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: errorMessage,
     );
   }
 
@@ -132,7 +140,7 @@ class SetupNotifier extends StateNotifier<SetupState> {
     await _checkPermissions();
   }
 
-  void nextPage() {
+  Future<void> nextPage() async {
     if (!state.canProceedToNext) {
       debugPrint('[Setup] Cannot proceed to next page');
       return;
@@ -140,7 +148,15 @@ class SetupNotifier extends StateNotifier<SetupState> {
 
     if (state.isLastPage) {
       debugPrint('[Setup] Completing setup...');
-      completeSetup();
+      state = state.copyWith(isLoading: true, errorMessage: null);
+      final success = await completeSetup();
+      if (success) {
+        debugPrint('[Setup] Setup completed successfully');
+        state = state.copyWith(isLoading: false, isCompleted: true);
+      } else {
+        debugPrint('[Setup] Setup failed');
+        state = state.copyWith(isLoading: false);
+      }
       return;
     }
 
@@ -306,38 +322,65 @@ class SetupNotifier extends StateNotifier<SetupState> {
     return categories;
   }
 
-  Future<void> completeSetup() async {
+  Future<bool> completeSetup() async {
     debugPrint('[Setup] Completing setup...');
     debugPrint('[Setup] Saving ${state.bankAccounts.length} bank accounts');
     debugPrint('[Setup] Saving ${state.categories.length} categories');
     debugPrint('[Setup] Saving ${state.tags.length} tags');
 
-    final prefs = await ref.read(sharedPreferencesProvider.future);
-    await prefs.setBool('setup_completed', true);
+    try {
+      final prefs = await ref.read(sharedPreferencesProvider.future);
+      await prefs.setBool('setup_completed', true);
 
-    final bankAccountRepo = ref.read(bankAccountRepositoryProvider);
-    final categoryRepo = ref.read(categoryRepositoryProvider);
-    final tagRepo = ref.read(tagRepositoryProvider);
+      final bankAccountRepo = ref.read(bankAccountRepositoryProvider);
+      final categoryRepo = ref.read(categoryRepositoryProvider);
+      final tagRepo = ref.read(tagRepositoryProvider);
 
-    for (final account in state.bankAccounts) {
-      await bankAccountRepo.insertAccount(account);
+      for (final account in state.bankAccounts) {
+        try {
+          await bankAccountRepo.insertAccount(account);
+          debugPrint('[Setup] Saved bank account: ${account.accountName}');
+        } catch (e) {
+          debugPrint('[Setup] Failed to save bank account ${account.accountName}: $e');
+          state = state.copyWith(errorMessage: 'Failed to save bank account: ${account.accountName}');
+          return false;
+        }
+      }
+
+      for (final category in state.categories) {
+        try {
+          await categoryRepo.insertCategory(category);
+          debugPrint('[Setup] Saved category: ${category.name}');
+        } catch (e) {
+          debugPrint('[Setup] Failed to save category ${category.name}: $e');
+          state = state.copyWith(errorMessage: 'Failed to save category: ${category.name}');
+          return false;
+        }
+      }
+
+      for (final tag in state.tags) {
+        try {
+          await tagRepo.insertTag(tag);
+          debugPrint('[Setup] Saved tag: ${tag.name}');
+        } catch (e) {
+          debugPrint('[Setup] Failed to save tag ${tag.name}: $e');
+          state = state.copyWith(errorMessage: 'Failed to save tag: ${tag.name}');
+          return false;
+        }
+      }
+
+      ref.invalidate(bankAccountsProvider);
+      ref.invalidate(categoriesProvider);
+      ref.invalidate(tagsProvider);
+      ref.invalidate(setupCompletedProvider);
+
+      debugPrint('[Setup] Setup completed successfully');
+      return true;
+    } catch (e) {
+      debugPrint('[Setup] Setup failed with error: $e');
+      state = state.copyWith(errorMessage: 'Setup failed: $e');
+      return false;
     }
-
-    for (final category in state.categories) {
-      await categoryRepo.insertCategory(category);
-    }
-
-    for (final tag in state.tags) {
-      await tagRepo.insertTag(tag);
-    }
-
-    ref.invalidate(bankAccountsProvider);
-    ref.invalidate(categoriesProvider);
-    ref.invalidate(tagsProvider);
-    ref.invalidate(setupCompletedProvider);
-
-    debugPrint('[Setup] Setup completed successfully');
-    state = state.copyWith(isCompleted: true);
   }
 }
 
