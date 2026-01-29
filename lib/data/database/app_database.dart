@@ -47,7 +47,21 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (Migrator m) async {
+        m.createAll();
+      },
+      onUpgrade: (Migrator m, int from, int to) async {
+        if (from == 1) {
+          m.addColumn(bankAccounts, bankAccounts.accountIcon);
+        }
+      },
+    );
+  }
 
   static Future<AppDatabase> getDatabase() async {
     final dbFolder = await getApplicationDocumentsDirectory();

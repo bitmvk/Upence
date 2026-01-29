@@ -72,6 +72,7 @@ class MyApp extends ConsumerWidget {
             darkTheme: AppTheme.darkTheme,
             themeMode: themeMode,
             home: setupCompleted ? const MainApp() : const SetupPage(),
+            routes: {'/accounts': (context) => const AccountPage()},
           ),
           loading: () => MaterialApp(
             home: Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -114,6 +115,7 @@ class _MainAppState extends ConsumerState<MainApp> {
         darkTheme: AppTheme.darkTheme,
         themeMode: themeMode,
         home: _buildMainPage(),
+        routes: {'/accounts': (context) => const AccountPage()},
       ),
       loading: () => MaterialApp(
         home: Scaffold(body: Center(child: CircularProgressIndicator())),

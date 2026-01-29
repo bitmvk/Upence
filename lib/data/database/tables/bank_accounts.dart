@@ -6,4 +6,5 @@ class BankAccounts extends Table {
   TextColumn get accountName => text()();
   TextColumn get accountNumber => text()();
   TextColumn get description => text().withDefault(const Constant(''))();
+  TextColumn get accountIcon => text()();
 }

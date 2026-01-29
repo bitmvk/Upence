@@ -296,6 +296,10 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
       ref.invalidate(recentTransactionsProvider);
       ref.invalidate(financialOverviewProvider);
 
+      if (_selectedAccountId != null && _selectedAccountId!.isNotEmpty) {
+        ref.invalidate(accountAnalyticsProvider(_selectedAccountId!));
+      }
+
       var message = 'Transaction saved successfully';
 
       if (_savePattern) {

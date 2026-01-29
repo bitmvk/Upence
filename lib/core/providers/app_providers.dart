@@ -16,6 +16,7 @@ import '../../data/models/bank_account.dart' as models;
 import '../../data/models/sms_parsing_pattern.dart' as models;
 import '../../data/models/sms.dart' as models;
 import '../../data/models/financial_overview.dart';
+import '../../data/models/account_analytics.dart';
 import '../../services/permission_service.dart';
 import '../../services/sms_service.dart';
 import '../../services/notification_service.dart';
@@ -146,6 +147,30 @@ final financialOverviewProvider = FutureProvider<FinancialOverview>((
     expense: results[2],
   );
 });
+
+// Account Analytics Provider (family provider for specific account)
+final accountAnalyticsProvider =
+    FutureProvider.family<AccountAnalytics, String>((ref, accountId) async {
+      final repo = ref.watch(transactionRepositoryProvider);
+      final results = await Future.wait([
+        repo.getAccountBalance(accountId),
+        repo.getAccountIncome(accountId),
+        repo.getAccountExpense(accountId),
+        repo.getAccountTransactionCount(accountId),
+        repo.getAccountMonthlyAvgIncome(accountId),
+        repo.getAccountMonthlyAvgExpense(accountId),
+        repo.getAccountLastTransactionDate(accountId),
+      ]);
+      return AccountAnalytics(
+        balance: results[0] as double,
+        totalIncome: results[1] as double,
+        totalExpense: results[2] as double,
+        transactionCount: results[3] as int,
+        avgMonthlyIncome: results[4] as double,
+        avgMonthlyExpense: results[5] as double,
+        lastTransactionDate: results[6] as DateTime?,
+      );
+    });
 
 // Categories Provider
 final categoriesProvider = FutureProvider<List<models.Category>>((ref) async {

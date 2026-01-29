@@ -24,6 +24,7 @@ class BankAccountRepository {
       accountName: Value(account.accountName),
       accountNumber: Value(account.accountNumber),
       description: Value(account.description),
+      accountIcon: Value(account.icon),
     );
     return await _bankAccountDao.insertAccount(companion);
   }
@@ -34,6 +35,7 @@ class BankAccountRepository {
       accountName: account.accountName,
       accountNumber: account.accountNumber,
       description: account.description,
+      accountIcon: account.icon,
     );
     return await _bankAccountDao.updateAccount(dbAccount);
   }
@@ -46,6 +48,7 @@ class BankAccountRepository {
       accountName: a.accountName,
       accountNumber: a.accountNumber,
       description: a.description,
+      icon: a.accountIcon,
     );
   }
 }

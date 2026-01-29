@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import 'subpages/category_management_page.dart';
-import 'subpages/account_management_page.dart';
 import 'subpages/tag_management_page.dart';
 import 'subpages/pattern_management_page.dart';
 
@@ -15,9 +14,7 @@ class SettingsPage extends ConsumerWidget {
     final currencyAsync = ref.watch(currencyProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
           _buildSectionHeader('Appearance'),
@@ -53,12 +50,7 @@ class SettingsPage extends ConsumerWidget {
             title: 'Bank Accounts',
             subtitle: 'Manage your bank accounts',
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AccountManagementPage(),
-                ),
-              );
+              Navigator.pushNamed(context, '/accounts');
             },
           ),
           _buildDataTile(

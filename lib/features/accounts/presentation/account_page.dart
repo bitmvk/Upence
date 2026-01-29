@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
+import 'widgets/account_card.dart';
+import 'widgets/account_icon_selector.dart';
+import '../../../data/models/bank_account.dart';
 
 class AccountPage extends ConsumerWidget {
   const AccountPage({super.key});
@@ -20,20 +23,22 @@ class AccountPage extends ConsumerWidget {
                   Icon(
                     Icons.account_balance,
                     size: 64,
-                    color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outline.withOpacity(0.5),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No accounts yet',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.outline.withOpacity(0.5),
                     ),
                   ),
                   const SizedBox(height: 8),
                   TextButton.icon(
-                    onPressed: () {
-                      // TODO: Navigate to add account
-                    },
+                    onPressed: () => _showAddEditAccountSheet(context, ref),
                     icon: const Icon(Icons.add),
                     label: const Text('Add Account'),
                   ),
@@ -47,52 +52,9 @@ class AccountPage extends ConsumerWidget {
             itemCount: accounts.length,
             itemBuilder: (context, index) {
               final account = accounts[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                    child: Icon(
-                      Icons.account_balance_wallet,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  title: Text(
-                    account.accountName,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 4),
-                      Text(
-                        'Account: ${account.accountNumber}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                      if (account.description.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          account.description,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ],
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.more_vert),
-                    onPressed: () {
-                      _showAccountMenu(context, ref, account);
-                    },
-                  ),
-                ),
+              return AccountCard(
+                account: account,
+                onMenuTap: () => _showAccountMenu(context, ref, account),
               );
             },
           );
@@ -101,20 +63,148 @@ class AccountPage extends ConsumerWidget {
         error: (error, stack) => Center(child: Text('Error: $error')),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // TODO: Navigate to add account
-        },
+        onPressed: () => _showAddEditAccountSheet(context, ref),
         icon: const Icon(Icons.add),
         label: const Text('Add Account'),
       ),
     );
   }
 
-  void _showAccountMenu(
+  void _showAddEditAccountSheet(
     BuildContext context,
-    WidgetRef ref,
-    dynamic account,
-  ) {
+    WidgetRef ref, {
+    BankAccount? existingAccount,
+  }) {
+    final accountNameController = TextEditingController(
+      text: existingAccount?.accountName ?? '',
+    );
+    final accountNumberController = TextEditingController(
+      text: existingAccount?.accountNumber ?? '',
+    );
+    final descriptionController = TextEditingController(
+      text: existingAccount?.description ?? '',
+    );
+    String selectedIcon = existingAccount?.icon ?? 'account_balance_wallet';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  existingAccount == null
+                      ? 'Add Bank Account'
+                      : 'Edit Bank Account',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: accountNameController,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Account Name *',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: accountNumberController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Account Number (Optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description (Optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                AccountIconSelector(
+                  selectedIcon: selectedIcon,
+                  onIconSelected: (icon) =>
+                      setSheetState(() => selectedIcon = icon),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    if (accountNameController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Account name is required'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    final repo = ref.read(bankAccountRepositoryProvider);
+
+                    if (existingAccount == null) {
+                      await repo.insertAccount(
+                        BankAccount(
+                          id: 0,
+                          accountName: accountNameController.text.trim(),
+                          accountNumber: accountNumberController.text.trim(),
+                          description: descriptionController.text.trim(),
+                          icon: selectedIcon,
+                        ),
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Account added')),
+                      );
+                    } else {
+                      await repo.updateAccount(
+                        existingAccount.copyWith(
+                          accountName: accountNameController.text.trim(),
+                          accountNumber: accountNumberController.text.trim(),
+                          description: descriptionController.text.trim(),
+                          icon: selectedIcon,
+                        ),
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Account updated')),
+                      );
+                    }
+
+                    ref.invalidate(bankAccountsProvider);
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                    }
+                  },
+                  icon: const Icon(Icons.save),
+                  label: Text(
+                    existingAccount == null ? 'Add Account' : 'Save Changes',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAccountMenu(BuildContext context, WidgetRef ref, dynamic account) {
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -126,12 +216,19 @@ class AccountPage extends ConsumerWidget {
               title: const Text('Edit Account'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to edit account
+                _showAddEditAccountSheet(
+                  context,
+                  ref,
+                  existingAccount: account,
+                );
               },
             ),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
+              title: const Text(
+                'Delete Account',
+                style: TextStyle(color: Colors.red),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _showDeleteDialog(context, ref, account);
@@ -143,11 +240,7 @@ class AccountPage extends ConsumerWidget {
     );
   }
 
-  void _showDeleteDialog(
-    BuildContext context,
-    WidgetRef ref,
-    dynamic account,
-  ) {
+  void _showDeleteDialog(BuildContext context, WidgetRef ref, dynamic account) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -163,10 +256,14 @@ class AccountPage extends ConsumerWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              // TODO: Implement delete account
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Account deleted')),
-              );
+              final repo = ref.read(bankAccountRepositoryProvider);
+              await repo.deleteAccount(account.id);
+              ref.invalidate(bankAccountsProvider);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Account deleted')),
+                );
+              }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),

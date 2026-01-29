@@ -3,12 +3,14 @@ class BankAccount {
   final String accountName;
   final String accountNumber;
   final String description;
+  final String icon;
 
   BankAccount({
     required this.id,
     required this.accountName,
     required this.accountNumber,
     this.description = '',
+    this.icon = 'account_balance_wallet',
   });
 
   BankAccount copyWith({
@@ -16,12 +18,14 @@ class BankAccount {
     String? accountName,
     String? accountNumber,
     String? description,
+    String? icon,
   }) {
     return BankAccount(
       id: id ?? this.id,
       accountName: accountName ?? this.accountName,
       accountNumber: accountNumber ?? this.accountNumber,
       description: description ?? this.description,
+      icon: icon ?? this.icon,
     );
   }
 
@@ -31,6 +35,7 @@ class BankAccount {
       'accountName': accountName,
       'accountNumber': accountNumber,
       'description': description,
+      'icon': icon,
     };
   }
 
@@ -40,6 +45,7 @@ class BankAccount {
       accountName: map['accountName'] as String,
       accountNumber: map['accountNumber'] as String,
       description: map['description'] as String? ?? '',
+      icon: map['icon'] as String? ?? 'account_balance_wallet',
     );
   }
 }

@@ -59,6 +59,100 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
     return result.data['total'] as double? ?? 0.0;
   }
 
+  Future<double> getAccountBalance(String accountId) async {
+    final result = await customSelect(
+      'SELECT SUM(CASE WHEN transaction_type = ? THEN amount ELSE -amount END) as total FROM transactions WHERE account_id = ?',
+      variables: [Variable('CREDIT'), Variable(accountId)],
+      readsFrom: {transactions},
+    ).getSingle();
+    return result.data['total'] as double? ?? 0.0;
+  }
+
+  Future<double> getAccountIncome(String accountId) async {
+    final result = await customSelect(
+      'SELECT SUM(amount) as total FROM transactions WHERE transaction_type = ? AND account_id = ?',
+      variables: [Variable('CREDIT'), Variable(accountId)],
+      readsFrom: {transactions},
+    ).getSingle();
+    return result.data['total'] as double? ?? 0.0;
+  }
+
+  Future<double> getAccountExpense(String accountId) async {
+    final result = await customSelect(
+      'SELECT SUM(amount) as total FROM transactions WHERE transaction_type = ? AND account_id = ?',
+      variables: [Variable('DEBIT'), Variable(accountId)],
+      readsFrom: {transactions},
+    ).getSingle();
+    return result.data['total'] as double? ?? 0.0;
+  }
+
+  Future<int> getAccountTransactionCount(String accountId) async {
+    final result = await customSelect(
+      'SELECT COUNT(*) as count FROM transactions WHERE account_id = ?',
+      variables: [Variable(accountId)],
+      readsFrom: {transactions},
+    ).getSingle();
+    return result.data['count'] as int? ?? 0;
+  }
+
+  Future<double> getAccountMonthlyAvgIncome(String accountId) async {
+    final result = await customSelect(
+      'SELECT SUM(amount) as total, MIN(timestamp) as firstTs, MAX(timestamp) as lastTs FROM transactions WHERE transaction_type = ? AND account_id = ?',
+      variables: [Variable('CREDIT'), Variable(accountId)],
+      readsFrom: {transactions},
+    ).getSingle();
+
+    final total = result.data['total'] as double? ?? 0.0;
+    final firstTs = result.data['firstTs'] as int?;
+    final lastTs = result.data['lastTs'] as int?;
+
+    if (firstTs == null || lastTs == null) return 0.0;
+
+    final firstDate = DateTime.fromMillisecondsSinceEpoch(firstTs);
+    final lastDate = DateTime.fromMillisecondsSinceEpoch(lastTs);
+
+    final months =
+        (lastDate.year - firstDate.year) * 12 +
+        (lastDate.month - firstDate.month) +
+        1;
+
+    return months > 0 ? total / months : total;
+  }
+
+  Future<double> getAccountMonthlyAvgExpense(String accountId) async {
+    final result = await customSelect(
+      'SELECT SUM(amount) as total, MIN(timestamp) as firstTs, MAX(timestamp) as lastTs FROM transactions WHERE transaction_type = ? AND account_id = ?',
+      variables: [Variable('DEBIT'), Variable(accountId)],
+      readsFrom: {transactions},
+    ).getSingle();
+
+    final total = result.data['total'] as double? ?? 0.0;
+    final firstTs = result.data['firstTs'] as int?;
+    final lastTs = result.data['lastTs'] as int?;
+
+    if (firstTs == null || lastTs == null) return 0.0;
+
+    final firstDate = DateTime.fromMillisecondsSinceEpoch(firstTs);
+    final lastDate = DateTime.fromMillisecondsSinceEpoch(lastTs);
+
+    final months =
+        (lastDate.year - firstDate.year) * 12 +
+        (lastDate.month - firstDate.month) +
+        1;
+
+    return months > 0 ? total / months : total;
+  }
+
+  Future<DateTime?> getAccountLastTransactionDate(String accountId) async {
+    final result =
+        await (select(transactions)
+              ..where((t) => t.accountId.equals(accountId))
+              ..orderBy([(t) => OrderingTerm.desc(t.timestamp)])
+              ..limit(1))
+            .getSingleOrNull();
+    return result?.timestamp;
+  }
+
   Future<int> insertTransaction(TransactionsCompanion transaction) =>
       into(transactions).insert(transaction);
 

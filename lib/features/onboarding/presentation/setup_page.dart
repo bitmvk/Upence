@@ -7,6 +7,7 @@ import '../../../core/widgets/color_picker_widget.dart';
 import '../../../data/models/category.dart';
 import '../../../data/models/tag.dart';
 import '../../../data/models/bank_account.dart';
+import '../../accounts/presentation/widgets/account_icon_selector.dart';
 import 'setup_provider.dart';
 
 class SetupPage extends ConsumerWidget {
@@ -572,73 +573,83 @@ class SetupPage extends ConsumerWidget {
     final accountNameController = TextEditingController();
     final accountNumberController = TextEditingController();
     final descriptionController = TextEditingController();
+    String selectedIcon = 'account_balance_wallet';
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Add Bank Account',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 24),
-              TextField(
-                controller: accountNameController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Account Name *',
-                  border: OutlineInputBorder(),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Add Bank Account',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: accountNumberController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Account Number (Optional)',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: accountNameController,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Account Name *',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description (Optional)',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: accountNumberController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Account Number (Optional)',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () {
-                  if (accountNameController.text.isNotEmpty) {
-                    notifier.addBankAccount(
-                      BankAccount(
-                        id: DateTime.now().millisecondsSinceEpoch,
-                        accountName: accountNameController.text,
-                        accountNumber: accountNumberController.text,
-                        description: descriptionController.text,
-                      ),
-                    );
-                    Navigator.pop(context);
-                  }
-                },
-                icon: const Icon(Icons.add),
-                label: const Text('Add Account'),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 48),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description (Optional)',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-            ],
+                const SizedBox(height: 16),
+                AccountIconSelector(
+                  selectedIcon: selectedIcon,
+                  onIconSelected: (icon) =>
+                      setSheetState(() => selectedIcon = icon),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    if (accountNameController.text.isNotEmpty) {
+                      notifier.addBankAccount(
+                        BankAccount(
+                          id: DateTime.now().millisecondsSinceEpoch,
+                          accountName: accountNameController.text,
+                          accountNumber: accountNumberController.text,
+                          description: descriptionController.text,
+                          icon: selectedIcon,
+                        ),
+                      );
+                      Navigator.pop(context);
+                    }
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Account'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
       ),

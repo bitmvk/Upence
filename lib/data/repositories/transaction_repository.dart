@@ -30,6 +30,27 @@ class TransactionRepository {
 
   Future<double> getTotalExpense() => _db.transactionDao.getTotalExpense();
 
+  Future<double> getAccountBalance(String accountId) =>
+      _db.transactionDao.getAccountBalance(accountId);
+
+  Future<double> getAccountIncome(String accountId) =>
+      _db.transactionDao.getAccountIncome(accountId);
+
+  Future<double> getAccountExpense(String accountId) =>
+      _db.transactionDao.getAccountExpense(accountId);
+
+  Future<int> getAccountTransactionCount(String accountId) =>
+      _db.transactionDao.getAccountTransactionCount(accountId);
+
+  Future<double> getAccountMonthlyAvgIncome(String accountId) =>
+      _db.transactionDao.getAccountMonthlyAvgIncome(accountId);
+
+  Future<double> getAccountMonthlyAvgExpense(String accountId) =>
+      _db.transactionDao.getAccountMonthlyAvgExpense(accountId);
+
+  Future<DateTime?> getAccountLastTransactionDate(String accountId) =>
+      _db.transactionDao.getAccountLastTransactionDate(accountId);
+
   Future<int> insertTransaction(models.Transaction transaction) async {
     final companion = TransactionsCompanion(
       counterParty: Value(transaction.counterParty),
