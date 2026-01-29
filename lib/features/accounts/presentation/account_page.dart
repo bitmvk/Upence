@@ -13,6 +13,7 @@ class AccountPage extends ConsumerWidget {
     final accountsAsync = ref.watch(bankAccountsProvider);
 
     return Scaffold(
+      appBar: AppBar(title: const Text('Bank Accounts')),
       body: accountsAsync.when(
         data: (accounts) {
           if (accounts.isEmpty) {

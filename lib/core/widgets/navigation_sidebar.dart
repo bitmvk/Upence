@@ -4,14 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 enum NavItem { home, accounts, analytics, settings }
 
 class NavigationSidebar extends ConsumerWidget {
-  final NavItem selectedItem;
-  final Function(NavItem) onItemSelected;
-
-  const NavigationSidebar({
-    super.key,
-    required this.selectedItem,
-    required this.onItemSelected,
-  });
+  const NavigationSidebar({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,43 +20,47 @@ class NavigationSidebar extends ConsumerWidget {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          _buildHeader(context),
-          const Divider(),
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                _buildNavItem(
-                  context: context,
-                  icon: Icons.home,
-                  label: 'Home',
-                  item: NavItem.home,
+      child: SafeArea(
+        child: Builder(
+          builder: (drawerContext) => Column(
+            children: [
+              _buildHeader(drawerContext),
+              const Divider(),
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                    _buildNavItem(
+                      context: drawerContext,
+                      ref: ref,
+                      icon: Icons.home,
+                      label: 'Home',
+                    ),
+                    _buildNavItem(
+                      context: drawerContext,
+                      ref: ref,
+                      icon: Icons.account_balance_wallet,
+                      label: 'Accounts',
+                    ),
+                    _buildNavItem(
+                      context: drawerContext,
+                      ref: ref,
+                      icon: Icons.bar_chart,
+                      label: 'Analytics',
+                    ),
+                    _buildNavItem(
+                      context: drawerContext,
+                      ref: ref,
+                      icon: Icons.settings,
+                      label: 'Settings',
+                    ),
+                  ],
                 ),
-                _buildNavItem(
-                  context: context,
-                  icon: Icons.account_balance_wallet,
-                  label: 'Accounts',
-                  item: NavItem.accounts,
-                ),
-                _buildNavItem(
-                  context: context,
-                  icon: Icons.bar_chart,
-                  label: 'Analytics',
-                  item: NavItem.analytics,
-                ),
-                _buildNavItem(
-                  context: context,
-                  icon: Icons.settings,
-                  label: 'Settings',
-                  item: NavItem.settings,
-                ),
-              ],
-            ),
+              ),
+              _buildFooter(drawerContext),
+            ],
           ),
-          _buildFooter(context),
-        ],
+        ),
       ),
     );
   }
@@ -126,32 +123,37 @@ class NavigationSidebar extends ConsumerWidget {
 
   Widget _buildNavItem({
     required BuildContext context,
+    required WidgetRef ref,
     required IconData icon,
     required String label,
-    required NavItem item,
   }) {
-    final isSelected = selectedItem == item;
     return ListTile(
       leading: Icon(
         icon,
-        color: isSelected
-            ? Theme.of(context).colorScheme.primary
-            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
       ),
       title: Text(
         label,
-        style: TextStyle(
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.onSurface,
-        ),
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
       ),
-      selected: isSelected,
-      selectedTileColor: Theme.of(context).colorScheme.primaryContainer,
       onTap: () {
-        onItemSelected(item);
-        Navigator.pop(context);
+        final scaffold = Scaffold.of(context);
+        scaffold.closeDrawer();
+        final navigator = Navigator.of(context);
+        switch (label) {
+          case 'Home':
+            navigator.pushNamed('/');
+            break;
+          case 'Accounts':
+            navigator.pushNamed('/accounts');
+            break;
+          case 'Analytics':
+            navigator.pushNamed('/analytics');
+            break;
+          case 'Settings':
+            navigator.pushNamed('/settings');
+            break;
+        }
       },
     );
   }

@@ -101,7 +101,6 @@ class MainApp extends ConsumerStatefulWidget {
 
 class _MainAppState extends ConsumerState<MainApp> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  NavItem _selectedNavItem = NavItem.home;
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +114,11 @@ class _MainAppState extends ConsumerState<MainApp> {
         darkTheme: AppTheme.darkTheme,
         themeMode: themeMode,
         home: _buildMainPage(),
-        routes: {'/accounts': (context) => const AccountPage()},
+        routes: {
+          '/accounts': (context) => const AccountPage(),
+          '/analytics': (context) => const AnalyticsPage(),
+          '/settings': (context) => const SettingsPage(),
+        },
       ),
       loading: () => MaterialApp(
         home: Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -129,42 +132,14 @@ class _MainAppState extends ConsumerState<MainApp> {
   Widget _buildMainPage() {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: NavigationSidebar(
-        selectedItem: _selectedNavItem,
-        onItemSelected: (item) {
-          setState(() => _selectedNavItem = item);
-        },
-      ),
+      drawer: const NavigationSidebar(),
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.menu),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
-        title: Text(_getAppBarTitle()),
-        actions: _buildAppBarActions(),
-      ),
-      body: _buildBody(),
-      floatingActionButton: _buildFAB(),
-    );
-  }
-
-  String _getAppBarTitle() {
-    switch (_selectedNavItem) {
-      case NavItem.home:
-        return 'Upence';
-      case NavItem.accounts:
-        return 'Accounts';
-      case NavItem.analytics:
-        return 'Analytics';
-      case NavItem.settings:
-        return 'Settings';
-    }
-  }
-
-  List<Widget> _buildAppBarActions() {
-    switch (_selectedNavItem) {
-      case NavItem.home:
-        return [
+        title: const Text('Upence'),
+        actions: [
           Consumer(
             builder: (context, ref, child) {
               final unprocessedCountAsync = ref.watch(
@@ -222,58 +197,35 @@ class _MainAppState extends ConsumerState<MainApp> {
               );
             },
           ),
-        ];
-      default:
-        return [];
-    }
-  }
-
-  Widget _buildBody() {
-    switch (_selectedNavItem) {
-      case NavItem.home:
-        return const HomePage();
-      case NavItem.accounts:
-        return const AccountPage();
-      case NavItem.analytics:
-        return const AnalyticsPage();
-      case NavItem.settings:
-        return const SettingsPage();
-    }
-  }
-
-  Widget _buildFAB() {
-    switch (_selectedNavItem) {
-      case NavItem.home:
-        return Consumer(
-          builder: (context, ref, child) {
-            final unprocessedCountAsync = ref.watch(
-              unprocessedSMSCountProvider,
-            );
-            return unprocessedCountAsync.when(
-              data: (count) {
-                if (count > 0) {
-                  return FloatingActionButton.extended(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const UnprocessedSMSPage(),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.sms),
-                    label: Text('$count Unprocessed'),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-              loading: () => const SizedBox.shrink(),
-              error: (error, stack) => const SizedBox.shrink(),
-            );
-          },
-        );
-      default:
-        return const SizedBox.shrink();
-    }
+        ],
+      ),
+      body: const HomePage(),
+      floatingActionButton: Consumer(
+        builder: (context, ref, child) {
+          final unprocessedCountAsync = ref.watch(unprocessedSMSCountProvider);
+          return unprocessedCountAsync.when(
+            data: (count) {
+              if (count > 0) {
+                return FloatingActionButton.extended(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const UnprocessedSMSPage(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.sms),
+                  label: Text('$count Unprocessed'),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (error, stack) => const SizedBox.shrink(),
+          );
+        },
+      ),
+    );
   }
 }
