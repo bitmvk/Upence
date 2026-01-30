@@ -7,23 +7,23 @@ This document tracks all pending tasks and improvements for Upence. Tasks are or
 ## 📝 UI Improvements (Simple)
 
 ### Account Management
-- [ ] **#1** - Disable add account button in bottom sheet for "add bank account" page in setup until a value is entered in the "Account Name" field
-- [ ] **#2** - Make the account list use the actual icon selected rather than the default icon in "add bank account" page (setup) and "manage account" page (settings)
-- [ ] **#3a** - Add a "Cancel" button to the bottom sheet in the "Add bank account" page
-- [ ] **#3b** - Change icon selection buttons in "add bank account" page:
+- [x] **#1** - Disable add account button in bottom sheet for "add bank account" page in setup until a value is entered in the "Account Name" field
+- [x] **#2** - Make the account list use the actual icon selected rather than the default icon in "add bank account" page (setup) and "manage account" page (settings)
+- [x] **#3a** - Add a "Cancel" button to the bottom sheet in the "Add bank account" page
+- [x] **#3b** - Change icon selection buttons in "add bank account" page:
   - Selected icon should have transparent background (no background color)
   - Change selected icon color to app primary color
-- [ ] **#8** - In manage bank accounts page (from settings), remove divider in account card
+- [x] **#8** - In manage bank accounts page (from settings), remove divider in account card
 
 ### Category Management
-- [ ] **#4** - In categories page of setup, remove "Use Default Categories" button. Instead, pre-populate 7 default categories in the app
-- [ ] **#5** - Disable add button in "Add Category" bottom sheet until a name is entered
+- [x] **#4** - In categories page of setup, remove "Use Default Categories" button. Instead, pre-populate 7 default categories in the app
+- [x] **#5** - Disable add button in "Add Category" bottom sheet until a name is entered
 
 ### Tags & SMS Pages
-- [ ] **#10** - In Tags page (from settings), change color picker to proper color picker used everywhere else
-- [ ] **#11** - In SMS patterns page, show in each card: sender, whole SMS body, and extracted information
-- [ ] **#12** - Add disable button to each pattern in SMS patterns page
-- [ ] **#13** - Add + button to topbar in ignored senders page
+- [x] **#10** - In Tags page (from settings), change color picker to proper color picker used everywhere else
+- [x] **#11** - In SMS patterns page, show in each card: sender, whole SMS body, and extracted information
+- [x] **#12** - Add disable button to each pattern in SMS patterns page
+- [x] **#13** - Add + button to topbar in ignored senders page
 
 ---
 
@@ -85,7 +85,7 @@ This document tracks all pending tasks and improvements for Upence. Tasks are or
 - Features (High): 3
 - Questions: 1
 
-**Completed:** 0
+**Completed:** 9
 **In Progress:** 0
-**Pending:** 18
+**Pending:** 9
 

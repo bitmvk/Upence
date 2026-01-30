@@ -245,6 +245,7 @@ class _AddEditCategoryBottomSheetState
           controller: _nameController,
           autofocus: widget.existingCategory == null,
           decoration: const InputDecoration(labelText: 'Name *'),
+          onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 16),
         TextField(
@@ -294,17 +295,17 @@ class _AddEditCategoryBottomSheetState
             const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: () {
-                  if (_nameController.text.isNotEmpty) {
-                    widget.onSave(
-                      _nameController.text,
-                      _selectedIcon,
-                      _selectedColor,
-                      _descriptionController.text,
-                    );
-                    Navigator.pop(context);
-                  }
-                },
+                onPressed: _nameController.text.isNotEmpty
+                    ? () {
+                        widget.onSave(
+                          _nameController.text,
+                          _selectedIcon,
+                          _selectedColor,
+                          _descriptionController.text,
+                        );
+                        Navigator.pop(context);
+                      }
+                    : null,
                 child: const Text('Save'),
               ),
             ),

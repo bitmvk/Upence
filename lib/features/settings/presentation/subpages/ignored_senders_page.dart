@@ -14,6 +14,12 @@ class IgnoredSendersPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ignored Senders'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => _showAddIgnoredSenderDialog(context, ref),
+          ),
+        ],
       ),
       body: ignoredSendersAsync.when(
         data: (senders) {
@@ -182,5 +188,65 @@ class IgnoredSendersPage extends ConsumerWidget {
 
   Future<void> _refreshData(WidgetRef ref) async {
     ref.invalidate(ignoredSendersProvider);
+  }
+
+  void _showAddIgnoredSenderDialog(BuildContext context, WidgetRef ref) {
+    final senderNameController = TextEditingController();
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Ignored Sender'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: senderNameController,
+              decoration: const InputDecoration(
+                labelText: 'Sender Name *',
+                hintText: 'e.g., VK-HDFCBK',
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: reasonController,
+              decoration: const InputDecoration(
+                labelText: 'Reason (Optional)',
+                hintText: 'e.g., Not a transaction sender',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (senderNameController.text.trim().isEmpty) {
+                return;
+              }
+              final repo = ref.read(senderRepositoryProvider);
+              await repo.markAsIgnored(
+                senderNameController.text.trim(),
+                reasonController.text.trim().isEmpty
+                    ? null
+                    : reasonController.text.trim(),
+              );
+              ref.invalidate(ignoredSendersProvider);
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Sender added to ignored list')),
+                );
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -97,7 +97,6 @@ class _AccountCardState extends ConsumerState<AccountCard> {
                 ),
               ],
             ),
-            const Divider(height: 24),
             analyticsAsync.when(
               data: (analytics) => _buildAnalytics(context, analytics),
               loading: () => const Center(

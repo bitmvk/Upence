@@ -311,7 +311,7 @@ class SetupPage extends ConsumerWidget {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
-                    leading: const Icon(Icons.account_balance_wallet),
+                    leading: Icon(IconUtils.getIcon(account.icon)),
                     title: Text(account.accountName),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -340,6 +340,13 @@ class SetupPage extends ConsumerWidget {
     SetupState state,
     SetupNotifier notifier,
   ) {
+    // Pre-populate default categories on first load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (state.categories.isEmpty) {
+        notifier.getPrefilledCategories();
+      }
+    });
+
     return Column(
       children: [
         Padding(
@@ -353,7 +360,7 @@ class SetupPage extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Select prefilled categories or add your own.',
+                'Default categories are pre-loaded. Add your own as needed.',
                 style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
               const SizedBox(height: 16),
@@ -370,20 +377,10 @@ class SetupPage extends ConsumerWidget {
         ),
         Expanded(
           child: state.categories.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'No categories yet',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: () => notifier.getPrefilledCategories(),
-                        child: const Text('Use Default Categories'),
-                      ),
-                    ],
+              ? const Center(
+                  child: Text(
+                    'Loading categories...',
+                    style: TextStyle(color: Colors.grey),
                   ),
                 )
               : GridView.builder(
@@ -635,6 +632,7 @@ class SetupPage extends ConsumerWidget {
                     labelText: 'Account Name *',
                     border: OutlineInputBorder(),
                   ),
+                  onChanged: (_) => setSheetState(() {}),
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -660,26 +658,39 @@ class SetupPage extends ConsumerWidget {
                       setSheetState(() => selectedIcon = icon),
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    if (accountNameController.text.isNotEmpty) {
-                      notifier.addBankAccount(
-                        BankAccount(
-                          id: DateTime.now().millisecondsSinceEpoch,
-                          accountName: accountNameController.text,
-                          accountNumber: accountNumberController.text,
-                          description: descriptionController.text,
-                          icon: selectedIcon,
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: accountNameController.text.isNotEmpty
+                            ? () {
+                                notifier.addBankAccount(
+                                  BankAccount(
+                                    id: DateTime.now().millisecondsSinceEpoch,
+                                    accountName: accountNameController.text,
+                                    accountNumber: accountNumberController.text,
+                                    description: descriptionController.text,
+                                    icon: selectedIcon,
+                                  ),
+                                );
+                                Navigator.pop(context);
+                              }
+                            : null,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add Account'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 48),
                         ),
-                      );
-                      Navigator.pop(context);
-                    }
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Account'),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 48),
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
               ],
@@ -784,6 +795,7 @@ class _AddCategoryBottomSheetState extends State<_AddCategoryBottomSheet> {
           controller: _nameController,
           autofocus: true,
           decoration: const InputDecoration(labelText: 'Name *'),
+          onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 16),
         TextField(
@@ -830,20 +842,20 @@ class _AddCategoryBottomSheetState extends State<_AddCategoryBottomSheet> {
             const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: () {
-                  if (_nameController.text.isNotEmpty) {
-                    widget.notifier.addCategory(
-                      Category(
-                        id: DateTime.now().millisecondsSinceEpoch,
-                        name: _nameController.text,
-                        icon: _selectedIcon,
-                        color: _selectedColor,
-                        description: _descriptionController.text,
-                      ),
-                    );
-                    Navigator.pop(context);
-                  }
-                },
+                onPressed: _nameController.text.isNotEmpty
+                    ? () {
+                        widget.notifier.addCategory(
+                          Category(
+                            id: DateTime.now().millisecondsSinceEpoch,
+                            name: _nameController.text,
+                            icon: _selectedIcon,
+                            color: _selectedColor,
+                            description: _descriptionController.text,
+                          ),
+                        );
+                        Navigator.pop(context);
+                      }
+                    : null,
                 child: const Text('Add'),
               ),
             ),
@@ -995,6 +1007,7 @@ class _AddTagBottomSheetState extends State<_AddTagBottomSheet> {
           controller: _nameController,
           autofocus: true,
           decoration: const InputDecoration(labelText: 'Name *'),
+          onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 16),
         const Text('Color'),
@@ -1024,20 +1037,20 @@ class _AddTagBottomSheetState extends State<_AddTagBottomSheet> {
             const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: () {
-                  if (_nameController.text.isNotEmpty) {
-                    final colorHex =
-                        '#${_selectedColor.toRadixString(16).substring(2)}';
-                    widget.notifier.addTag(
-                      Tag(
-                        id: DateTime.now().millisecondsSinceEpoch,
-                        name: _nameController.text,
-                        color: colorHex,
-                      ),
-                    );
-                    Navigator.pop(context);
-                  }
-                },
+                onPressed: _nameController.text.isNotEmpty
+                    ? () {
+                        final colorHex =
+                            '#${_selectedColor.toRadixString(16).substring(2)}';
+                        widget.notifier.addTag(
+                          Tag(
+                            id: DateTime.now().millisecondsSinceEpoch,
+                            name: _nameController.text,
+                            color: colorHex,
+                          ),
+                        );
+                        Navigator.pop(context);
+                      }
+                    : null,
                 child: const Text('Add'),
               ),
             ),

@@ -38,31 +38,124 @@ class _PatternManagementPageState extends ConsumerState<PatternManagementPage> {
             itemCount: patterns.length,
             itemBuilder: (context, index) {
               final pattern = patterns[index];
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: pattern.isActive
-                      ? AppColors.income
-                      : AppColors.gray400,
-                  child: Icon(
-                    pattern.isActive ? Icons.check : Icons.close,
-                    color: Colors.white,
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: pattern.isActive
+                                ? AppColors.income
+                                : AppColors.gray400,
+                            child: Icon(
+                              pattern.isActive ? Icons.check : Icons.close,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  pattern.patternName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                Text(
+                                  'Sender: ${pattern.senderName}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              pattern.isActive
+                                  ? Icons.block
+                                  : Icons.check_circle_outline,
+                              color: pattern.isActive
+                                  ? AppColors.expense
+                                  : AppColors.income,
+                            ),
+                            onPressed: () => _togglePatternStatus(pattern),
+                            tooltip: pattern.isActive ? 'Disable' : 'Enable',
+                          ),
+                        ],
+                      ),
+                      if (pattern.sampleSms.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        const Divider(),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Sample SMS:',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            pattern.sampleSms,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _buildPatternInfoChip(
+                            'Amount',
+                            pattern.amountPattern,
+                            Icons.payments,
+                          ),
+                          const SizedBox(width: 8),
+                          _buildPatternInfoChip(
+                            'Counterparty',
+                            pattern.counterpartyPattern,
+                            Icons.person,
+                          ),
+                          const SizedBox(width: 8),
+                          _buildPatternInfoChip(
+                            'Reference',
+                            pattern.referencePattern,
+                            Icons.description,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () => _showEditPatternDialog(pattern),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            color: AppColors.expense,
+                            onPressed: () => _showDeleteDialog(pattern),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ),
-                title: Text(pattern.patternName),
-                subtitle: Text('Sender: ${pattern.senderName}'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => _showEditPatternDialog(pattern),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      color: AppColors.expense,
-                      onPressed: () => _showDeleteDialog(pattern),
-                    ),
-                  ],
                 ),
               );
             },
@@ -267,6 +360,45 @@ class _PatternManagementPageState extends ConsumerState<PatternManagementPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _togglePatternStatus(SMSParsingPattern pattern) async {
+    final repo = ref.read(patternRepositoryProvider);
+    await repo.updatePattern(
+      pattern.copyWith(isActive: !pattern.isActive),
+    );
+    ref.invalidate(patternsProvider);
+  }
+
+  Widget _buildPatternInfoChip(
+    String label,
+    String? value,
+    IconData icon,
+  ) {
+    if (value == null || value.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Colors.grey.shade700),
+          const SizedBox(width: 4),
+          Text(
+            '$label: $value',
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ],
       ),
     );
   }
