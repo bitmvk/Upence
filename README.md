@@ -13,27 +13,22 @@ Flutter port of Upence Android SMS transaction tracker app.
 - [x] Basic app entry point with Riverpod
 - [x] Core constants and utilities
 - [x] Data models (Transaction, Category, Tag, BankAccount, SMS, Sender, SMSParsingPattern)
+- [x] Notification service implementation
+- [x] SMS reading service
+- [x] Setup/onboarding flow
+- [x] Basic UI pages (home, settings, accounts, categories, tags, patterns)
+- [x] Permission handling
 
 ### ⏳️ In Progress
-- SMS reading service (needs API verification)
-- Notification service (needs API verification)
-- SMS parsing and pattern matching
-- Android platform channel for SMS receiver
+- SMS parsing and pattern matching (pattern management UI exists, needs refinement)
 - Transaction repositories
-- UI implementation (home page, SMS processing, settings)
-- Permission handling
+- Analytics page
 
 ### ❌ Not Started
 - Transaction CRUD operations
-- Category management UI
-- Account management UI
-- Tag management UI
-- Pattern management UI
 - Sender filtering UI
-- Analytics page
 - Data export/import
-- India sender ruleset
-- Background SMS processing
+- Background SMS processing with auto-classification
 
 ## Architecture
 
@@ -189,4 +184,57 @@ From Upence_old (Kotlin):
 
 ---
 
-*Last Updated: January 27, 2026*
+---
+
+## 📋 Current Todo Tasks
+
+See [`Todo.md`](./Todo.md) for a detailed list of all pending tasks and improvements.
+
+**Summary:**
+- **Total Tasks:** 18
+- **Completed:** 0
+- **In Progress:** 0
+- **Pending:** 18
+
+**Categories:**
+- UI Improvements (Simple): 9 tasks
+- Bug Fixes: 3 tasks
+- Features (Medium Complexity): 2 tasks
+- Features (High Complexity): 3 tasks
+
+See [`plans/upence-implementation-plan.md`](./plans/upence-implementation-plan.md) for the detailed implementation roadmap.
+
+---
+
+## 📊 Implementation Progress
+
+| Phase | Description | Tasks | Status |
+|-------|-------------|-------|--------|
+| Phase 1 | Simple UI Fixes | #1, #3a, #3b, #5, #8, #10, #13 | Not Started |
+| Phase 2 | Icon/Visual Fixes | #2, #6, #7 | Not Started |
+| Phase 3 | Default Categories | #4 | Not Started |
+| Phase 4 | SMS Patterns Page | #11, #12 | Not Started |
+| Phase 5 | Foreign Key Verification | #9 | Not Started |
+| Phase 6 | Regex & Rules | #14, #15 | Not Started |
+| Phase 7 | Auto Processing | #16 | Not Started |
+| Phase 8 | SMS Notifications | #17 | Not Started |
+| Phase 9 | Sender Rules | #18 | Not Started |
+
+For detailed task breakdown and implementation steps, see the [implementation plan](./plans/upence-implementation-plan.md).
+
+---
+
+## 🆕 Recent Updates
+
+*January 30, 2026*
+- Created comprehensive Todo.md with 18 tracked tasks
+- Created detailed implementation plan (25-36 hours of work)
+- Updated README with progress tracking sections
+
+*January 27, 2026*
+- Initial project setup completed
+- Database schema and basic services implemented
+
+---
+
+*Last Updated: January 30, 2026*

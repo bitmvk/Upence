@@ -1,22 +1,91 @@
-1. Disable add account button in the bottomsheet for "add bank account" page in the set up until a value is entered in the "Account Name" field.
-2. make the account list use the actual icon selected rather than the default icon in the "add bank account" page of set up and the "manage account" page of the main app.
-3. Add a "Cancel" button to the bottom sheet in the "Add bank account" page
-3. Change the icon selection buttons the following way in the "add bank account" page in set up:
-    i. the selected icon shouldnt have a background. The background should remain transaprent.
-    ii. Change the icon color of the selected icon to the app primary color.
-4. in the "categories" page of set up, remove the button saying "use Default Categories". Insead, make the 7 categories in the default list already preexisting in the app.
-5. Disable the add button in "Add categoy" bottom sheet until a name is entered
-6. for some reason, I can see the icon I selected for a new category created when I created it. but when I reaopen the app after closing it and navigate to categories page from settings, few of the icons are just showing the default categories icons, even though in the database I can see that they are the correct icons. The correct icons are being rendered if I added an other category to the list. This is happening also for groceries.
-7. in the manage bank account page, from settings, there is no icon rendered in the selected account card, but the card has place for the icon to be rendered.
-8. in the account card in the manage bank accounts page in settings, remove the divider.
-9. I havent checked how toe deletion is handling the foreign keys. See if they are being handled as expected.
-10. In the Tags page navigated from settings, change the color picker to the proper color picker used every where else.
-11. In SMS patterns page, show the sender, the whole body of the sms, and the extracted information from the sms in the card.
-12. Add a disable button to each pattern in SMS pattern page.
-13. add a + button to the topbar in the ignored senders page.
-14. Add rule based ignoring of senders. Allow regex rules. Show this setting in the ignored senders page
-15. add a regex based sender name matching for patterns. This should be visible in "advanced" collapsible section in  the SMS processing page. it should be pre populated with the sender name of that perticular sms. Also show some basic regex rules
-16. Add a "auto process this transaction" check box under "select this category for this pattern" check box with the sane indentation in the SMS processing page. If this is selected, the sms should automatically be processed without any user intervernsion. the auto processing should send a notification saying "this transaction has been automatically classified with the following ..."
-17. send notifications to the user when a sms is recieved and it has been identified as a transaction. This will be a complecated feature, especially the classification part. For now, send a notification for every sms which is recieved. The notification should have 1 action button to it saying "Not transaction". On acction trigger, mark the sms as deleted from the sms table. Keep the sms in the table but dont show the sms in the main pending sms page.
-this should also mark the futurea sms with the same pattern as not transactions and directly mark them as deleted, and dont send a notification.
-18. Add rules which will be used to Identify which senders send transaction sms. for india, only senders ending with -s have to be searched to see if they are actually transaction sms. allow the user to make custom rules like this. Also create few default country based rules which can pre filter the sms. These rules should be changable. The user created rules should also be stored. Prefer storing these in json format or create a table for them. allow the user to selecte 1 or more sets of rules as tehy want.
+# Todo
+
+This document tracks all pending tasks and improvements for Upence. Tasks are organized by category and complexity.
+
+---
+
+## 📝 UI Improvements (Simple)
+
+### Account Management
+- [ ] **#1** - Disable add account button in bottom sheet for "add bank account" page in setup until a value is entered in the "Account Name" field
+- [ ] **#2** - Make the account list use the actual icon selected rather than the default icon in "add bank account" page (setup) and "manage account" page (settings)
+- [ ] **#3a** - Add a "Cancel" button to the bottom sheet in the "Add bank account" page
+- [ ] **#3b** - Change icon selection buttons in "add bank account" page:
+  - Selected icon should have transparent background (no background color)
+  - Change selected icon color to app primary color
+- [ ] **#8** - In manage bank accounts page (from settings), remove divider in account card
+
+### Category Management
+- [ ] **#4** - In categories page of setup, remove "Use Default Categories" button. Instead, pre-populate 7 default categories in the app
+- [ ] **#5** - Disable add button in "Add Category" bottom sheet until a name is entered
+
+### Tags & SMS Pages
+- [ ] **#10** - In Tags page (from settings), change color picker to proper color picker used everywhere else
+- [ ] **#11** - In SMS patterns page, show in each card: sender, whole SMS body, and extracted information
+- [ ] **#12** - Add disable button to each pattern in SMS patterns page
+- [ ] **#13** - Add + button to topbar in ignored senders page
+
+---
+
+## 🐛 Bug Fixes
+
+- [ ] **#6** - Icons not showing correctly after app restart: custom category icons revert to default icons, but correct icons show if another category is added. Happens for groceries and others
+- [ ] **#7** - In manage bank accounts page (from settings), no icon rendered in selected account card (card has space for icon but it's empty)
+- [ ] **#9** - Verify foreign key handling on deletion - ensure cascading deletes work as expected
+
+---
+
+## 🚀 Features (Medium Complexity)
+
+### Regex & Rules
+- [ ] **#14** - Add rule-based ignoring of senders with regex support. Show these rules in ignored senders page
+- [ ] **#15** - Add regex-based sender name matching for patterns in SMS processing page:
+  - Show in "Advanced" collapsible section
+  - Pre-populate with sender name of that SMS
+  - Display basic regex rules/examples
+
+---
+
+## 🎯 Features (High Complexity)
+
+### Auto Processing & Notifications
+- [ ] **#16** - Add "Auto process this transaction" checkbox under "Select this category for this pattern" in SMS processing page:
+  - Same indentation as other checkboxes
+  - If selected, SMS automatically processes without user intervention
+  - Send notification: "This transaction has been automatically classified with [category]..."
+- [ ] **#17** - Send notifications when SMS is received and identified as transaction:
+  - For now, send notification for every SMS received
+  - Add action button "Not transaction"
+  - On action trigger: mark SMS as deleted in SMS table (keep data but don't show in pending SMS page)
+  - Auto-mark future SMS with same pattern as not transactions (don't show or notify)
+- [ ] **#18** - Add rules to identify which senders send transaction SMS:
+  - Create default country-based rules (e.g., India: only senders ending with -S)
+  - Allow users to create custom rules
+  - Rules should be changeable
+  - User can select one or more rule sets
+  - Store in JSON format
+  - **Implementation**: Dedicated page accessible from settings
+
+---
+
+## ❓ Questions / Decisions Needed
+
+- **[Rules System]** Should items #14 (rule-based sender ignoring) and #15 (regex-based sender matching) use the same unified rules configuration system, or should they be separate implementations?
+  - If unified: single UI and storage for both types of rules
+  - If separate: different UIs and database tables for each
+
+---
+
+## 📊 Progress Tracking
+
+**Total Tasks:** 18
+- UI Improvements (Simple): 9
+- Bug Fixes: 3
+- Features (Medium): 2
+- Features (High): 3
+- Questions: 1
+
+**Completed:** 0
+**In Progress:** 0
+**Pending:** 18
+
