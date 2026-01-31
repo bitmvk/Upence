@@ -54,7 +54,7 @@ class SMSRulesPage extends ConsumerWidget {
         ),
         value: rule.enabled,
         onChanged: (value) async {
-          rule.enabled = value ?? false;
+          rule.enabled = value;
           await ref.read(smsRulesServiceProvider).saveUserSelections();
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(

@@ -4,6 +4,7 @@ import '../../../data/models/sms.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../data/models/transaction.dart';
 import '../../../data/models/sms_parsing_pattern.dart';
+import '../../../data/models/regex_sender_pattern.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/custom_dropdown.dart';
@@ -409,6 +410,7 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
             const SizedBox(height: 24),
             _buildPatternSaveOptions(),
             const SizedBox(height: 24),
+            _buildAdvancedSection(),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -1061,6 +1063,7 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: TextField(
+                controller: _descriptionController,
                 decoration: InputDecoration(
                   hintText: 'Enter description (optional)',
                   hintStyle: TextStyle(color: AppColors.gray500),
@@ -1072,13 +1075,200 @@ class _SMSProcessingPageState extends ConsumerState<SMSProcessingPage> {
                     vertical: 12,
                   ),
                 ),
-                maxLines: 3,
-                controller: _descriptionController,
                 onChanged: (value) => setState(() => _description = value),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAdvancedSection() {
+    return Card(
+      child: ExpansionTile(
+        title: const Text(
+          'Advanced',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        leading: const Icon(Icons.tune),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Regex Sender Matching',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Consumer(
+                  builder: (context, ref, child) {
+                    final patternsAsync = ref.watch(
+                      regexSenderPatternsProvider,
+                    );
+                    return patternsAsync.when(
+                      data: (patterns) {
+                        if (patterns.isEmpty) {
+                          return const Text(
+                            'No regex patterns configured',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          );
+                        }
+                        return Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: patterns.map((pattern) {
+                            return FilterChip(
+                              label: Text(
+                                pattern.regexPattern,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontFamily: 'monospace',
+                                ),
+                              ),
+                              selected: false,
+                              onSelected: (selected) {
+                                _showAddRegexPatternDialog(
+                                  context,
+                                  ref,
+                                  pattern,
+                                );
+                              },
+                            );
+                          }).toList(),
+                        );
+                      },
+                      loading: () => const CircularProgressIndicator(),
+                      error: (error, stack) => Text('Error: $error'),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: () =>
+                      _showAddRegexPatternDialog(context, ref, null),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Regex Pattern'),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Examples:',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  r'• ^HDFC - Matches senders starting with HDFC'
+                  '\n'
+                  r'• .*-S$ - Matches senders ending with -S'
+                  '\n'
+                  r'• BANK - Matches senders containing BANK'
+                  '\n'
+                  r'• UPI - Matches senders containing UPI',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade600,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddRegexPatternDialog(
+    BuildContext context,
+    WidgetRef ref,
+    RegexSenderPattern? existingPattern,
+  ) {
+    final patternController = TextEditingController(
+      text: existingPattern?.regexPattern ?? widget.sms.sender,
+    );
+    final descriptionController = TextEditingController(
+      text: existingPattern?.description ?? '',
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          existingPattern == null ? 'Add Regex Pattern' : 'Edit Regex Pattern',
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: patternController,
+              decoration: const InputDecoration(
+                labelText: 'Regex Pattern *',
+                hintText: 'e.g., ^HDFC',
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: descriptionController,
+              decoration: const InputDecoration(
+                labelText: 'Description (Optional)',
+                hintText: 'e.g., HDFC Bank senders',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (patternController.text.trim().isEmpty) {
+                return;
+              }
+
+              final pattern = RegexSenderPattern(
+                id: existingPattern?.id ?? 0,
+                regexPattern: patternController.text.trim(),
+                description: descriptionController.text.trim().isEmpty
+                    ? null
+                    : descriptionController.text.trim(),
+                priority: 0,
+                isActive: true,
+                createdTimestamp: DateTime.now().millisecondsSinceEpoch,
+              );
+
+              final repo = ref.read(regexSenderPatternsRepositoryProvider);
+              if (existingPattern == null) {
+                await repo.insertPattern(pattern);
+              } else {
+                await repo.updatePattern(pattern);
+              }
+
+              ref.invalidate(regexSenderPatternsProvider);
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      existingPattern == null
+                          ? 'Pattern added'
+                          : 'Pattern updated',
+                    ),
+                  ),
+                );
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }
