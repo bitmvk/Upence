@@ -24,7 +24,8 @@ android {
         applicationId = "com.upence"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // permission_handler requires minSdk 21 for SMS permissions on Android
+        minSdk = 21
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
