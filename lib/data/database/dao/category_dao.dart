@@ -26,4 +26,11 @@ class CategoryDao extends DatabaseAccessor<AppDatabase>
     )..where((c) => c.id.equals(id))).go();
     return count > 0;
   }
+
+  Future<List<String>> getDistinctIcons() async {
+    final results = await customSelect(
+      'SELECT DISTINCT icon FROM categories',
+    ).get();
+    return results.map((row) => row.read<String>('icon')).toList();
+  }
 }

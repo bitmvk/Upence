@@ -7,6 +7,7 @@ import 'package:upence/data/models/tag.dart';
 import 'package:upence/data/models/bank_account.dart';
 import 'package:upence/services/permission_service.dart';
 import 'package:permission_handler/permission_handler.dart' as ph;
+import 'package:upence/core/utils/icon_utils.dart';
 
 enum SetupStep { welcome, permissions, bankAccount, categories, tags }
 
@@ -363,6 +364,12 @@ class SetupNotifier extends StateNotifier<SetupState> {
           return false;
         }
       }
+
+      final distinctIcons = state.categories
+          .map((c) => c.icon)
+          .toSet()
+          .toList();
+      await IconUtils.populateUsedIcons(distinctIcons);
 
       for (final tag in state.tags) {
         try {

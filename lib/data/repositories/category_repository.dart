@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import '../database/app_database.dart';
 import '../database/dao/category_dao.dart';
 import '../models/category.dart' as models;
+import '../../core/utils/icon_utils.dart';
 
 class CategoryRepository {
   final CategoryDao _categoryDao;
@@ -10,6 +11,10 @@ class CategoryRepository {
 
   Future<List<models.Category>> getAllCategories() async {
     final categories = await _categoryDao.getAllCategories();
+
+    final distinctIcons = await _categoryDao.getDistinctIcons();
+    await IconUtils.populateUsedIcons(distinctIcons);
+
     return categories.map(_toModel).toList();
   }
 
@@ -26,7 +31,11 @@ class CategoryRepository {
       color: Value(category.color),
       description: Value(category.description),
     );
-    return await _categoryDao.insertCategory(companion);
+    final id = await _categoryDao.insertCategory(companion);
+
+    await IconUtils.populateUsedIcons([category.icon]);
+
+    return id;
   }
 
   Future<bool> updateCategory(models.Category category) async {
@@ -37,7 +46,11 @@ class CategoryRepository {
       color: category.color,
       description: category.description,
     );
-    return await _categoryDao.updateCategory(dbCategory);
+    final result = await _categoryDao.updateCategory(dbCategory);
+
+    await IconUtils.populateUsedIcons([category.icon]);
+
+    return result;
   }
 
   Future<bool> deleteCategory(int id) => _categoryDao.deleteCategory(id);

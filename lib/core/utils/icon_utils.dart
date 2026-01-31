@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_iconpicker/flutter_iconpicker.dart';
+import 'package:flutter_iconpicker/Helpers/icon_pack_manager.dart';
 
 class IconUtils {
   static const List<String> _handpickedIconNames = [
@@ -13,6 +15,7 @@ class IconUtils {
     'shopping_cart',
     'shopping_bag',
     'store',
+    'local_grocery_store',
     'local_offer',
     'point_of_sale',
     'savings',
@@ -134,6 +137,8 @@ class IconUtils {
         return Icons.shopping_bag;
       case 'store':
         return Icons.store;
+      case 'local_grocery_store':
+        return Icons.local_grocery_store;
       case 'local_offer':
         return Icons.local_offer;
       case 'point_of_sale':
@@ -315,6 +320,36 @@ class IconUtils {
 
   static void populateCache(Map<String, IconData> icons) {
     _cache = icons;
+  }
+
+  static Future<void> populateUsedIcons(List<String> iconNames) async {
+    if (_cache != null) {
+      final iconPack = IconPackManager.getIcons(IconPack.material);
+      for (final name in iconNames) {
+        if (!_cache!.containsKey(name)) {
+          try {
+            final icon = iconPack.entries.firstWhere((e) => e.key == name);
+            _cache![name] = icon.value.data;
+          } catch (_) {
+            // Icon not found, skip it
+          }
+        }
+      }
+      return;
+    }
+
+    final iconPack = IconPackManager.getIcons(IconPack.material);
+    final usedCache = <String, IconData>{};
+    for (final name in iconNames) {
+      try {
+        final icon = iconPack.entries.firstWhere((e) => e.key == name);
+        usedCache[name] = icon.value.data;
+      } catch (_) {
+        // Icon not found, skip it
+      }
+    }
+
+    _cache = {..._handpickedIcons, ...usedCache};
   }
 
   static void setLoadError(String message) {
