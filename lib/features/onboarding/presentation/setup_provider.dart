@@ -283,7 +283,7 @@ class SetupNotifier extends StateNotifier<SetupState> {
       models.Category(
         id: DateTime.now().millisecondsSinceEpoch + 3,
         name: 'Shopping',
-        icon: 'shopping_cart',
+        icon: 'shopping_bag',
         color: 0xFF4361EE,
         description: 'Shopping expenses',
       ),
@@ -341,8 +341,12 @@ class SetupNotifier extends StateNotifier<SetupState> {
           await bankAccountRepo.insertAccount(account);
           debugPrint('[Setup] Saved bank account: ${account.accountName}');
         } catch (e) {
-          debugPrint('[Setup] Failed to save bank account ${account.accountName}: $e');
-          state = state.copyWith(errorMessage: 'Failed to save bank account: ${account.accountName}');
+          debugPrint(
+            '[Setup] Failed to save bank account ${account.accountName}: $e',
+          );
+          state = state.copyWith(
+            errorMessage: 'Failed to save bank account: ${account.accountName}',
+          );
           return false;
         }
       }
@@ -353,7 +357,9 @@ class SetupNotifier extends StateNotifier<SetupState> {
           debugPrint('[Setup] Saved category: ${category.name}');
         } catch (e) {
           debugPrint('[Setup] Failed to save category ${category.name}: $e');
-          state = state.copyWith(errorMessage: 'Failed to save category: ${category.name}');
+          state = state.copyWith(
+            errorMessage: 'Failed to save category: ${category.name}',
+          );
           return false;
         }
       }
@@ -364,7 +370,9 @@ class SetupNotifier extends StateNotifier<SetupState> {
           debugPrint('[Setup] Saved tag: ${tag.name}');
         } catch (e) {
           debugPrint('[Setup] Failed to save tag ${tag.name}: $e');
-          state = state.copyWith(errorMessage: 'Failed to save tag: ${tag.name}');
+          state = state.copyWith(
+            errorMessage: 'Failed to save tag: ${tag.name}',
+          );
           return false;
         }
       }

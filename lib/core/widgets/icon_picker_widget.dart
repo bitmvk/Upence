@@ -57,6 +57,13 @@ class _IconPickerWidgetState extends State<IconPickerWidget> {
         iconMap[entry.key] = entry.value.data;
       }
 
+      if (iconMap.isEmpty) {
+        throw Exception(
+          'Icon pack is empty. Run: dart run flutter_iconpicker:generate_packs --packs material\n'
+          'Icon packs must be generated before the app can use them.',
+        );
+      }
+
       IconUtils.populateCache(iconMap);
 
       setState(() {
@@ -94,6 +101,7 @@ class _IconPickerWidgetState extends State<IconPickerWidget> {
                   entry.key,
                 ).toLowerCase().contains(_searchQuery.toLowerCase()),
           )
+          .take(100)
           .toList();
     } else {
       return _handpickedIcons.entries
@@ -104,6 +112,7 @@ class _IconPickerWidgetState extends State<IconPickerWidget> {
                   entry.key,
                 ).toLowerCase().contains(_searchQuery.toLowerCase()),
           )
+          .take(100)
           .toList();
     }
   }

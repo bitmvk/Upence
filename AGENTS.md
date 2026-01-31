@@ -6,7 +6,9 @@ This file contains project-specific guidelines for agentic coding assistants wor
 
 ### Building
 - `flutter build apk` - Build Android APK
+- `flutter build apk --no-tree-shake-icons` - Build Android APK (use this flag when using icon picker)
 - `flutter build appbundle` - Build Android App Bundle
+- `flutter build appbundle --no-tree-shake-icons` - Build Android App Bundle (use this flag when using icon picker)
 - `flutter run -d android` - Run on connected Android device/emulator
 
 ### Linting and Analysis
@@ -22,6 +24,7 @@ This file contains project-specific guidelines for agentic coding assistants wor
 ### Code Generation
 - `dart run build_runner build` - Generate Drift database code
 - `dart run build_runner build --delete-conflicting-outputs` - Force regenerate (use if conflicts)
+- `dart run flutter_iconpicker:generate_packs --packs material` - Generate Material icon pack (required for icon picker)
 
 ## Code Style Guidelines
 
