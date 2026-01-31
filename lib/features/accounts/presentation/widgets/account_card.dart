@@ -41,9 +41,9 @@ class _AccountCardState extends ConsumerState<AccountCard> {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  // backgroundColor: Theme.of(
-                  //   context,
-                  // ).colorScheme.primaryContainer,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.primaryContainer.withAlpha(200),
                   child: Icon(_getIcon(widget.account.icon), size: 28),
                 ),
                 const SizedBox(width: 12),
