@@ -14,6 +14,8 @@ import 'tables/bank_accounts.dart';
 import 'tables/sms.dart';
 import 'tables/sms_parsing_patterns.dart';
 import 'tables/senders.dart';
+import 'tables/sender_ignore_rules.dart';
+import 'tables/regex_sender_patterns.dart';
 import 'dao/transaction_dao.dart';
 import 'dao/category_dao.dart';
 import 'dao/tag_dao.dart';
@@ -21,6 +23,8 @@ import 'dao/bank_account_dao.dart';
 import 'dao/sms_dao.dart';
 import 'dao/pattern_dao.dart';
 import 'dao/sender_dao.dart';
+import 'dao/sender_ignore_rules_dao.dart';
+import 'dao/regex_sender_patterns_dao.dart';
 
 part 'app_database.g.dart';
 
@@ -34,6 +38,8 @@ part 'app_database.g.dart';
     SmsTable,
     SMSParsingPatterns,
     Senders,
+    SenderIgnoreRules,
+    RegexSenderPatterns,
   ],
   daos: [
     TransactionDao,
@@ -43,13 +49,15 @@ part 'app_database.g.dart';
     SmsDao,
     PatternDao,
     SenderDao,
+    SenderIgnoreRulesDao,
+    RegexSenderPatternsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration {
@@ -73,7 +81,7 @@ class AppDatabase extends _$AppDatabase {
     if (await file.exists()) {
       final prefs = await SharedPreferences.getInstance();
       final setupCompleted = prefs.getBool('setup_completed') ?? false;
-      
+
       // Only delete the database if setup is NOT completed
       // This ensures we don't lose data from a completed setup
       if (!setupCompleted) {

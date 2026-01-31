@@ -13,6 +13,7 @@ import 'package:upence/features/onboarding/presentation/setup_page.dart';
 import 'package:upence/features/transactions/presentation/transaction_list_page.dart';
 import 'package:upence/features/transactions/presentation/transaction_details_page.dart';
 import 'package:upence/features/settings/presentation/subpages/ignored_senders_page.dart';
+import 'package:upence/features/settings/presentation/subpages/sms_rules_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,7 +50,10 @@ void main() async {
 
   runApp(
     ProviderScope(
-      overrides: [databaseProvider.overrideWithValue(database)],
+      overrides: [
+        databaseProvider.overrideWithValue(database),
+        smsRulesServiceProvider,
+      ],
       child: const MyApp(),
     ),
   );
@@ -113,9 +117,11 @@ class MainApp extends ConsumerWidget {
           '/settings': (context) => const SettingsPage(),
           '/transactions': (context) => const TransactionListPage(),
           '/settings/ignored-senders': (context) => const IgnoredSendersPage(),
+          '/settings/sms-rules': (context) => const SMSRulesPage(),
         },
         onGenerateRoute: (settings) {
-          if (settings.name != null && settings.name!.startsWith('/transaction/')) {
+          if (settings.name != null &&
+              settings.name!.startsWith('/transaction/')) {
             final id = int.tryParse(settings.name!.split('/')[2]);
             if (id != null) {
               return MaterialPageRoute(

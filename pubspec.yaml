@@ -1,6 +1,6 @@
 name: upence
 description: "A simple expense tracking app that automatically parses SMS messages to track your transactions."
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+1
 
@@ -56,3 +56,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/categories/
+    - assets/sms_rules/

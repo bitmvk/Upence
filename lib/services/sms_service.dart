@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../data/models/sms.dart';
+import '../features/sms/services/sms_rules_service.dart' as rules;
 import '../features/sms/services/sms_parsing_service.dart';
 import 'notification_service.dart';
 
@@ -10,6 +11,8 @@ class SMSService {
   static final SMSService _instance = SMSService._internal();
   factory SMSService() => _instance;
   SMSService._internal();
+
+  final rules.SMSRulesService _smsRulesService = rules.SMSRulesService();
 
   final SmsQuery _query = SmsQuery();
   final SMSParsingService _parsingService = SMSParsingService();
@@ -73,7 +76,7 @@ class SMSService {
   }
 
   bool _isBankMessage(String sender) {
-    return _parsingService.isBankMessage(sender);
+    return _smsRulesService.matchesTransactionSender(sender);
   }
 
   Future<void> processNewSMS(SMSMessage sms) async {
@@ -108,6 +111,10 @@ class SMSService {
       }
     }
     return null;
+  }
+
+  Future<void> initialize() async {
+    await _smsRulesService.initialize();
   }
 
   Future<void> syncSMS() async {

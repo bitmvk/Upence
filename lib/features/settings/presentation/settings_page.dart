@@ -92,6 +92,15 @@ class SettingsPage extends ConsumerWidget {
               Navigator.pushNamed(context, '/settings/ignored-senders');
             },
           ),
+          _buildDataTile(
+            context,
+            icon: Icons.rule,
+            title: 'SMS Rules',
+            subtitle: 'Manage transaction sender identification rules',
+            onTap: () {
+              Navigator.pushNamed(context, '/settings/sms-rules');
+            },
+          ),
           _buildSectionHeader('Data'),
           _buildDataTile(
             context,

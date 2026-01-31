@@ -8,7 +8,10 @@ import '../../data/repositories/tag_repository.dart';
 import '../../data/repositories/bank_account_repository.dart';
 import '../../data/repositories/sms_repository.dart';
 import '../../data/repositories/pattern_repository.dart';
+import '../../features/sms/services/sms_rules_service.dart';
 import '../../data/repositories/sender_repository.dart';
+import '../../data/repositories/sender_ignore_rules_repository.dart';
+import '../../data/repositories/regex_sender_patterns_repository.dart';
 import '../../data/models/transaction_model.dart' as models;
 import '../../data/models/category.dart' as models;
 import '../../data/models/tag.dart' as models;
@@ -16,6 +19,8 @@ import '../../data/models/bank_account.dart' as models;
 import '../../data/models/sms_parsing_pattern.dart' as models;
 import '../../data/models/sms.dart' as models;
 import '../../data/models/sender.dart' as models;
+import '../../data/models/sender_ignore_rule.dart' as models;
+import '../../data/models/regex_sender_pattern.dart' as models;
 import '../../data/models/financial_overview.dart';
 import '../../data/models/account_analytics.dart';
 import '../../services/permission_service.dart';
@@ -72,8 +77,25 @@ final smsServiceProvider = Provider<SMSService>((ref) {
   return SMSService();
 });
 
+// Repository Providers
+final senderIgnoreRulesRepositoryProvider =
+    Provider<SenderIgnoreRulesRepository>((ref) {
+      final db = ref.watch(databaseProvider);
+      return SenderIgnoreRulesRepository(db.senderIgnoreRulesDao);
+    });
+
+final regexSenderPatternsRepositoryProvider =
+    Provider<RegexSenderPatternsRepository>((ref) {
+      final db = ref.watch(databaseProvider);
+      return RegexSenderPatternsRepository(db.regexSenderPatternsDao);
+    });
+
 final notificationServiceProvider = Provider<NotificationService>((ref) {
   return NotificationService();
+});
+
+final smsRulesServiceProvider = Provider<SMSRulesService>((ref) {
+  return SMSRulesService();
 });
 
 // SharedPreferences Provider
@@ -220,3 +242,18 @@ final ignoredSendersProvider = FutureProvider<List<models.Sender>>((ref) async {
   final senderRepo = ref.watch(senderRepositoryProvider);
   return await senderRepo.getIgnoredSenders();
 });
+
+// Sender Ignore Rules Provider
+final senderIgnoreRulesProvider = FutureProvider<List<models.SenderIgnoreRule>>(
+  (ref) async {
+    final repo = ref.watch(senderIgnoreRulesRepositoryProvider);
+    return await repo.getAllRules();
+  },
+);
+
+// Regex Sender Patterns Provider
+final regexSenderPatternsProvider =
+    FutureProvider<List<models.RegexSenderPattern>>((ref) async {
+      final repo = ref.watch(regexSenderPatternsRepositoryProvider);
+      return await repo.getAllPatterns();
+    });
