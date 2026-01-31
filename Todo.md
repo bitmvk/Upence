@@ -25,6 +25,22 @@ This document tracks all pending tasks and improvements for Upence. Tasks are or
 - [x] **#12** - Add disable button to each pattern in SMS patterns page
 - [x] **#13** - Add + button to topbar in ignored senders page
 
+### SMS Processing Page
+- [ ] **#19** - Move Advanced section into SMS body card with conditional expansion (open if not auto-parsed, closed if auto-parsed)
+- [ ] **#20** - Add "Modify Pattern" button that appears immediately when user modifies auto-parsed data
+- [ ] **#21** - Move pattern save options checkbox (Save this pattern, Save bank account, Save category) inside Advanced section
+- [ ] **#22** - Add Display Name textfield (patternName) in Advanced section
+- [ ] **#23** - Add Sender Name textfield (senderName) in Advanced section
+- [ ] **#24** - Add Match with Sender (regex) textfield (senderIdentifier) in Advanced section
+- [ ] **#25** - Add Priority textfield (priority field) in Advanced section
+- [ ] **#26** - Add Reference Pattern textfield (referencePattern) in Advanced section (optional)
+- [ ] **#27** - Track whether SMS was auto-parsed (_wasAutoParsed state)
+- [ ] **#28** - Track user modifications after auto-parse (_userHasModified state)
+- [ ] **#29** - Store matched pattern ID (_matchedPatternId state)
+- [ ] **#30** - Implement change detection for all user inputs (textfields, dropdowns, word selection, toggles)
+- [ ] **#31** - Populate advanced section fields with pattern values when auto-parsed
+- [ ] **#32** - Implement _modifyExistingPattern() method to update existing patterns
+
 ---
 
 ## 🐛 Bug Fixes
@@ -64,7 +80,18 @@ This document tracks all pending tasks and improvements for Upence. Tasks are or
   - Rules should be changeable
   - User can select one or more rule sets
   - Store in JSON format
-  - **Implementation**: Dedicated page accessible from settings
+   - **Implementation**: Dedicated page accessible from settings
+
+---
+
+## 💾 Database Updates
+
+### SMS Parsing Pattern Schema
+- [ ] **#33** - Add priority field to SMSParsingPattern table (default value: 0)
+- [ ] **#34** - Update database schema from version 2 to 3 with migration for priority field
+- [ ] **#35** - Add priority field to SMSParsingPattern model
+- [ ] **#36** - Add priority field to pattern repository (insertPattern, updatePattern, _toModel)
+- [ ] **#37** - Run `dart run build_runner build --delete-conflicting-outputs` after database changes
 
 ---
 
@@ -78,14 +105,14 @@ This document tracks all pending tasks and improvements for Upence. Tasks are or
 
 ## 📊 Progress Tracking
 
-**Total Tasks:** 18
-- UI Improvements (Simple): 9
+**Total Tasks:** 37
+- UI Improvements (Simple): 17
 - Bug Fixes: 3
-- Features (Medium): 2
+- Features (Medium): 13
 - Features (High): 3
 - Questions: 1
 
 **Completed:** 9
 **In Progress:** 0
-**Pending:** 9
+**Pending:** 28
 
