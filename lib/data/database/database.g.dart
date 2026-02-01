@@ -733,6 +733,21 @@ class $SmsMessagesTable extends SmsMessages
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _receivedAtMeta = const VerificationMeta(
     'receivedAt',
   );
@@ -796,6 +811,7 @@ class $SmsMessagesTable extends SmsMessages
     id,
     sender,
     body,
+    isDeleted,
     receivedAt,
     deletedAt,
     processedAt,
@@ -832,6 +848,12 @@ class $SmsMessagesTable extends SmsMessages
       );
     } else if (isInserting) {
       context.missing(_bodyMeta);
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
     }
     if (data.containsKey('received_at')) {
       context.handle(
@@ -892,6 +914,10 @@ class $SmsMessagesTable extends SmsMessages
         DriftSqlType.string,
         data['${effectivePrefix}body'],
       )!,
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
       receivedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}received_at'],
@@ -925,6 +951,7 @@ class Sms extends DataClass implements Insertable<Sms> {
   final int id;
   final String sender;
   final String body;
+  final bool isDeleted;
   final DateTime receivedAt;
   final DateTime? deletedAt;
   final DateTime? processedAt;
@@ -934,6 +961,7 @@ class Sms extends DataClass implements Insertable<Sms> {
     required this.id,
     required this.sender,
     required this.body,
+    required this.isDeleted,
     required this.receivedAt,
     this.deletedAt,
     this.processedAt,
@@ -946,6 +974,7 @@ class Sms extends DataClass implements Insertable<Sms> {
     map['id'] = Variable<int>(id);
     map['sender'] = Variable<String>(sender);
     map['body'] = Variable<String>(body);
+    map['is_deleted'] = Variable<bool>(isDeleted);
     map['received_at'] = Variable<DateTime>(receivedAt);
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<DateTime>(deletedAt);
@@ -963,6 +992,7 @@ class Sms extends DataClass implements Insertable<Sms> {
       id: Value(id),
       sender: Value(sender),
       body: Value(body),
+      isDeleted: Value(isDeleted),
       receivedAt: Value(receivedAt),
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
@@ -984,6 +1014,7 @@ class Sms extends DataClass implements Insertable<Sms> {
       id: serializer.fromJson<int>(json['id']),
       sender: serializer.fromJson<String>(json['sender']),
       body: serializer.fromJson<String>(json['body']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       receivedAt: serializer.fromJson<DateTime>(json['receivedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       processedAt: serializer.fromJson<DateTime?>(json['processedAt']),
@@ -998,6 +1029,7 @@ class Sms extends DataClass implements Insertable<Sms> {
       'id': serializer.toJson<int>(id),
       'sender': serializer.toJson<String>(sender),
       'body': serializer.toJson<String>(body),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
       'receivedAt': serializer.toJson<DateTime>(receivedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'processedAt': serializer.toJson<DateTime?>(processedAt),
@@ -1010,6 +1042,7 @@ class Sms extends DataClass implements Insertable<Sms> {
     int? id,
     String? sender,
     String? body,
+    bool? isDeleted,
     DateTime? receivedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
     Value<DateTime?> processedAt = const Value.absent(),
@@ -1019,6 +1052,7 @@ class Sms extends DataClass implements Insertable<Sms> {
     id: id ?? this.id,
     sender: sender ?? this.sender,
     body: body ?? this.body,
+    isDeleted: isDeleted ?? this.isDeleted,
     receivedAt: receivedAt ?? this.receivedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     processedAt: processedAt.present ? processedAt.value : this.processedAt,
@@ -1030,6 +1064,7 @@ class Sms extends DataClass implements Insertable<Sms> {
       id: data.id.present ? data.id.value : this.id,
       sender: data.sender.present ? data.sender.value : this.sender,
       body: data.body.present ? data.body.value : this.body,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       receivedAt: data.receivedAt.present
           ? data.receivedAt.value
           : this.receivedAt,
@@ -1050,6 +1085,7 @@ class Sms extends DataClass implements Insertable<Sms> {
           ..write('id: $id, ')
           ..write('sender: $sender, ')
           ..write('body: $body, ')
+          ..write('isDeleted: $isDeleted, ')
           ..write('receivedAt: $receivedAt, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('processedAt: $processedAt, ')
@@ -1064,6 +1100,7 @@ class Sms extends DataClass implements Insertable<Sms> {
     id,
     sender,
     body,
+    isDeleted,
     receivedAt,
     deletedAt,
     processedAt,
@@ -1077,6 +1114,7 @@ class Sms extends DataClass implements Insertable<Sms> {
           other.id == this.id &&
           other.sender == this.sender &&
           other.body == this.body &&
+          other.isDeleted == this.isDeleted &&
           other.receivedAt == this.receivedAt &&
           other.deletedAt == this.deletedAt &&
           other.processedAt == this.processedAt &&
@@ -1088,6 +1126,7 @@ class SmsMessagesCompanion extends UpdateCompanion<Sms> {
   final Value<int> id;
   final Value<String> sender;
   final Value<String> body;
+  final Value<bool> isDeleted;
   final Value<DateTime> receivedAt;
   final Value<DateTime?> deletedAt;
   final Value<DateTime?> processedAt;
@@ -1097,6 +1136,7 @@ class SmsMessagesCompanion extends UpdateCompanion<Sms> {
     this.id = const Value.absent(),
     this.sender = const Value.absent(),
     this.body = const Value.absent(),
+    this.isDeleted = const Value.absent(),
     this.receivedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.processedAt = const Value.absent(),
@@ -1107,6 +1147,7 @@ class SmsMessagesCompanion extends UpdateCompanion<Sms> {
     this.id = const Value.absent(),
     required String sender,
     required String body,
+    this.isDeleted = const Value.absent(),
     required DateTime receivedAt,
     this.deletedAt = const Value.absent(),
     this.processedAt = const Value.absent(),
@@ -1119,6 +1160,7 @@ class SmsMessagesCompanion extends UpdateCompanion<Sms> {
     Expression<int>? id,
     Expression<String>? sender,
     Expression<String>? body,
+    Expression<bool>? isDeleted,
     Expression<DateTime>? receivedAt,
     Expression<DateTime>? deletedAt,
     Expression<DateTime>? processedAt,
@@ -1129,6 +1171,7 @@ class SmsMessagesCompanion extends UpdateCompanion<Sms> {
       if (id != null) 'id': id,
       if (sender != null) 'sender': sender,
       if (body != null) 'body': body,
+      if (isDeleted != null) 'is_deleted': isDeleted,
       if (receivedAt != null) 'received_at': receivedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (processedAt != null) 'processed_at': processedAt,
@@ -1141,6 +1184,7 @@ class SmsMessagesCompanion extends UpdateCompanion<Sms> {
     Value<int>? id,
     Value<String>? sender,
     Value<String>? body,
+    Value<bool>? isDeleted,
     Value<DateTime>? receivedAt,
     Value<DateTime?>? deletedAt,
     Value<DateTime?>? processedAt,
@@ -1151,6 +1195,7 @@ class SmsMessagesCompanion extends UpdateCompanion<Sms> {
       id: id ?? this.id,
       sender: sender ?? this.sender,
       body: body ?? this.body,
+      isDeleted: isDeleted ?? this.isDeleted,
       receivedAt: receivedAt ?? this.receivedAt,
       deletedAt: deletedAt ?? this.deletedAt,
       processedAt: processedAt ?? this.processedAt,
@@ -1170,6 +1215,9 @@ class SmsMessagesCompanion extends UpdateCompanion<Sms> {
     }
     if (body.present) {
       map['body'] = Variable<String>(body.value);
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
     }
     if (receivedAt.present) {
       map['received_at'] = Variable<DateTime>(receivedAt.value);
@@ -1195,6 +1243,7 @@ class SmsMessagesCompanion extends UpdateCompanion<Sms> {
           ..write('id: $id, ')
           ..write('sender: $sender, ')
           ..write('body: $body, ')
+          ..write('isDeleted: $isDeleted, ')
           ..write('receivedAt: $receivedAt, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('processedAt: $processedAt, ')
@@ -3267,6 +3316,24 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $SenderFiltersTable senderFilters = $SenderFiltersTable(this);
+  late final BankAccountDao bankAccountDao = BankAccountDao(
+    this as AppDatabase,
+  );
+  late final CategoryDao categoryDao = CategoryDao(this as AppDatabase);
+  late final TagDao tagDao = TagDao(this as AppDatabase);
+  late final ParsingPatternDao parsingPatternDao = ParsingPatternDao(
+    this as AppDatabase,
+  );
+  late final SenderFilterDao senderFilterDao = SenderFilterDao(
+    this as AppDatabase,
+  );
+  late final SmsDao smsDao = SmsDao(this as AppDatabase);
+  late final TransactionDao transactionDao = TransactionDao(
+    this as AppDatabase,
+  );
+  late final TransactionTagDao transactionTagDao = TransactionTagDao(
+    this as AppDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4094,6 +4161,7 @@ typedef $$SmsMessagesTableCreateCompanionBuilder =
       Value<int> id,
       required String sender,
       required String body,
+      Value<bool> isDeleted,
       required DateTime receivedAt,
       Value<DateTime?> deletedAt,
       Value<DateTime?> processedAt,
@@ -4105,6 +4173,7 @@ typedef $$SmsMessagesTableUpdateCompanionBuilder =
       Value<int> id,
       Value<String> sender,
       Value<String> body,
+      Value<bool> isDeleted,
       Value<DateTime> receivedAt,
       Value<DateTime?> deletedAt,
       Value<DateTime?> processedAt,
@@ -4156,6 +4225,11 @@ class $$SmsMessagesTableFilterComposer
 
   ColumnFilters<String> get body => $composableBuilder(
     column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4234,6 +4308,11 @@ class $$SmsMessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get receivedAt => $composableBuilder(
     column: $table.receivedAt,
     builder: (column) => ColumnOrderings(column),
@@ -4277,6 +4356,9 @@ class $$SmsMessagesTableAnnotationComposer
 
   GeneratedColumn<String> get body =>
       $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
 
   GeneratedColumn<DateTime> get receivedAt => $composableBuilder(
     column: $table.receivedAt,
@@ -4356,6 +4438,7 @@ class $$SmsMessagesTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> sender = const Value.absent(),
                 Value<String> body = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime> receivedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<DateTime?> processedAt = const Value.absent(),
@@ -4365,6 +4448,7 @@ class $$SmsMessagesTableTableManager
                 id: id,
                 sender: sender,
                 body: body,
+                isDeleted: isDeleted,
                 receivedAt: receivedAt,
                 deletedAt: deletedAt,
                 processedAt: processedAt,
@@ -4376,6 +4460,7 @@ class $$SmsMessagesTableTableManager
                 Value<int> id = const Value.absent(),
                 required String sender,
                 required String body,
+                Value<bool> isDeleted = const Value.absent(),
                 required DateTime receivedAt,
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<DateTime?> processedAt = const Value.absent(),
@@ -4385,6 +4470,7 @@ class $$SmsMessagesTableTableManager
                 id: id,
                 sender: sender,
                 body: body,
+                isDeleted: isDeleted,
                 receivedAt: receivedAt,
                 deletedAt: deletedAt,
                 processedAt: processedAt,
