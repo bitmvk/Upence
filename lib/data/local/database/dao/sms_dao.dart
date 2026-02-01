@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
-import 'package:upence/data/database/database.dart';
-import 'package:upence/data/database/tables/sms.dart';
+import 'package:upence/data/local/database/database.dart';
+import 'package:upence/data/local/database/tables/sms.dart';
 
 part 'sms_dao.g.dart';
 

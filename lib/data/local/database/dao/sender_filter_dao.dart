@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
-import 'package:upence/data/database/database.dart';
-import 'package:upence/data/database/tables/sender_filters.dart';
+import 'package:upence/data/local/database/database.dart';
+import 'package:upence/data/local/database/tables/sender_filters.dart';
 
 part 'sender_filter_dao.g.dart';
 

@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
-import 'package:upence/data/database/database.dart';
-import 'package:upence/data/database/tables/bank_accounts.dart';
+import 'package:upence/data/local/database/database.dart';
+import 'package:upence/data/local/database/tables/bank_accounts.dart';
 
 part 'bank_account_dao.g.dart';
 

@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
-import 'package:upence/data/database/database.dart';
-import 'package:upence/data/database/tables/tags.dart';
+import 'package:upence/data/local/database/database.dart';
+import 'package:upence/data/local/database/tables/tags.dart';
 
 part 'tag_dao.g.dart';
 

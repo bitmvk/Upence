@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
-import 'package:upence/data/database/database.dart';
-import 'package:upence/data/database/tables/categories.dart';
+import 'package:upence/data/local/database/database.dart';
+import 'package:upence/data/local/database/tables/categories.dart';
 
 part 'category_dao.g.dart';
 

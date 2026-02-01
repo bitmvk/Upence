@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
-import 'package:upence/data/database/database.dart';
-import 'package:upence/data/database/tables/transactions.dart';
+import 'package:upence/data/local/database/database.dart';
+import 'package:upence/data/local/database/tables/transactions.dart';
 
 part 'transaction_dao.g.dart';
 

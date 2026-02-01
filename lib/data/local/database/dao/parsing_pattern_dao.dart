@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
-import 'package:upence/data/database/database.dart';
-import 'package:upence/data/database/tables/parsing_patterns.dart';
+import 'package:upence/data/local/database/database.dart';
+import 'package:upence/data/local/database/tables/parsing_patterns.dart';
 
 part 'parsing_pattern_dao.g.dart';
 
