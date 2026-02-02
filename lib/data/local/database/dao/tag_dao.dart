@@ -16,8 +16,12 @@ class TagDao extends DatabaseAccessor<AppDatabase> with _$TagDaoMixin {
     return query.get();
   }
 
-  Future<Tag?> getTagById(int id) async {
+  Future<Tag?> getTag(int id) async {
     return (select(tags)..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
+  }
+
+  Future<List<Tag?>> getTags(List<int> ids) async {
+    return (select(tags)..where((tbl) => tbl.id.isIn(ids))).get();
   }
 
   Future<int> insertTag(Tag tag) {

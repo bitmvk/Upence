@@ -16,17 +16,17 @@ class SmsDao extends DatabaseAccessor<AppDatabase> with _$SmsDaoMixin {
     return query.get();
   }
 
-  Future<Sms?> getSmsById(int id) async {
+  Future<Sms?> getSms(int id) async {
     return (select(
       smsMessages,
     )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
   }
 
-  Future<List<Sms>> getSmsByIds(List<int> ids) async {
+  Future<List<Sms>> getSmses(List<int> ids) async {
     return (select(smsMessages)..where((tbl) => tbl.id.isIn(ids))).get();
   }
 
-  Future<List<Sms>> getSms({
+  Future<List<Sms>> filterSms({
     List<String>? statuses,
     bool? isDeleted,
     bool? isTransaction,

@@ -11,14 +11,14 @@ class DateTimeRange {
   DateTimeRange({required this.start, required this.end});
 }
 
-class TransactionWithRelations {
+class CompositeTransactions {
   final Transaction transaction;
   final BankAccount? account;
   final Category? category;
   final Sms? sms;
   final List<Tag> tags;
 
-  TransactionWithRelations({
+  CompositeTransactions({
     required this.transaction,
     this.account,
     this.category,
@@ -43,17 +43,14 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
     return query.get();
   }
 
-  Future<Transaction?> getTransactionById(int id) async {
+  Future<Transaction?> getTransaction(int id) async {
     return (select(
       transactions,
     )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
   }
 
-  Future<List<Transaction>> getTransactionByIds(List<int> ids) async {
-    return (select(transactions)..where((tbl) => tbl.id.isIn(ids))).get();
-  }
-
   Future<List<Transaction>> getTransactions({
+    List<int>? ids,
     List<int>? accountIds,
     List<int>? categoryIds,
     List<int>? smsIds,
@@ -65,6 +62,10 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
     int? offset,
   }) async {
     final query = select(transactions);
+
+    if (ids != null && ids.isNotEmpty) {
+      query.where((tbl) => tbl.id.isIn(ids));
+    }
 
     if (accountIds != null && accountIds.isNotEmpty) {
       query.where((tbl) => tbl.accountId.isIn(accountIds));
@@ -115,22 +116,22 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
     return query.get();
   }
 
-  Future<List<TransactionWithRelations>> getTransactionsWithRelations(
+  Future<List<CompositeTransactions>> getCompositeTransactions(
     List<int> transactionIds,
   ) async {
-    final transactionsList = await getTransactionByIds(transactionIds);
+    final transactionsList = await getTransactions(ids: transactionIds);
 
-    final transactionWithRelationsList = <TransactionWithRelations>[];
+    final compositeTransactionsList = <CompositeTransactions>[];
 
     for (final transaction in transactionsList) {
-      final account = await db.bankAccountDao.getAccountById(
+      final account = await db.bankAccountDao.getAccount(
         transaction.accountId,
       );
       final category = transaction.categoryId != null
-          ? await db.categoryDao.getCategoryById(transaction.categoryId!)
+          ? await db.categoryDao.getCategory(transaction.categoryId!)
           : null;
       final sms = transaction.smsId != null
-          ? await db.smsDao.getSmsById(transaction.smsId!)
+          ? await db.smsDao.getSms(transaction.smsId!)
           : null;
 
       final transactionTags = await db.transactionTagDao.getTransactionTags(
@@ -140,14 +141,14 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
 
       final tags = <Tag>[];
       for (final tagId in tagIds) {
-        final tag = await db.tagDao.getTagById(tagId);
+        final tag = await db.tagDao.getTag(tagId);
         if (tag != null) {
           tags.add(tag);
         }
       }
 
-      transactionWithRelationsList.add(
-        TransactionWithRelations(
+      compositeTransactionsList.add(
+        CompositeTransactions(
           transaction: transaction,
           account: account,
           category: category,
@@ -157,7 +158,7 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
       );
     }
 
-    return transactionWithRelationsList;
+    return compositeTransactionsList;
   }
 
   Future<int> insertTransaction(Transaction transaction) {

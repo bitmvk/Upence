@@ -29,7 +29,7 @@ class SenderFilterDao extends DatabaseAccessor<AppDatabase>
     return query.get();
   }
 
-  Future<SenderFilter?> getFilterById(int id) async {
+  Future<SenderFilter?> getFilter(int id) async {
     return (select(
       senderFilters,
     )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
@@ -51,6 +51,14 @@ class SenderFilterDao extends DatabaseAccessor<AppDatabase>
     final rowsAffected =
         await (update(senderFilters)..where((tbl) => tbl.id.equals(id))).write(
           SenderFiltersCompanion(isActive: const Value(false)),
+        );
+    return rowsAffected > 0;
+  }
+
+  Future<bool> activateFilter(int id) async {
+    final rowsAffected =
+        await (update(senderFilters)..where((tbl) => tbl.id.equals(id))).write(
+          SenderFiltersCompanion(isActive: const Value(true)),
         );
     return rowsAffected > 0;
   }

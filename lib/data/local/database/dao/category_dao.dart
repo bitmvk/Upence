@@ -17,7 +17,7 @@ class CategoryDao extends DatabaseAccessor<AppDatabase>
     return query.get();
   }
 
-  Future<Category?> getCategoryById(int id) async {
+  Future<Category?> getCategory(int id) async {
     return (select(
       categories,
     )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();

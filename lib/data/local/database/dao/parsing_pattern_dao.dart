@@ -29,7 +29,7 @@ class ParsingPatternDao extends DatabaseAccessor<AppDatabase>
     return query.get();
   }
 
-  Future<ParsingPattern?> getRuleById(int id) async {
+  Future<ParsingPattern?> getRule(int id) async {
     return (select(
       parsingPatterns,
     )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
@@ -51,6 +51,13 @@ class ParsingPatternDao extends DatabaseAccessor<AppDatabase>
     final rowsAffected =
         await (update(parsingPatterns)..where((tbl) => tbl.id.equals(id)))
             .write(ParsingPatternsCompanion(isActive: const Value(false)));
+    return rowsAffected > 0;
+  }
+
+  Future<bool> activateRule(int id) async {
+    final rowsAffected =
+        await (update(parsingPatterns)..where((tbl) => tbl.id.equals(id)))
+            .write(ParsingPatternsCompanion(isActive: const Value(true)));
     return rowsAffected > 0;
   }
 }

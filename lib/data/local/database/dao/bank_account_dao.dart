@@ -17,7 +17,7 @@ class BankAccountDao extends DatabaseAccessor<AppDatabase>
     return query.get();
   }
 
-  Future<BankAccount?> getAccountById(int id) async {
+  Future<BankAccount?> getAccount(int id) async {
     return (select(
       bankAccounts,
     )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
