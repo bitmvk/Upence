@@ -44,13 +44,21 @@ part 'database.g.dart';
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  @override
   late final BankAccountDao bankAccountDao = BankAccountDao(this);
+  @override
   late final CategoryDao categoryDao = CategoryDao(this);
+  @override
   late final TagDao tagDao = TagDao(this);
+  @override
   late final ParsingPatternDao parsingPatternDao = ParsingPatternDao(this);
+  @override
   late final SenderFilterDao senderFilterDao = SenderFilterDao(this);
+  @override
   late final SmsDao smsDao = SmsDao(this);
+  @override
   late final TransactionDao transactionDao = TransactionDao(this);
+  @override
   late final TransactionTagDao transactionTagDao = TransactionTagDao(this);
 
   @override

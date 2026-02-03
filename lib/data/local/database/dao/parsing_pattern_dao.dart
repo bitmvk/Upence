@@ -7,7 +7,7 @@ part 'parsing_pattern_dao.g.dart';
 @DriftAccessor(tables: [ParsingPatterns])
 class ParsingPatternDao extends DatabaseAccessor<AppDatabase>
     with _$ParsingPatternDaoMixin {
-  ParsingPatternDao(AppDatabase db) : super(db);
+  ParsingPatternDao(super.db);
 
   Future<List<ParsingPattern>> getAllRules({int? limit, int? offset}) async {
     final query = select(parsingPatterns);

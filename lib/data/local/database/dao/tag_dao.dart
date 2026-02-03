@@ -6,7 +6,7 @@ part 'tag_dao.g.dart';
 
 @DriftAccessor(tables: [Tags])
 class TagDao extends DatabaseAccessor<AppDatabase> with _$TagDaoMixin {
-  TagDao(AppDatabase db) : super(db);
+  TagDao(super.db);
 
   Future<List<Tag>> getAllTags({int? limit, int? offset}) async {
     final query = select(tags);

@@ -7,7 +7,7 @@ part 'transaction_tag_dao.g.dart';
 @DriftAccessor(tables: [TransactionTags])
 class TransactionTagDao extends DatabaseAccessor<AppDatabase>
     with _$TransactionTagDaoMixin {
-  TransactionTagDao(AppDatabase db) : super(db);
+  TransactionTagDao(super.db);
 
   Future<List<TransactionTag>> getAllTransactionTags({
     int? limit,

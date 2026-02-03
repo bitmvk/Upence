@@ -7,7 +7,7 @@ part 'bank_account_dao.g.dart';
 @DriftAccessor(tables: [BankAccounts])
 class BankAccountDao extends DatabaseAccessor<AppDatabase>
     with _$BankAccountDaoMixin {
-  BankAccountDao(AppDatabase db) : super(db);
+  BankAccountDao(super.db);
 
   Future<List<BankAccount>> getAllAccounts({int? limit, int? offset}) async {
     final query = select(bankAccounts);

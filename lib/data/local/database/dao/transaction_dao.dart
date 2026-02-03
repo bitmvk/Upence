@@ -30,7 +30,7 @@ class CompositeTransactions {
 @DriftAccessor(tables: [Transactions])
 class TransactionDao extends DatabaseAccessor<AppDatabase>
     with _$TransactionDaoMixin {
-  TransactionDao(AppDatabase db) : super(db);
+  TransactionDao(super.db);
 
   Future<List<Transaction>> getAllTransactions({
     int? limit,

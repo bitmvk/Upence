@@ -7,7 +7,7 @@ part 'sender_filter_dao.g.dart';
 @DriftAccessor(tables: [SenderFilters])
 class SenderFilterDao extends DatabaseAccessor<AppDatabase>
     with _$SenderFilterDaoMixin {
-  SenderFilterDao(AppDatabase db) : super(db);
+  SenderFilterDao(super.db);
 
   Future<List<SenderFilter>> getAllFilters({int? limit, int? offset}) async {
     final query = select(senderFilters);
