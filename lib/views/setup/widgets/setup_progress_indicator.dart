@@ -15,18 +15,20 @@ class SetupProgressIndicator extends StatelessWidget {
     final progress = currentStep / totalSteps;
 
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.only(top:24, left: 24, right: 24),
       child: Column(
         children: [
           Text(
             'Step $currentStep of $totalSteps',
             style: Theme.of(
               context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ).textTheme.bodyMedium
           ),
           const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+          FractionallySizedBox(
+            widthFactor: 0.5,
+            child:ClipRRect(
+            borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 8,
@@ -37,7 +39,7 @@ class SetupProgressIndicator extends StatelessWidget {
                 Theme.of(context).colorScheme.primary,
               ),
             ),
-          ),
+          )),
         ],
       ),
     );

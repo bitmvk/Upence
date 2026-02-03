@@ -49,10 +49,7 @@ class _SetupViewState extends ConsumerState<SetupView> {
       body: SafeArea(
         child: Column(
           children: [
-            SetupProgressIndicator(
-              currentStep: state.currentStep.index + 1,
-              totalSteps: SetupViewModel.totalSteps,
-            ),
+            
             Expanded(
               child: PageView(
                 controller: _pageController,
@@ -60,11 +57,15 @@ class _SetupViewState extends ConsumerState<SetupView> {
                 children: const [
                   WelcomePage(),
                   PermissionsPage(),
-                  CategoriesSetupPage(),
                   AccountsSetupPage(),
+                  CategoriesSetupPage(),
                   TagsSetupPage(),
                 ],
               ),
+            ),
+            SetupProgressIndicator(
+              currentStep: state.currentStep.index + 1,
+              totalSteps: SetupViewModel.totalSteps,
             ),
             _buildNavigationButtons(context, state, viewModel),
           ],
@@ -79,7 +80,7 @@ class _SetupViewState extends ConsumerState<SetupView> {
     dynamic viewModel,
   ) {
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -115,7 +116,7 @@ class _SetupViewState extends ConsumerState<SetupView> {
             children: [
               if (state.currentStep.index > 0)
                 Expanded(
-                  child: OutlinedButton(
+                  child: TextButton(
                     onPressed: () => viewModel.previousStep(),
                     child: const Text('Back'),
                   ),
@@ -132,7 +133,7 @@ class _SetupViewState extends ConsumerState<SetupView> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       )
-                    : ElevatedButton(
+                    : TextButton(
                         onPressed: viewModel.canProceedFromCurrentStep()
                             ? () {
                                 if (state.currentStep == SetupStep.tags) {

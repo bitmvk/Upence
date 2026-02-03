@@ -9,6 +9,8 @@ import 'package:upence/repositories/tags_repository.dart';
 
 enum SetupStep { welcome, permissions, categories, accounts, tags }
 
+enum AppPermissionStatus { granted, denied, permanentlyDenied, checking }
+
 class SetupState {
   final SetupStep currentStep;
   final bool isLoading;
@@ -16,7 +18,7 @@ class SetupState {
   final List<Category> categories;
   final List<BankAccount> accounts;
   final List<Tag> tags;
-  final Map<String, bool> permissionsGranted;
+  final Map<String, AppPermissionStatus> permissionsGranted;
   final bool canProceed;
 
   SetupState({
@@ -37,7 +39,7 @@ class SetupState {
     List<Category>? categories,
     List<BankAccount>? accounts,
     List<Tag>? tags,
-    Map<String, bool>? permissionsGranted,
+    Map<String, AppPermissionStatus>? permissionsGranted,
     bool? canProceed,
   }) {
     return SetupState(
@@ -66,7 +68,13 @@ class SetupViewModel extends Notifier<SetupState> {
     _accountsRepo = ref.read(bankAccountRepositoryProvider);
     _tagsRepo = ref.read(tagsRepositoryProvider);
 
-    return SetupState(currentStep: SetupStep.welcome);
+    return SetupState(
+      currentStep: SetupStep.welcome,
+      permissionsGranted: {
+        'SMS': AppPermissionStatus.checking,
+        'Notifications': AppPermissionStatus.checking,
+      },
+    );
   }
 
   void nextStep() {
@@ -139,22 +147,42 @@ class SetupViewModel extends Notifier<SetupState> {
 
     state = state.copyWith(
       permissionsGranted: {
-        'SMS': smsStatus.isGranted,
-        'Notifications': notificationStatus.isGranted,
+        'SMS': smsStatus.isGranted
+            ? AppPermissionStatus.granted
+            : (smsStatus.isDenied
+                  ? AppPermissionStatus.denied
+                  : AppPermissionStatus.permanentlyDenied),
+        'Notifications': notificationStatus.isGranted
+            ? AppPermissionStatus.granted
+            : (notificationStatus.isDenied
+                  ? AppPermissionStatus.denied
+                  : AppPermissionStatus.permanentlyDenied),
       },
     );
   }
 
-  Future<void> requestPermissions() async {
-    final smsResult = await Permission.sms.request();
-    final notificationResult = await Permission.notification.request();
-
-    state = state.copyWith(
-      permissionsGranted: {
-        'SMS': smsResult.isGranted,
-        'Notifications': notificationResult.isGranted,
-      },
+  Future<void> requestPermissions(String type) async {
+    final currentPermissions = Map<String, AppPermissionStatus>.from(
+      state.permissionsGranted,
     );
+
+    if (type == "SMS") {
+      final smsResult = await Permission.sms.request();
+      currentPermissions['SMS'] = smsResult.isGranted
+          ? AppPermissionStatus.granted
+          : (smsResult.isDenied
+                ? AppPermissionStatus.denied
+                : AppPermissionStatus.permanentlyDenied);
+    }
+    if (type == "Notification") {
+      final notificationResult = await Permission.notification.request();
+      currentPermissions['Notifications'] = notificationResult.isGranted
+          ? AppPermissionStatus.granted
+          : (notificationResult.isDenied
+                ? AppPermissionStatus.denied
+                : AppPermissionStatus.permanentlyDenied);
+    }
+    state = state.copyWith(permissionsGranted: currentPermissions);
   }
 
   bool canProceedFromCurrentStep() {
@@ -162,7 +190,9 @@ class SetupViewModel extends Notifier<SetupState> {
       case SetupStep.welcome:
         return true;
       case SetupStep.permissions:
-        return state.permissionsGranted.values.every((granted) => granted);
+        return state.permissionsGranted.values.every(
+          (status) => status == AppPermissionStatus.granted,
+        );
       case SetupStep.categories:
         return state.categories.isNotEmpty;
       case SetupStep.accounts:

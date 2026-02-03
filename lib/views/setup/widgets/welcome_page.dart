@@ -13,13 +13,13 @@ class WelcomePage extends StatelessWidget {
           children: [
             Icon(
               Icons.account_balance_wallet,
-              size: 120,
+              size: 86,
               color: Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(height: 32),
             Text(
               'Welcome to Upence',
-              style: Theme.of(context).textTheme.headlineMedium,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 16),
             Text(
@@ -27,38 +27,9 @@ class WelcomePage extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyLarge,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 48),
-            _buildStepList(context),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildStepList(BuildContext context) {
-    final steps = [
-      'Grant permissions',
-      'Set up categories',
-      'Add bank accounts',
-      'Create tags',
-    ];
-
-    return Column(
-      children: steps.map((step) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              Icon(
-                Icons.check_circle_outline,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 12),
-              Text(step, style: Theme.of(context).textTheme.bodyMedium),
-            ],
-          ),
-        );
-      }).toList(),
     );
   }
 }
