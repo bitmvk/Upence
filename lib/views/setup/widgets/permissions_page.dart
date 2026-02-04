@@ -46,8 +46,12 @@ class _PermissionsPageState extends ConsumerState<PermissionsPage> {
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('Permissions', style: Theme.of(context).textTheme.headlineSmall),
+          Text(
+            'Permissions',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
           const SizedBox(height: 16),
           Text(
             'Upence needs these permissions to work properly.',
@@ -59,7 +63,8 @@ class _PermissionsPageState extends ConsumerState<PermissionsPage> {
             title: 'SMS Access',
             description: 'To read and parse transaction SMS messages',
             permissionStatus: permissions['SMS'] ?? AppPermissionStatus.denied,
-            onRequest: permissions['SMS'] != AppPermissionStatus.permanentlyDenied
+            onRequest:
+                permissions['SMS'] != AppPermissionStatus.permanentlyDenied
                 ? () => viewModel.requestPermissions("SMS")
                 : () async {
                     await openAppSettings();
@@ -70,7 +75,8 @@ class _PermissionsPageState extends ConsumerState<PermissionsPage> {
             icon: Icons.notifications,
             title: 'Notifications',
             description: 'To send expense alerts and reminders',
-            permissionStatus: permissions['Notifications'] ?? AppPermissionStatus.denied,
+            permissionStatus:
+                permissions['Notifications'] ?? AppPermissionStatus.denied,
             onRequest:
                 permissions['Notifications'] !=
                     AppPermissionStatus.permanentlyDenied
@@ -102,7 +108,11 @@ class _PermissionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String buttonText = permissionStatus == AppPermissionStatus.checking? "Loading...":(permissionStatus == AppPermissionStatus.permanentlyDenied? "Settings": "Grant");
+    String buttonText = permissionStatus == AppPermissionStatus.checking
+        ? "Loading..."
+        : (permissionStatus == AppPermissionStatus.permanentlyDenied
+              ? "Settings"
+              : "Grant");
     return Card(
       child: ListTile(
         leading: Icon(icon),
@@ -110,7 +120,16 @@ class _PermissionItem extends StatelessWidget {
         subtitle: Text(description),
         trailing: permissionStatus == AppPermissionStatus.granted
             ? Icon(Icons.check_circle, color: Colors.green)
-            : ElevatedButton(onPressed: permissionStatus == AppPermissionStatus.checking? () {}: onRequest, child: Text(buttonText))
+            : ElevatedButton(
+                onPressed: permissionStatus == AppPermissionStatus.checking
+                    ? () {}
+                    : (permissionStatus == AppPermissionStatus.permanentlyDenied
+                          ? () async {
+                              await openAppSettings();
+                            }
+                          : onRequest),
+                child: Text(buttonText),
+              ),
       ),
     );
   }
