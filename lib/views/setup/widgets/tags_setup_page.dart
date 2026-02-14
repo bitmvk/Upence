@@ -118,6 +118,9 @@ class _TagDialogState extends State<_TagDialog> {
   void initState() {
     super.initState();
     _nameController = TextEditingController();
+    _nameController.addListener(() {
+      setState(() {});
+    });
   }
 
   @override

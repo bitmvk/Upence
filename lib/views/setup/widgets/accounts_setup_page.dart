@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:upence/core/ui/icon_mapper.dart';
 import 'package:upence/data/local/database/database.dart';
 import 'package:upence/views/setup/setup_view_model.dart';
 
@@ -117,7 +118,7 @@ class _AccountCard extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
           child: Icon(
-            IconData(int.parse(account.icon), fontFamily: 'MaterialIcons'),
+            iconMap[account.icon],
             color: Theme.of(context).colorScheme.primary,
           ),
         ),
@@ -151,7 +152,22 @@ class _AccountDialogState extends State<_AccountDialog> {
   late TextEditingController _nameController;
   late TextEditingController _numberController;
   late TextEditingController _descriptionController;
-  String _icon = '0xe192';
+  String _icon = "account_balance";
+  final financeIcons = iconMap.entries
+      .where(
+        (e) => [
+          'account_balance',
+          'credit_card',
+          'account_balance_wallet',
+          'savings',
+          'attach_money',
+          'payment',
+          'receipt',
+          'point_of_sale',
+          'account_balance',
+        ].contains(e.key),
+      )
+      .toList();
 
   @override
   void initState() {
@@ -166,6 +182,10 @@ class _AccountDialogState extends State<_AccountDialog> {
     if (widget.account != null) {
       _icon = widget.account!.icon;
     }
+
+    _nameController.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
@@ -180,68 +200,64 @@ class _AccountDialogState extends State<_AccountDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.account == null ? 'Add Account' : 'Edit Account'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Bank Name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _numberController,
-              decoration: const InputDecoration(
-                labelText: 'Account Number (optional)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description (optional)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              decoration: const InputDecoration(
-                labelText: 'Icon',
-                border: OutlineInputBorder(),
-              ),
-              initialValue: _icon,
-              items: const [
-                DropdownMenuItem(
-                  value: '0xe192',
-                  child: Icon(Icons.account_balance),
+      insetPadding: EdgeInsets.zero,
+      contentPadding: EdgeInsets.zero,
+      content: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.8,
+        height: MediaQuery.of(context).size.height * 0.6,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Bank Name',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-                DropdownMenuItem(
-                  value: '0xe195',
-                  child: Icon(Icons.credit_card),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _numberController,
+                  decoration: const InputDecoration(
+                    labelText: 'Account Number (optional)',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-                DropdownMenuItem(
-                  value: '0xe0e0',
-                  child: Icon(Icons.account_balance_wallet),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description (optional)',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-                DropdownMenuItem(value: '0xe86a', child: Icon(Icons.savings)),
-                DropdownMenuItem(
-                  value: '0xe634',
-                  child: Icon(Icons.attach_money),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    labelText: 'Icon',
+                    border: OutlineInputBorder(),
+                  ),
+                  initialValue: _icon,
+                  items: financeIcons.map((entry) {
+                    return DropdownMenuItem<String>(
+                      value: entry.key, // Use the key as the value
+                      child: Icon(entry.value), // Use the IconData for display
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _icon = value;
+                      });
+                    }
+                  },
                 ),
               ],
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _icon = value;
-                  });
-                }
-              },
             ),
-          ],
+          ),
         ),
       ),
       actions: [

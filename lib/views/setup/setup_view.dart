@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:upence/views/setup/setup_view_model.dart';
 import 'package:upence/views/setup/widgets/accounts_setup_page.dart';
 import 'package:upence/views/setup/widgets/categories_setup_page.dart';
@@ -79,6 +80,7 @@ class _SetupViewState extends ConsumerState<SetupView> {
     SetupState state,
     dynamic viewModel,
   ) {
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(
@@ -138,6 +140,9 @@ class _SetupViewState extends ConsumerState<SetupView> {
                             ? () {
                                 if (state.currentStep == SetupStep.tags) {
                                   viewModel.completeSetup();
+                                  if (context.mounted) {
+                                    context.go("/");
+                                  }
                                 } else {
                                   viewModel.nextStep();
                                 }

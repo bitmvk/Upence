@@ -7,7 +7,7 @@ import 'package:upence/repositories/bank_account_repository.dart';
 import 'package:upence/repositories/categories_repository.dart';
 import 'package:upence/repositories/tags_repository.dart';
 
-enum SetupStep { welcome, permissions, categories, accounts, tags }
+enum SetupStep { welcome, permissions, accounts, categories, tags }
 
 enum AppPermissionStatus { granted, denied, permanentlyDenied, checking }
 
@@ -62,6 +62,60 @@ class SetupViewModel extends Notifier<SetupState> {
 
   static const int totalSteps = 5;
 
+  static List<Category> getDefaultCategories() {
+    return [
+      Category(
+        id: -1,
+        name: 'Food & Dining',
+        icon: 'restaurant',
+        color: 0xFFFF6B6B,
+        description: 'Restaurants, cafes, groceries, and food delivery',
+      ),
+      Category(
+        id: -2,
+        name: 'Entertainment',
+        icon: 'theater_comedy',
+        color: 0xFF4ECDC4,
+        description: 'Movies, games, concerts, and leisure activities',
+      ),
+      Category(
+        id: -3,
+        name: 'Travel',
+        icon: 'flight',
+        color: 0xFF45B7D1,
+        description: 'Flights, hotels, transportation, and vacation expenses',
+      ),
+      Category(
+        id: -4,
+        name: 'Subscriptions',
+        icon: 'subscriptions',
+        color: 0xFF96CEB4,
+        description: 'Streaming services, software, and recurring payments',
+      ),
+      Category(
+        id: -5,
+        name: 'Shopping',
+        icon: 'shopping_cart',
+        color: 0xFFDDA0DD,
+        description: 'Online shopping, retail purchases, and gifts',
+      ),
+      Category(
+        id: -6,
+        name: 'Health & Wellness',
+        icon: 'medical_services',
+        color: 0xFF98D8C8,
+        description: 'Medical expenses, pharmacy, fitness, and self-care',
+      ),
+      Category(
+        id: -7,
+        name: 'Utilities',
+        icon: 'bolt',
+        color: 0xFFF7DC6F,
+        description: 'Electricity, water, internet, and household bills',
+      ),
+    ];
+  }
+
   @override
   SetupState build() {
     _categoriesRepo = ref.read(categoriesRepositoryProvider);
@@ -70,6 +124,7 @@ class SetupViewModel extends Notifier<SetupState> {
 
     return SetupState(
       currentStep: SetupStep.welcome,
+      categories: getDefaultCategories(),
       permissionsGranted: {
         'SMS': AppPermissionStatus.checking,
         'Notifications': AppPermissionStatus.checking,
@@ -216,6 +271,7 @@ class SetupViewModel extends Notifier<SetupState> {
       state = state.copyWith(isLoading: false);
 
       ref.read(setupCompletedProvider.notifier).setCompleted();
+
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
