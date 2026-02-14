@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:upence/core/di/providers.dart';
+import 'package:upence/core/utils/logger.dart';
 import 'package:upence/data/local/database/database.dart';
 import 'package:upence/repositories/bank_account_repository.dart';
 import 'package:upence/repositories/categories_repository.dart';
@@ -272,8 +272,13 @@ class SetupViewModel extends Notifier<SetupState> {
       state = state.copyWith(isLoading: false);
 
       ref.read(setupCompletedProvider.notifier).setCompleted();
-    } catch (e) {
-      debugPrint(e.toString());
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Failed to complete setup',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'SetupViewModel',
+      );
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to complete setup: ${e.toString()}',
@@ -282,21 +287,21 @@ class SetupViewModel extends Notifier<SetupState> {
   }
 
   Future<void> _batchInsertCategories() async {
-    for (final category in state.categories) {
-      await _categoriesRepo.createCategory(category);
-    }
+    await Future.wait(
+      state.categories.map(
+        (category) => _categoriesRepo.createCategory(category),
+      ),
+    );
   }
 
   Future<void> _batchInsertAccounts() async {
-    for (final account in state.accounts) {
-      await _accountsRepo.createBankAccount(account);
-    }
+    await Future.wait(
+      state.accounts.map((account) => _accountsRepo.createBankAccount(account)),
+    );
   }
 
   Future<void> _batchInsertTags() async {
-    for (final tag in state.tags) {
-      await _tagsRepo.createTag(tag);
-    }
+    await Future.wait(state.tags.map((tag) => _tagsRepo.createTag(tag)));
   }
 }
 

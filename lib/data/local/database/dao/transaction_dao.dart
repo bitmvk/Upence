@@ -32,7 +32,7 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
     List<int>? accountIds,
     List<int>? categoryIds,
     List<int>? smsIds,
-    DateTimeRange? dateRange,
+    AppDateTimeRange? dateRange,
     int? minAmount,
     int? maxAmount,
     List<String>? payees,
@@ -113,30 +113,41 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
         .map((t) => t.smsId!)
         .toSet();
 
-    final accounts = accountIds.isEmpty
-        ? <BankAccount>[]
-        : await (select(
-            db.bankAccounts,
-          )..where((tbl) => tbl.id.isIn(accountIds))).get();
-    final accountsMap = {for (var a in accounts) a.id: a};
-
-    final categories = categoryIds.isEmpty
-        ? <Category>[]
-        : await (select(
-            db.categories,
-          )..where((tbl) => tbl.id.isIn(categoryIds))).get();
-    final categoriesMap = {for (var c in categories) c.id: c};
-
-    final smsMessages = smsIds.isEmpty
-        ? <Sms>[]
-        : await (select(
-            db.smsMessages,
-          )..where((tbl) => tbl.id.isIn(smsIds))).get();
-    final smsMap = {for (var s in smsMessages) s.id: s};
-
-    final transactionTags = await (select(
+    final transactionTagsFuture = (select(
       db.transactionTags,
     )..where((tbl) => tbl.transactionId.isIn(transactionIdSet))).get();
+
+    final accountsFuture = accountIds.isEmpty
+        ? Future.value(<BankAccount>[])
+        : (select(
+            db.bankAccounts,
+          )..where((tbl) => tbl.id.isIn(accountIds))).get();
+
+    final categoriesFuture = categoryIds.isEmpty
+        ? Future.value(<Category>[])
+        : (select(
+            db.categories,
+          )..where((tbl) => tbl.id.isIn(categoryIds))).get();
+
+    final smsFuture = smsIds.isEmpty
+        ? Future.value(<Sms>[])
+        : (select(db.smsMessages)..where((tbl) => tbl.id.isIn(smsIds))).get();
+
+    final results = await Future.wait([
+      accountsFuture,
+      categoriesFuture,
+      smsFuture,
+      transactionTagsFuture,
+    ]);
+
+    final accounts = results[0] as List<BankAccount>;
+    final categories = results[1] as List<Category>;
+    final smsMessages = results[2] as List<Sms>;
+    final transactionTags = results[3] as List<TransactionTag>;
+
+    final accountsMap = {for (var a in accounts) a.id: a};
+    final categoriesMap = {for (var c in categories) c.id: c};
+    final smsMap = {for (var s in smsMessages) s.id: s};
 
     final tagIds = transactionTags.map((tt) => tt.tagId).toSet();
     final tags = tagIds.isEmpty

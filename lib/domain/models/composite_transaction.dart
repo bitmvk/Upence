@@ -1,6 +1,6 @@
 import 'package:upence/data/local/database/database.dart';
 
-export 'package:upence/core/utils/formatters.dart' show DateTimeRange;
+export 'package:upence/core/utils/formatters.dart' show AppDateTimeRange;
 
 class CompositeTransaction {
   final Transaction transaction;

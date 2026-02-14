@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:upence/core/utils/formatters.dart';
 import 'package:upence/data/local/database/database.dart';
 
 class SmsListItem extends StatelessWidget {
@@ -79,7 +80,7 @@ class SmsListItem extends StatelessWidget {
             ),
           ),
           Text(
-            _formatDateTime(sms.receivedAt),
+            DateFormatter.formatShortDateWithTime(sms.receivedAt),
             style: textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -192,41 +193,5 @@ class SmsListItem extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-    final smsDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
-
-    String dateStr;
-    if (smsDate == today) {
-      dateStr = 'Today';
-    } else if (smsDate == yesterday) {
-      dateStr = 'Yesterday';
-    } else {
-      const months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      dateStr = '${dateTime.day} ${months[dateTime.month - 1]}';
-    }
-
-    final timeStr =
-        '${dateTime.hour.toString().padLeft(2, '0')}:'
-        '${dateTime.minute.toString().padLeft(2, '0')}';
-
-    return '$dateStr, $timeStr';
   }
 }

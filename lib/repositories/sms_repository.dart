@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:upence/core/utils/formatters.dart';
 import 'package:upence/data/local/database/dao/sms_dao.dart';
 import 'package:upence/data/local/database/database.dart';
 
@@ -17,7 +18,7 @@ class SmsRepository {
 
   Future<List<Sms>> getUnprocessedSms({int? limit}) async {
     return await _smsDao.filterSms(
-      statuses: ['pending'],
+      statuses: [SmsStatus.pending.value],
       isDeleted: false,
       limit: limit,
     );
@@ -47,7 +48,7 @@ class SmsRepository {
   Future<bool> markAsProcessed(int id) async {
     final rowsAffected = await _updateSmsStatus(
       id,
-      status: 'processed',
+      status: SmsStatus.processed.value,
       processedAt: DateTime.now(),
     );
     return rowsAffected > 0;
@@ -56,7 +57,7 @@ class SmsRepository {
   Future<bool> markAsIgnored(int id) async {
     final rowsAffected = await _updateSmsStatus(
       id,
-      status: 'ignored',
+      status: SmsStatus.ignored.value,
       processedAt: DateTime.now(),
     );
     return rowsAffected > 0;
@@ -77,6 +78,9 @@ class SmsRepository {
   }
 
   Future<int> getUnprocessedCount() async {
-    return await _smsDao.countSms(statuses: ['pending'], isDeleted: false);
+    return await _smsDao.countSms(
+      statuses: [SmsStatus.pending.value],
+      isDeleted: false,
+    );
   }
 }

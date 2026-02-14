@@ -30,15 +30,15 @@ extension SmsStatusX on SmsStatus {
   };
 }
 
-class DateTimeRange {
+class AppDateTimeRange {
   final DateTime start;
   final DateTime end;
 
-  const DateTimeRange({required this.start, required this.end});
+  const AppDateTimeRange({required this.start, required this.end});
 }
 
 class DateFormatter {
-  static const _months = [
+  static const List<String> _months = [
     'Jan',
     'Feb',
     'Mar',
@@ -52,6 +52,8 @@ class DateFormatter {
     'Nov',
     'Dec',
   ];
+
+  static List<String> get months => _months;
 
   static String formatShortDate(DateTime dateTime) {
     final now = DateTime.now();
@@ -88,6 +90,10 @@ class DateFormatter {
     return _months[month - 1];
   }
 
+  static String formatMonthAndYear(DateTime date) {
+    return '${_months[date.month - 1]} ${date.year}';
+  }
+
   static DateTime getMonthStart(DateTime date) {
     return DateTime(date.year, date.month, 1);
   }
@@ -115,6 +121,11 @@ class CurrencyFormatter {
 
     final formatted = _formatAmount(absAmount);
     return '$prefix$formatted';
+  }
+
+  static String formatAbs(int amountCents) {
+    final absAmount = (amountCents / 100).abs();
+    return _formatAmount(absAmount);
   }
 
   static String _formatAmount(double amount) {

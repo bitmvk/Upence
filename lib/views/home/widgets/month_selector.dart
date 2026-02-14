@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:upence/core/utils/formatters.dart';
 
 class MonthSelector extends StatelessWidget {
   final DateTime selectedMonth;
@@ -18,7 +19,7 @@ class MonthSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final monthName = _getMonthName(selectedMonth.month);
+    final monthName = DateFormatter.formatMonthName(selectedMonth.month);
     final year = selectedMonth.year;
 
     return Row(
@@ -89,23 +90,5 @@ class MonthSelector extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _getMonthName(int month) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return months[month - 1];
   }
 }

@@ -1,7 +1,7 @@
-import 'dart:developer';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:upence/core/di/providers.dart';
+import 'package:upence/core/utils/formatters.dart';
+import 'package:upence/core/utils/logger.dart';
 import 'package:upence/data/local/database/database.dart';
 import 'package:upence/domain/models/composite_transaction.dart';
 import 'package:upence/repositories/sms_repository.dart';
@@ -107,13 +107,19 @@ class HomeViewModel extends Notifier<HomeState> {
 
   Future<void> loadReferenceData() async {
     try {
-      log('HomeViewModel: Loading reference data...');
+      AppLogger.info('Loading reference data...', tag: 'HomeViewModel');
       final categories = await _categoriesRepo.getAllCategories();
-      log('HomeViewModel: Loaded ${categories.length} categories');
+      AppLogger.info(
+        'Loaded ${categories.length} categories',
+        tag: 'HomeViewModel',
+      );
       final accounts = await _accountsRepo.getAllBankAccounts();
-      log('HomeViewModel: Loaded ${accounts.length} accounts');
+      AppLogger.info(
+        'Loaded ${accounts.length} accounts',
+        tag: 'HomeViewModel',
+      );
       final tags = await _tagsRepo.getAllTags();
-      log('HomeViewModel: Loaded ${tags.length} tags');
+      AppLogger.info('Loaded ${tags.length} tags', tag: 'HomeViewModel');
 
       state = state.copyWith(
         categories: categories,
@@ -121,12 +127,17 @@ class HomeViewModel extends Notifier<HomeState> {
         tags: tags,
         isLoaded: true,
       );
-      log(
-        'HomeViewModel: State updated, accounts in state: ${state.accounts.length}',
+      AppLogger.info(
+        'State updated, accounts in state: ${state.accounts.length}',
+        tag: 'HomeViewModel',
       );
     } catch (e, stackTrace) {
-      log('HomeViewModel: Failed to load data: $e');
-      log('Stack trace: $stackTrace');
+      AppLogger.error(
+        'Failed to load data',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'HomeViewModel',
+      );
       state = state.copyWith(
         errorMessage: 'Failed to load data: $e',
         isLoaded: true,
@@ -157,7 +168,7 @@ class HomeViewModel extends Notifier<HomeState> {
         null,
         null,
         null,
-        DateTimeRange(start: monthStart, end: monthEnd),
+        AppDateTimeRange(start: monthStart, end: monthEnd),
         null,
         null,
         null,
@@ -169,7 +180,7 @@ class HomeViewModel extends Notifier<HomeState> {
       int expense = 0;
 
       for (final tx in allTransactions) {
-        if (tx.type == 'credit') {
+        if (tx.type == TransactionType.credit.value) {
           income += tx.amount;
         } else {
           expense += tx.amount;

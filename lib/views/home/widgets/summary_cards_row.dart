@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:upence/core/utils/formatters.dart';
 
 class SummaryCardsRow extends StatelessWidget {
   final int totalIncome;
@@ -109,7 +110,7 @@ class SummaryCardsRow extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            _formatCurrency(netSpend),
+            CurrencyFormatter.formatAbs(netSpend),
             style: textTheme.headlineMedium?.copyWith(
               color: isPositive
                   ? colorScheme.onPrimaryContainer
@@ -193,7 +194,7 @@ class SummaryCardsRow extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            _formatCurrency(amount),
+            CurrencyFormatter.formatAbs(amount),
             style: textTheme.titleLarge?.copyWith(
               color: colorScheme.onSurface,
               fontWeight: FontWeight.w700,
@@ -203,24 +204,5 @@ class SummaryCardsRow extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatCurrency(int amountCents) {
-    final amount = amountCents / 100;
-    final isNegative = amount < 0;
-    final absAmount = amount.abs();
-
-    String formatted;
-    if (absAmount >= 10000000) {
-      formatted = '₹${(absAmount / 10000000).toStringAsFixed(1)}Cr';
-    } else if (absAmount >= 100000) {
-      formatted = '₹${(absAmount / 100000).toStringAsFixed(1)}L';
-    } else if (absAmount >= 1000) {
-      formatted = '₹${(absAmount / 1000).toStringAsFixed(1)}K';
-    } else {
-      formatted = '₹${absAmount.toStringAsFixed(0)}';
-    }
-
-    return isNegative ? '-$formatted' : formatted;
   }
 }

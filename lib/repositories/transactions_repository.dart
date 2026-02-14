@@ -14,7 +14,7 @@ class TransactionsRepository {
     List<int>? accountIds,
     List<int>? categoryIds,
     List<int>? smsIds,
-    DateTimeRange? dateRange,
+    AppDateTimeRange? dateRange,
     int? minAmount,
     int? maxAmount,
     List<String>? payees,

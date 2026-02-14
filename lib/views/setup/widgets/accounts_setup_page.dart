@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:upence/core/ui/category_icons.dart';
 import 'package:upence/core/ui/icon_mapper.dart';
 import 'package:upence/data/local/database/database.dart';
 import 'package:upence/views/setup/setup_view_model.dart';
@@ -154,19 +155,7 @@ class _AccountDialogState extends State<_AccountDialog> {
   late TextEditingController _descriptionController;
   String _icon = "account_balance";
   final financeIcons = iconMap.entries
-      .where(
-        (e) => [
-          'account_balance',
-          'credit_card',
-          'account_balance_wallet',
-          'savings',
-          'attach_money',
-          'payment',
-          'receipt',
-          'point_of_sale',
-          'account_balance',
-        ].contains(e.key),
-      )
+      .where((e) => FinanceIcons.all.contains(e.key))
       .toList();
 
   @override

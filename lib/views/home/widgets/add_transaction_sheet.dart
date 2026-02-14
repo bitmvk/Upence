@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:upence/core/ui/icon_mapper.dart';
+import 'package:upence/core/utils/formatters.dart';
 import 'package:upence/data/local/database/database.dart';
 
 class AddTransactionSheet extends StatefulWidget {
@@ -51,10 +52,10 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
   final _payeeController = TextEditingController();
   final _descriptionController = TextEditingController();
 
-  String _type = 'debit';
+  TransactionType _type = TransactionType.debit;
   Category? _selectedCategory;
   BankAccount? _selectedAccount;
-  List<Tag> _selectedTags = [];
+  final List<Tag> _selectedTags = [];
   DateTime _selectedDate = DateTime.now();
   bool _isSaving = false;
 
@@ -83,7 +84,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
     if (body.toLowerCase().contains('credit') ||
         body.toLowerCase().contains('received') ||
         body.toLowerCase().contains('deposited')) {
-      _type = 'credit';
+      _type = TransactionType.credit;
     }
 
     _descriptionController.text = 'From SMS: ${widget.prefillSms!.sender}';
@@ -227,7 +228,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
               context,
               label: 'Expense',
               icon: Icons.arrow_upward_rounded,
-              value: 'debit',
+              value: TransactionType.debit,
               color: colorScheme.error,
             ),
           ),
@@ -237,7 +238,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
               context,
               label: 'Income',
               icon: Icons.arrow_downward_rounded,
-              value: 'credit',
+              value: TransactionType.credit,
               color: colorScheme.tertiary,
             ),
           ),
@@ -250,7 +251,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
     BuildContext context, {
     required String label,
     required IconData icon,
-    required String value,
+    required TransactionType value,
     required Color color,
   }) {
     final isSelected = _type == value;
@@ -353,7 +354,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
 
   Widget _buildCategoryDropdown(BuildContext context) {
     return DropdownButtonFormField<Category>(
-      value: _selectedCategory,
+      initialValue: _selectedCategory,
       decoration: InputDecoration(
         labelText: 'Category',
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -386,7 +387,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
 
   Widget _buildAccountDropdown(BuildContext context) {
     return DropdownButtonFormField<BankAccount>(
-      value: _selectedAccount,
+      initialValue: _selectedAccount,
       decoration: InputDecoration(
         labelText: 'Account',
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -451,7 +452,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
             ),
             const SizedBox(width: 12),
             Text(
-              'Date: ${_formatDate(_selectedDate)}',
+              'Date: ${DateFormatter.formatFullDate(_selectedDate)}',
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const Spacer(),
@@ -529,7 +530,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
       child: FilledButton(
         onPressed: _isSaving ? null : _save,
         style: FilledButton.styleFrom(
-          backgroundColor: _type == 'credit'
+          backgroundColor: _type == TransactionType.credit
               ? colorScheme.tertiary
               : colorScheme.primary,
           shape: RoundedRectangleBorder(
@@ -581,7 +582,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
       smsId: widget.prefillSms?.id,
       payee: _payeeController.text,
       amount: amount,
-      type: _type,
+      type: _type.value,
       reference: null,
       description: _descriptionController.text.isEmpty
           ? null
@@ -592,23 +593,5 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
     final tagIds = _selectedTags.map((t) => t.id).toList();
     widget.onSave(transaction, tagIds);
     Navigator.pop(context);
-  }
-
-  String _formatDate(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 }

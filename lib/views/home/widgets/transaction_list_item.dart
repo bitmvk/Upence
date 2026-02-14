@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:upence/core/ui/icon_mapper.dart';
+import 'package:upence/core/utils/formatters.dart';
 import 'package:upence/data/local/database/database.dart';
 import 'package:upence/domain/models/composite_transaction.dart';
 
@@ -83,7 +84,9 @@ class TransactionListItem extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                _formatDate(transaction.occurredAt),
+                                DateFormatter.formatShortDate(
+                                  transaction.occurredAt,
+                                ),
                                 style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
                                       color: colorScheme.onSurfaceVariant,
@@ -157,14 +160,17 @@ class TransactionListItem extends StatelessWidget {
   Widget _buildAmount(BuildContext context, bool isCredit) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final amount = transaction.amount / 100;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          '${isCredit ? '+' : '-'}${_formatCurrency(amount.abs())}',
+          CurrencyFormatter.format(
+            transaction.amount,
+            showSign: true,
+            isCredit: isCredit,
+          ),
           style: textTheme.titleMedium?.copyWith(
             color: isCredit ? colorScheme.tertiary : colorScheme.error,
             fontWeight: FontWeight.w700,
@@ -178,46 +184,5 @@ class TransactionListItem extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  String _formatDate(DateTime dateTime) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-    final txDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
-
-    if (txDate == today) {
-      return 'Today';
-    } else if (txDate == yesterday) {
-      return 'Yesterday';
-    } else {
-      const months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      return '${dateTime.day} ${months[dateTime.month - 1]}';
-    }
-  }
-
-  String _formatCurrency(double amount) {
-    if (amount >= 10000000) {
-      return '₹${(amount / 10000000).toStringAsFixed(1)}Cr';
-    } else if (amount >= 100000) {
-      return '₹${(amount / 100000).toStringAsFixed(1)}L';
-    } else if (amount >= 1000) {
-      return '₹${(amount / 1000).toStringAsFixed(1)}K';
-    } else {
-      return '₹${amount.toStringAsFixed(0)}';
-    }
   }
 }
