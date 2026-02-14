@@ -14,7 +14,7 @@ class CategoriesRepository {
     return await _categoryDao.getCategory(id);
   }
 
-  Future<int> addCategory(Category category) async {
+  Future<int> createCategory(Category category) async {
     return await _categoryDao.insertCategory(category);
   }
 

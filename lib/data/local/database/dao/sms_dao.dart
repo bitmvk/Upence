@@ -82,4 +82,27 @@ class SmsDao extends DatabaseAccessor<AppDatabase> with _$SmsDaoMixin {
         );
     return rowsAffected > 0;
   }
+
+  Future<int> countSms({
+    List<String>? statuses,
+    bool? isDeleted,
+    bool? isTransaction,
+  }) async {
+    final query = selectOnly(smsMessages)..addColumns([smsMessages.id.count()]);
+
+    if (statuses != null && statuses.isNotEmpty) {
+      query.where(smsMessages.status.isIn(statuses));
+    }
+
+    if (isDeleted != null) {
+      query.where(smsMessages.isDeleted.equals(isDeleted));
+    }
+
+    if (isTransaction != null) {
+      query.where(smsMessages.isTransaction.equals(isTransaction));
+    }
+
+    final result = await query.getSingle();
+    return result.read(smsMessages.id.count()) ?? 0;
+  }
 }

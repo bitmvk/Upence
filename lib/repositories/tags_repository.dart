@@ -14,7 +14,7 @@ class TagsRepository {
     return await _tagDao.getTag(id);
   }
 
-  Future<int> addTag(Tag tag) async {
+  Future<int> createTag(Tag tag) async {
     return await _tagDao.insertTag(tag);
   }
 

@@ -24,7 +24,14 @@ class BankAccountDao extends DatabaseAccessor<AppDatabase>
   }
 
   Future<int> insertAccount(BankAccount account) {
-    return into(bankAccounts).insert(account);
+    return into(bankAccounts).insert(
+      BankAccountsCompanion.insert(
+        name: account.name,
+        icon: account.icon,
+        number: Value(account.number),
+        description: Value(account.description),
+      ),
+    );
   }
 
   Future<bool> updateAccount(BankAccount account) {

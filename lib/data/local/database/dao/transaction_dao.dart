@@ -1,31 +1,9 @@
 import 'package:drift/drift.dart';
 import 'package:upence/data/local/database/database.dart';
 import 'package:upence/data/local/database/tables/transactions.dart';
+import 'package:upence/domain/models/composite_transaction.dart';
 
 part 'transaction_dao.g.dart';
-
-class DateTimeRange {
-  final DateTime start;
-  final DateTime end;
-
-  DateTimeRange({required this.start, required this.end});
-}
-
-class CompositeTransactions {
-  final Transaction transaction;
-  final BankAccount? account;
-  final Category? category;
-  final Sms? sms;
-  final List<Tag> tags;
-
-  CompositeTransactions({
-    required this.transaction,
-    this.account,
-    this.category,
-    this.sms,
-    required this.tags,
-  });
-}
 
 @DriftAccessor(tables: [Transactions])
 class TransactionDao extends DatabaseAccessor<AppDatabase>
@@ -116,53 +94,90 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
     return query.get();
   }
 
-  Future<List<CompositeTransactions>> getCompositeTransactions(
+  Future<List<CompositeTransaction>> getCompositeTransactions(
     List<int> transactionIds,
   ) async {
+    if (transactionIds.isEmpty) return [];
+
     final transactionsList = await getTransactions(ids: transactionIds);
+    if (transactionsList.isEmpty) return [];
 
-    final compositeTransactionsList = <CompositeTransactions>[];
+    final transactionIdSet = transactionsList.map((t) => t.id).toSet();
+    final accountIds = transactionsList.map((t) => t.accountId).toSet();
+    final categoryIds = transactionsList
+        .where((t) => t.categoryId != null)
+        .map((t) => t.categoryId!)
+        .toSet();
+    final smsIds = transactionsList
+        .where((t) => t.smsId != null)
+        .map((t) => t.smsId!)
+        .toSet();
 
-    for (final transaction in transactionsList) {
-      final account = await db.bankAccountDao.getAccount(
-        transaction.accountId,
-      );
-      final category = transaction.categoryId != null
-          ? await db.categoryDao.getCategory(transaction.categoryId!)
-          : null;
-      final sms = transaction.smsId != null
-          ? await db.smsDao.getSms(transaction.smsId!)
-          : null;
+    final accounts = accountIds.isEmpty
+        ? <BankAccount>[]
+        : await (select(
+            db.bankAccounts,
+          )..where((tbl) => tbl.id.isIn(accountIds))).get();
+    final accountsMap = {for (var a in accounts) a.id: a};
 
-      final transactionTags = await db.transactionTagDao.getTransactionTags(
-        transactionIds: [transaction.id],
-      );
-      final tagIds = transactionTags.map((tt) => tt.tagId).toList();
+    final categories = categoryIds.isEmpty
+        ? <Category>[]
+        : await (select(
+            db.categories,
+          )..where((tbl) => tbl.id.isIn(categoryIds))).get();
+    final categoriesMap = {for (var c in categories) c.id: c};
 
-      final tags = <Tag>[];
-      for (final tagId in tagIds) {
-        final tag = await db.tagDao.getTag(tagId);
-        if (tag != null) {
-          tags.add(tag);
-        }
+    final smsMessages = smsIds.isEmpty
+        ? <Sms>[]
+        : await (select(
+            db.smsMessages,
+          )..where((tbl) => tbl.id.isIn(smsIds))).get();
+    final smsMap = {for (var s in smsMessages) s.id: s};
+
+    final transactionTags = await (select(
+      db.transactionTags,
+    )..where((tbl) => tbl.transactionId.isIn(transactionIdSet))).get();
+
+    final tagIds = transactionTags.map((tt) => tt.tagId).toSet();
+    final tags = tagIds.isEmpty
+        ? <Tag>[]
+        : await (select(db.tags)..where((tbl) => tbl.id.isIn(tagIds))).get();
+    final tagsMap = {for (var t in tags) t.id: t};
+
+    final Map<int, List<Tag>> transactionTagsMap = {};
+    for (final tt in transactionTags) {
+      transactionTagsMap.putIfAbsent(tt.transactionId, () => []);
+      final tag = tagsMap[tt.tagId];
+      if (tag != null) {
+        transactionTagsMap[tt.transactionId]!.add(tag);
       }
-
-      compositeTransactionsList.add(
-        CompositeTransactions(
-          transaction: transaction,
-          account: account,
-          category: category,
-          sms: sms,
-          tags: tags,
-        ),
-      );
     }
 
-    return compositeTransactionsList;
+    return transactionsList.map((tx) {
+      return CompositeTransaction(
+        transaction: tx,
+        account: accountsMap[tx.accountId],
+        category: tx.categoryId != null ? categoriesMap[tx.categoryId] : null,
+        sms: tx.smsId != null ? smsMap[tx.smsId] : null,
+        tags: transactionTagsMap[tx.id] ?? [],
+      );
+    }).toList();
   }
 
   Future<int> insertTransaction(Transaction transaction) {
-    return into(transactions).insert(transaction);
+    return into(transactions).insert(
+      TransactionsCompanion.insert(
+        accountId: transaction.accountId,
+        amount: transaction.amount,
+        type: transaction.type,
+        occurredAt: transaction.occurredAt,
+        categoryId: Value(transaction.categoryId),
+        smsId: Value(transaction.smsId),
+        payee: Value(transaction.payee),
+        reference: Value(transaction.reference),
+        description: Value(transaction.description),
+      ),
+    );
   }
 
   Future<bool> updateTransaction(Transaction transaction) {

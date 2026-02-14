@@ -24,7 +24,14 @@ class CategoryDao extends DatabaseAccessor<AppDatabase>
   }
 
   Future<int> insertCategory(Category category) {
-    return into(categories).insert(category);
+    return into(categories).insert(
+      CategoriesCompanion.insert(
+        name: category.name,
+        icon: category.icon,
+        color: category.color,
+        description: Value(category.description),
+      ),
+    );
   }
 
   Future<bool> updateCategory(Category category) {

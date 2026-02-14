@@ -3,6 +3,7 @@ import 'package:upence/data/local/database/database.dart';
 import 'package:upence/repositories/bank_account_repository.dart';
 import 'package:upence/repositories/categories_repository.dart';
 import 'package:upence/repositories/rules_repository.dart';
+import 'package:upence/repositories/sms_repository.dart';
 import 'package:upence/repositories/tags_repository.dart';
 import 'package:upence/repositories/transactions_repository.dart';
 
@@ -14,7 +15,7 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 
 final transactionsRepositoryProvider = Provider<TransactionsRepository>((ref) {
   final db = ref.watch(databaseProvider);
-  return TransactionsRepository(db.transactionDao);
+  return TransactionsRepository(db.transactionDao, db.transactionTagDao);
 });
 
 final bankAccountRepositoryProvider = Provider<BankAccountRepository>((ref) {
@@ -35,4 +36,9 @@ final categoriesRepositoryProvider = Provider<CategoriesRepository>((ref) {
 final tagsRepositoryProvider = Provider<TagsRepository>((ref) {
   final db = ref.watch(databaseProvider);
   return TagsRepository(db.tagDao);
+});
+
+final smsRepositoryProvider = Provider<SmsRepository>((ref) {
+  final db = ref.watch(databaseProvider);
+  return SmsRepository(db.smsDao);
 });

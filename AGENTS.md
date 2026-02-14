@@ -95,7 +95,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:upence/core/di/proviers.dart';
+import 'package:upence/core/di/providers.dart';
 import 'package:upence/data/local/database/database.dart';
 ```
 

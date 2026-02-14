@@ -50,7 +50,6 @@ class _SetupViewState extends ConsumerState<SetupView> {
       body: SafeArea(
         child: Column(
           children: [
-            
             Expanded(
               child: PageView(
                 controller: _pageController,
@@ -80,7 +79,6 @@ class _SetupViewState extends ConsumerState<SetupView> {
     SetupState state,
     dynamic viewModel,
   ) {
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(
@@ -137,9 +135,9 @@ class _SetupViewState extends ConsumerState<SetupView> {
                       )
                     : TextButton(
                         onPressed: viewModel.canProceedFromCurrentStep()
-                            ? () {
+                            ? () async {
                                 if (state.currentStep == SetupStep.tags) {
-                                  viewModel.completeSetup();
+                                  await viewModel.completeSetup();
                                   if (context.mounted) {
                                     context.go("/");
                                   }

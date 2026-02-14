@@ -1,10 +1,13 @@
 import 'package:upence/data/local/database/dao/transaction_dao.dart';
+import 'package:upence/data/local/database/dao/transaction_tag_dao.dart';
 import 'package:upence/data/local/database/database.dart';
+import 'package:upence/domain/models/composite_transaction.dart';
 
 class TransactionsRepository {
   final TransactionDao _transactionDao;
+  final TransactionTagDao _transactionTagDao;
 
-  TransactionsRepository(this._transactionDao);
+  TransactionsRepository(this._transactionDao, this._transactionTagDao);
 
   Future<List<Transaction>> getTransactions(
     List<int>? ids,
@@ -36,14 +39,21 @@ class TransactionsRepository {
     return await _transactionDao.getTransaction(id);
   }
 
-  Future<List<CompositeTransactions>> getCompositeTransactions(
+  Future<List<CompositeTransaction>> getCompositeTransactions(
     List<int> ids,
   ) async {
     return await _transactionDao.getCompositeTransactions(ids);
   }
 
-  Future<int> addTransaction(Transaction transaction) async {
-    return await _transactionDao.insertTransaction(transaction);
+  Future<int> createTransaction(
+    Transaction transaction, {
+    List<int> tagIds = const [],
+  }) async {
+    final transactionId = await _transactionDao.insertTransaction(transaction);
+    if (tagIds.isNotEmpty) {
+      await _transactionTagDao.updateTagsForTransaction(transactionId, tagIds);
+    }
+    return transactionId;
   }
 
   Future<bool> updateTransaction(Transaction transaction) async {
@@ -52,5 +62,12 @@ class TransactionsRepository {
 
   Future<int> deleteTransaction(int id) async {
     return await _transactionDao.deleteTransaction(id);
+  }
+
+  Future<void> updateTransactionTags(
+    int transactionId,
+    List<int> tagIds,
+  ) async {
+    await _transactionTagDao.updateTagsForTransaction(transactionId, tagIds);
   }
 }
